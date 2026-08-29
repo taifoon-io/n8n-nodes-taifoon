@@ -44,8 +44,7 @@
       "dist/credentials/TaifoonApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/Taifoon/Taifoon.node.js",
-      "dist/nodes/Taifoon/TaifoonTrigger.node.js"
+      "dist/nodes/Taifoon/Taifoon.node.js"
     ]
   },
   "devDependencies": {

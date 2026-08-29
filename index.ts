@@ -3,4 +3,3 @@
 
 export * from './credentials/TaifoonApi.credentials';
 export * from './nodes/Taifoon/Taifoon.node';
-export * from './nodes/Taifoon/TaifoonTrigger.node';

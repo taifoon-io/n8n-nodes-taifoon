@@ -1,56 +1,53 @@
 # n8n-nodes-taifoon
 
-Cross-chain intelligence, proofs, and assurance receipts for n8n workflows.
+Cross-chain intelligence, proofs, and receipts for n8n workflows.
 
 ## What is Taifoon?
 
-[Taifoon](https://taifoon.io) is the cross-chain data availability layer. It provides:
+[Taifoon](https://taifoon.io) is the cross-chain data availability layer:
 
 - **61 chains** indexed in real-time with finality proofs
 - **25 protocols** decoded (Across, Relay, Stargate, Mayan, etc.)
 - **V5 proofs** for on-chain verification of any block or transaction
-- **Genome stream** — a unified event bus for all cross-chain activity
-- **Assurance layer** — settlement receipts with 14 terminal outcomes
+- **Genome stream** — unified event bus for all cross-chain activity
 
-## Nodes
+## Node Operations
 
-### Taifoon (Action Node)
+### Intel
 
-Query cross-chain intelligence and generate proofs.
+| Operation | Description |
+|-----------|-------------|
+| Get Overview | Dashboard summary: chains, protocols, orders |
+| Get Solvers | Solver leaderboard with fill stats |
+| Get Protocol Health | Protocol ICP profile and metrics |
+| Compare Routes | Compare protocols for a route |
+| Get Fill Rates | Per-protocol fill rate summary |
+| Get Live Stats | Per-protocol-per-chain 24h stats |
 
-**Resources:**
+### Proof
 
-| Resource | Operations |
-|----------|------------|
-| **Intel** | Get Overview, Get Solvers, Get Protocol Health, Compare Routes, Get Fill Rates |
-| **Proof** | Estimate Cost, Generate Block Proof, Generate TX Proof, Get Superroot |
-| **Agent** | Query (natural language), Get Quote, Get Health |
-| **Genome** | Get Stats, Get Latest, Query Stream |
-| **Assurance** | Get Receipt, Verify Receipt |
+| Operation | Description |
+|-----------|-------------|
+| Estimate Cost | Get proof pricing for a chain |
+| Generate Block Proof | V5 proof blob for a block |
+| Generate TX Proof | V5 proof for a transaction hash |
+| Get Superroot | Current superroot hash and chain count |
 
-### Taifoon Trigger
+### Agent
 
-Trigger workflows on cross-chain events.
+| Operation | Description |
+|-----------|-------------|
+| Query | Natural language question about cross-chain |
+| Get Quote | Cross-chain route quote with recommendations |
+| Get Health | Agent service health status |
 
-**Event Types:**
+### Genome
 
-| Event | Description |
-|-------|-------------|
-| `proto.fill` | Cross-chain order filled by a solver |
-| `proto.deposit` | Intent deposit detected on source chain |
-| `proto.timeout` | Order timed out without fill |
-| `signal.whale` | Large transfer detected (>$100k) |
-| `superroot.commit` | New superroot sealed (~10s interval) |
-| `block.ingest` | New block header stored |
-| `dex.swap` | DEX swap detected |
-| `settlement.sealed` | TaifoonReceipt sealed (assurance) |
-
-**Filters:**
-
-- Filter by chains (Ethereum, Arbitrum, Base, etc.)
-- Filter by protocols (Across, Relay, Stargate, etc.)
-- Filter by minimum volume (USD)
-- Custom JSON filter for advanced use cases
+| Operation | Description |
+|-----------|-------------|
+| Get Stats | Genome system statistics |
+| Get Latest | Recent genome entries |
+| Query Stream | Filter genome stream by criteria |
 
 ## Installation
 
@@ -61,10 +58,10 @@ Trigger workflows on cross-chain events.
 3. Enter `n8n-nodes-taifoon`
 4. Click **Install**
 
-### Manual Installation
+### Manual
 
 ```bash
-pnpm install n8n-nodes-taifoon
+npm install n8n-nodes-taifoon
 ```
 
 ## Credentials
@@ -75,21 +72,6 @@ pnpm install n8n-nodes-taifoon
 4. Paste your API key
 
 ## Example Workflows
-
-### Alert on Whale Transfers
-
-```
-Taifoon Trigger (signal.whale, min $500k)
-  → Slack (Send message)
-```
-
-### Generate Proof for Settlement
-
-```
-Webhook (receive tx hash)
-  → Taifoon (Proof: Generate TX Proof)
-  → HTTP Request (submit to contract)
-```
 
 ### Cross-Chain Route Recommendation
 
@@ -103,35 +85,43 @@ Schedule (every hour)
 
 ```
 Schedule (every 5 min)
-  → Taifoon (Intel: Get Protocol Health)
+  → Taifoon (Intel: Get Fill Rates)
   → IF (fill_rate < 0.8)
-    → Email (alert)
+    → Slack (alert)
+```
+
+### Generate Proof for Settlement
+
+```
+Webhook (receive tx hash)
+  → Taifoon (Proof: Generate TX Proof)
+  → HTTP Request (submit to contract)
+```
+
+### Whale Alert
+
+```
+Schedule (every minute)
+  → Taifoon (Genome: Get Latest, limit 50)
+  → IF (volume_usd > 500000)
+    → Telegram (send message)
 ```
 
 ## Pricing
 
-Taifoon uses a credit-based pricing model:
+| Tier | Price | Credits/month |
+|------|-------|---------------|
+| Explorer | Free | 50 |
+| Builder | $49/mo | 5,000 |
+| Solver | $299/mo | 50,000 |
 
-| Tier | Price | Credits/month | Webhooks |
-|------|-------|---------------|----------|
-| Explorer | Free | 50 | 5/day |
-| Builder | $49/mo | 5,000 | 100 |
-| Solver | $299/mo | 50,000 | Unlimited |
+See [taifoon.io/pricing](https://taifoon.io/pricing)
 
-See [taifoon.io/pricing](https://taifoon.io/pricing) for details.
+## Links
 
-## Documentation
-
-- [API Reference](https://docs.taifoon.io/api)
-- [Webhook Guide](https://docs.taifoon.io/webhooks)
-- [Proof System](https://docs.taifoon.io/proofs)
-- [Assurance Layer](https://docs.taifoon.io/assurance)
-
-## Support
-
+- [API Docs](https://docs.taifoon.io/api)
 - [Discord](https://discord.gg/taifoon)
-- [GitHub Issues](https://github.com/taifoon-io/n8n-nodes-taifoon/issues)
-- [Email](mailto:support@taifoon.io)
+- [GitHub](https://github.com/taifoon-io/n8n-nodes-taifoon)
 
 ## License
 
