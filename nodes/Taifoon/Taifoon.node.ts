@@ -1,4 +1,5 @@
 import {
+	IDataObject,
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
@@ -406,8 +407,8 @@ export class Taifoon implements INodeType {
 
 				let endpoint = '';
 				let method: 'GET' | 'POST' = 'GET';
-				let body: Record<string, unknown> | undefined;
-				let qs: Record<string, unknown> = {};
+				let body: IDataObject | undefined;
+				let qs: IDataObject = {};
 
 				// ─── INTEL ───────────────────────────────────────────────
 				if (resource === 'intel') {

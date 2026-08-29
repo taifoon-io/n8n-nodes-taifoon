@@ -1,4 +1,5 @@
 import {
+	IDataObject,
 	IHookFunctions,
 	IWebhookFunctions,
 	INodeType,
@@ -307,7 +308,7 @@ export class TaifoonTrigger implements INodeType {
 
 	async webhook(this: IWebhookFunctions): Promise<IWebhookResponseData> {
 		const req = this.getRequestObject();
-		const body = req.body as Record<string, unknown>;
+		const body = req.body as IDataObject;
 
 		// Validate it looks like a Taifoon genome event
 		if (!body.genome_address && !body.entity && !body.action) {
