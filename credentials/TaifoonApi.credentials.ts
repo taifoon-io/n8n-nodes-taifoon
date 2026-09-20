@@ -1,14 +1,17 @@
-import {
-	IAuthenticateGeneric,
-	ICredentialTestRequest,
-	ICredentialType,
-	INodeProperties,
-} from 'n8n-workflow';
+import type { IAuthenticateGeneric, ICredentialTestRequest, ICredentialType, Icon, INodeProperties } from 'n8n-workflow';
 
+/**
+ * Only two operations need this: submitting a completion to the relayer, and polling one. Everything
+ * else in the Taifoon node is a public read and works with no credential at all.
+ */
 export class TaifoonApi implements ICredentialType {
 	name = 'taifoonApi';
-	displayName = 'Taifoon API';
-	documentationUrl = 'https://docs.taifoon.io/api-keys';
+
+	displayName = 'Taifoon Relayer API';
+
+	icon: Icon = { light: 'file:taifoon.svg', dark: 'file:taifoon.dark.svg' };
+
+	documentationUrl = 'https://www.taifoon.io/v1/openapi.json';
 
 	properties: INodeProperties[] = [
 		{
@@ -18,34 +21,18 @@ export class TaifoonApi implements ICredentialType {
 			typeOptions: { password: true },
 			default: '',
 			required: true,
-			description: 'Your Taifoon API key (starts with taif-). Get one at https://taifoon.io/console',
-		},
-		{
-			displayName: 'Environment',
-			name: 'environment',
-			type: 'options',
-			default: 'production',
-			options: [
-				{ name: 'Production', value: 'production' },
-				{ name: 'Testnet', value: 'testnet' },
-			],
-			description: 'Which Taifoon environment to use',
+			description:
+				'A relayer key (starts with tfr_). It authorises Completion → Submit and Completion → Get Status. No other operation needs it.',
 		},
 	];
 
 	authenticate: IAuthenticateGeneric = {
 		type: 'generic',
-		properties: {
-			headers: {
-				Authorization: '=Bearer {{$credentials.apiKey}}',
-			},
-		},
+		properties: { headers: { 'X-API-Key': '={{$credentials.apiKey}}' } },
 	};
 
+	// Side-effect free, and it does not count against the key's rate limit.
 	test: ICredentialTestRequest = {
-		request: {
-			baseURL: '={{$credentials.environment === "testnet" ? "https://testnet.api.taifoon.dev" : "https://api.taifoon.dev"}}',
-			url: '/api/genome/stats',
-		},
+		request: { baseURL: 'https://www.taifoon.io/v1', url: '/relayer/whoami' },
 	};
 }

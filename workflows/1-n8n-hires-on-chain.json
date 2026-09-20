@@ -1,0 +1,287 @@
+{
+  "name": "Taifoon \u2014 n8n hires an on-chain agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "skills",
+              "value": "nft-market-reading",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "priceUnits",
+              "value": "10000",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "chainId",
+              "value": 8453,
+              "type": "number"
+            },
+            {
+              "id": "a4",
+              "name": "task",
+              "value": "Summarise the latest superroot health and flag any chain older than 10 minutes.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "what-you-need",
+      "name": "What you need",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -500,
+        300
+      ],
+      "notes": "The only node you edit. `skills` must be tags agents actually publish \u2014 GET /v1/agents/cards lists them under skills_seen. priceUnits is in the token's smallest unit: 10000 = 0.01 USDC.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "agent",
+        "operation": "match",
+        "required_skills": "={{ $json.skills }}",
+        "matchOptions": {}
+      },
+      "id": "match-agents",
+      "name": "Match agents",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        300
+      ],
+      "notes": "Ranks candidates from BOTH populations. Partial matches come back marked ineligible with what they lack.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Take the best ELIGIBLE candidate. An agent covering only some of the skills is not a cheaper\n// option, it is a different job \u2014 so stop rather than quietly downgrade what was asked for.\nconst need = $('What you need').first().json;\nconst res = $json;\nconst ok = (res.candidates ?? []).filter((c) => c.eligible === true);\nif (!ok.length) {\n  const near = (res.candidates ?? [])[0];\n  const s = res.searched ?? {};\n  throw new Error(near\n    ? `No agent covers every skill. Closest: ${near.card?.name ?? near.card?.id}, ${near.why}.`\n    : `No agent publishes these skills. ${s.cards ?? 0} cards were readable; ${s.unreadable ?? 0} more agents published a card that could not be fetched.`);\n}\nconst card = ok[0].card;\n// card.id names the agent in its registry (chain:agentId). It cannot be paid. The OWNER can.\nif (!card.owner) throw new Error(`${card.name ?? card.id} matched, but its owner address is unknown, so it cannot be named as a seller.`);\nreturn [{ json: { ...need, seller: card.owner, sellerName: card.name, agent: card.id, kind: card.kind, endpoint: card.endpoint } }];"
+      },
+      "id": "pick-one-or-stop",
+      "name": "Pick one, or stop",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        300
+      ],
+      "notes": "Refuses a partial match, and says how many agents could not be read at all.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "assurance",
+        "operation": "getQuote",
+        "chainId": "={{ $json.chainId }}",
+        "seller": "={{ $json.seller }}",
+        "price": "={{ $json.priceUnits }}",
+        "deposit": ""
+      },
+      "id": "quote-the-guarantee",
+      "name": "Quote the guarantee",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ],
+      "notes": "Priced from THIS seller's settled record, as an interval. A seller with no settled jobs comes back `insurable: false` \u2014 the hire can still go ahead, uninsured, and the offer then charges no premium.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "job",
+        "operation": "createOffer",
+        "chainId": "={{ $('Pick one, or stop').item.json.chainId }}",
+        "seller": "={{ $('Pick one, or stop').item.json.seller }}",
+        "price": "={{ $('Pick one, or stop').item.json.priceUnits }}",
+        "offerOptions": {}
+      },
+      "id": "create-the-offer",
+      "name": "Create the offer",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ],
+      "notes": "Returns UNSIGNED calls. Funding moves the hirer's money, so the hirer signs. Nothing is sent from here.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "handshake",
+        "operation": "open",
+        "candidateAddress": "={{ $('Pick one, or stop').item.json.seller }}",
+        "candidateKind": "={{ $('Pick one, or stop').item.json.kind === 'n8n' ? 'n8n' : 'onchain' }}",
+        "task": "={{ $('Pick one, or stop').item.json.task }}",
+        "openOptions": {
+          "required_skills": "={{ $('Pick one, or stop').item.json.skills }}"
+        }
+      },
+      "id": "open-the-handshake",
+      "name": "Open the handshake",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ],
+      "notes": "Records the offer and returns a handshake ID to follow. The broker routes and records; it never signs.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "handshake_id",
+              "value": "={{ $json.handshake_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b2",
+              "name": "jobId",
+              "value": "={{ $('Create the offer').item.json.jobId }}",
+              "type": "string"
+            },
+            {
+              "id": "b3",
+              "name": "premium",
+              "value": "={{ $('Quote the guarantee').item.json.premium.label }}",
+              "type": "string"
+            },
+            {
+              "id": "b4",
+              "name": "callsToSign",
+              "value": "={{ $('Create the offer').item.json.calls }}",
+              "type": "array"
+            },
+            {
+              "id": "b5",
+              "name": "sellerMustFirst",
+              "value": "={{ $('Create the offer').item.json.seller_must_first }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "what-to-sign",
+      "name": "What to sign",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        700,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "What you need",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "What you need": {
+      "main": [
+        [
+          {
+            "node": "Match agents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match agents": {
+      "main": [
+        [
+          {
+            "node": "Pick one, or stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick one, or stop": {
+      "main": [
+        [
+          {
+            "node": "Quote the guarantee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quote the guarantee": {
+      "main": [
+        [
+          {
+            "node": "Create the offer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create the offer": {
+      "main": [
+        [
+          {
+            "node": "Open the handshake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open the handshake": {
+      "main": [
+        [
+          {
+            "node": "What to sign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Match by skill, price the guarantee from the seller's own record, create the offer, open a handshake. Ends with the exact calls to sign. Taifoon never holds a key."
+  }
+}

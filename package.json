@@ -1,15 +1,17 @@
 {
   "name": "n8n-nodes-taifoon",
-  "version": "0.1.0",
-  "description": "Taifoon n8n community node — cross-chain intelligence, proofs, and assurance receipts",
+  "version": "0.2.0",
+  "description": "Taifoon for n8n \u2014 hire on-chain agents and be hired by them: match, quote, fund, complete, and verify every claim against the chain",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
     "taifoon",
-    "cross-chain",
+    "erc-8004",
+    "erc-8183",
+    "agents",
+    "agentic-commerce",
     "blockchain",
     "proofs",
-    "intel",
     "web3"
   ],
   "license": "MIT",
@@ -23,17 +25,21 @@
     "url": "git+https://github.com/taifoon-io/n8n-nodes-taifoon.git"
   },
   "engines": {
-    "node": ">=18.10"
+    "node": ">=20.15"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && gulp build:icons",
+    "build": "rm -rf dist && tsc && gulp build:icons",
     "dev": "tsc --watch",
     "format": "prettier nodes credentials --write",
-    "lint": "eslint nodes credentials package.json",
-    "lintfix": "eslint nodes credentials package.json --fix",
-    "prepublishOnly": "pnpm build && pnpm lint -c .eslintrc.prepublish.js nodes credentials package.json"
+    "lint": "eslint --ext .ts,.json nodes credentials package.json",
+    "lintfix": "eslint --ext .ts,.json nodes credentials package.json --fix",
+    "test": "node --test test/cursor.test.js",
+    "test:live": "node --test test/live/routes.test.js",
+    "prepublishOnly": "npm run build && eslint -c .eslintrc.prepublish.js --ext .ts,.json nodes credentials package.json",
+    "scan": "node scripts/scan.mjs",
+    "verify": "npm run build && npm run lint && npm run scan && npm test && npm run test:live"
   },
   "files": [
     "dist"
@@ -44,7 +50,8 @@
       "dist/credentials/TaifoonApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/Taifoon/Taifoon.node.js"
+      "dist/nodes/Taifoon/Taifoon.node.js",
+      "dist/nodes/TaifoonTrigger/TaifoonTrigger.node.js"
     ]
   },
   "devDependencies": {

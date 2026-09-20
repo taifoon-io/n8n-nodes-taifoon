@@ -1,0 +1,98 @@
+import type { INodeProperties } from 'n8n-workflow';
+import { ASSURANCE_CHAINS, show, address } from './shared';
+
+export const assuranceOperations: INodeProperties[] = [
+	{
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		displayOptions: { show: { resource: ['assurance'] } },
+		options: [
+			{
+				name: 'Build Call',
+				value: 'buildCall',
+				action: 'Build an unsigned call',
+				description: 'The exact calldata for an insured job, with its effect in plain words and who must sign. Nothing is signed or sent.',
+				routing: { request: { method: 'POST', url: '/assurance/call' } },
+			},
+			{
+				name: 'Get Deployment',
+				value: 'getDeployment',
+				action: 'Get the assurance deployment',
+				description: 'Where the hook and pool factory are deployed, who may upgrade them, and the rules the contracts enforce',
+				routing: { request: { method: 'GET', url: '/assurance' } },
+			},
+			{
+				name: 'Get Pools',
+				value: 'getPools',
+				action: 'Get coverage pools',
+				description: 'Per seller: its settled record, premium interval, and its coverage pool read from chain. Never aggregated across sellers.',
+				routing: { request: { method: 'GET', url: '/pools' } },
+			},
+			{
+				name: 'Get Quote',
+				value: 'getQuote',
+				action: 'Get a quote for the guarantee',
+				description: 'Price the premium from that seller\'s own settled record, and learn now whether these terms could settle',
+				routing: { request: { method: 'POST', url: '/assurance/quote' } },
+			},
+		],
+		default: 'getQuote',
+	},
+	{
+		displayName: 'Chain',
+		name: 'chainId',
+		type: 'options',
+		options: ASSURANCE_CHAINS,
+		default: 8453,
+		required: true,
+		displayOptions: show('assurance', ['getQuote', 'buildCall']),
+		routing: { send: { type: 'body', property: 'chainId' } },
+	},
+	{
+		...address('Seller', 'seller', 'assurance', ['getQuote'], 'The agent whose record prices the premium.'),
+		routing: { send: { type: 'body', property: 'seller' } },
+	},
+	{
+		displayName: 'Price (Smallest Unit)',
+		name: 'price',
+		type: 'string',
+		default: '',
+		required: true,
+		placeholder: '100000000',
+		description: 'An integer in the token\'s smallest unit. 100 USDC is <code>100000000</code>.',
+		displayOptions: show('assurance', ['getQuote']),
+		routing: { send: { type: 'body', property: 'price' } },
+	},
+	{
+		displayName: 'Deposit (Smallest Unit)',
+		name: 'deposit',
+		type: 'string',
+		default: '',
+		description: 'What the seller will lock. It must exceed the price, or the quote refuses and says why.',
+		displayOptions: show('assurance', ['getQuote']),
+		routing: { send: { type: 'body', property: 'deposit', value: '={{ $value || undefined }}' } },
+	},
+	{
+		displayName: 'Action',
+		name: 'action',
+		type: 'json',
+		default: '{\n  "kind": "complete",\n  "jobId": "0x"\n}',
+		required: true,
+		description:
+			'One of: <code>fund-job</code>, <code>submit</code>, <code>complete</code>, <code>expire</code>, <code>reject</code>, <code>create-pool</code>, <code>back-seller</code>. Send an empty object to get the list with an example.',
+		displayOptions: show('assurance', ['buildCall']),
+		routing: { send: { type: 'body', property: 'action', value: '={{ typeof $value === "string" ? JSON.parse($value) : $value }}' } },
+	},
+	{
+		displayName: 'Limit',
+		name: 'limit',
+		type: 'number',
+		typeOptions: { minValue: 1 },
+		default: 50,
+		description: 'Max number of results to return',
+		displayOptions: show('assurance', ['getPools']),
+		routing: { send: { type: 'query', property: 'limit' } },
+	},
+];

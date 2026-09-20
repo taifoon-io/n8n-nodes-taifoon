@@ -1,0 +1,100 @@
+import type { INodeProperties } from 'n8n-workflow';
+import { CHAINS, show } from './shared';
+
+export const proofOperations: INodeProperties[] = [
+	{
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		displayOptions: { show: { resource: ['proof'] } },
+		options: [
+			{
+				name: 'Get Root',
+				value: 'getRoot',
+				action: 'Get the latest root',
+				description: 'The latest superroot, with how long ago it was anchored',
+				routing: { request: { method: 'GET', url: '/root/latest' } },
+			},
+			{
+				name: 'Get Transaction Proof',
+				value: 'getTxProof',
+				action: 'Get the proof of a transaction',
+				description: 'Proof that a transaction is inside the root, with is_finalized and a list of exactly what was checked',
+				routing: { request: { method: 'GET', url: '=/proof/tx/{{$parameter.chainId}}/{{$parameter.txHash}}' } },
+			},
+			{
+				name: 'Verify Hire Claim',
+				value: 'attestHire',
+				action: 'Verify a hire claim against the chain',
+				description: 'Re-derive every claim in a completion report from chain. Returns REAL, FABRICATED or UNVERIFIED. Run this before showing a report to anyone.',
+				routing: { request: { method: 'POST', url: '/attest/hire' } },
+			},
+		],
+		default: 'getTxProof',
+	},
+	{
+		displayName: 'Chain',
+		name: 'chainId',
+		type: 'options',
+		options: CHAINS,
+		default: 8453,
+		required: true,
+		displayOptions: show('proof', ['getTxProof']),
+	},
+	{
+		displayName: 'Transaction Hash',
+		name: 'txHash',
+		type: 'string',
+		default: '',
+		required: true,
+		placeholder: '0x… (66 characters)',
+		displayOptions: show('proof', ['getTxProof']),
+	},
+	{
+		displayName: 'Claim',
+		name: 'claim',
+		type: 'collection',
+		placeholder: 'Add Claimed Fact',
+		default: {},
+		description: 'Whatever the report asserted. Each fact given is checked; each one left out is simply not checked.',
+		displayOptions: show('proof', ['attestHire']),
+		options: [
+			{
+				displayName: 'Agent Address',
+				name: 'agentAddress',
+				type: 'string',
+				default: '',
+				routing: { send: { type: 'body', property: 'agentAddress' } },
+			},
+			{
+				displayName: 'Chain ID',
+				name: 'chainId',
+				type: 'number',
+				default: 8453,
+				routing: { send: { type: 'body', property: 'chainId' } },
+			},
+			{
+				displayName: 'Completion Rate Claimed (%)',
+				name: 'completionClaimed',
+				type: 'number',
+				default: 0,
+				routing: { send: { type: 'body', property: 'completionClaimed' } },
+			},
+			{
+				displayName: 'Jobs Claimed',
+				name: 'jobsClaimed',
+				type: 'number',
+				default: 0,
+				routing: { send: { type: 'body', property: 'jobsClaimed' } },
+			},
+			{
+				displayName: 'Transaction Hash',
+				name: 'txHash',
+				type: 'string',
+				default: '',
+				routing: { send: { type: 'body', property: 'txHash' } },
+			},
+		],
+	},
+];
