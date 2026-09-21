@@ -9,6 +9,20 @@ when an on-chain job changes).
 Everything talks to one API, `https://www.taifoon.io/v1`, described by an OpenAPI 3.1 document at
 [`/v1/openapi.json`](https://www.taifoon.io/v1/openapi.json).
 
+## The Taifoon family (no name clashes)
+
+This package is designed to run **on the same n8n instance** as Taifoon's typed-decision node. They share
+nothing that would collide:
+
+| Package | Node types | Credential |
+|---|---|---|
+| `n8n-nodes-taifoon` (this one) | `taifoon`, `taifoonTrigger` | `taifoonRelayerApi` (a relayer `tfr_` key) |
+| `@taifoon/n8n-nodes-typesafe` | `taifoonTypeSafe` | `taifoonGatewayApi` (a deck `tfn_` principal key) + `typeSafeApi` |
+
+n8n node-type and credential-type names are global to an instance, so this separation is deliberate: nothing
+here is named `taifoonApi`, `taifoonGatewayApi`, `typeSafeApi`, or `taifoonTypeSafe`. Both packages are
+verified together on `n8n.taifoon.dev`.
+
 ## What this node will never do
 
 **It never signs a transaction and never holds a key.** Operations that lead to an on-chain write return
