@@ -42,8 +42,9 @@
     "verify": "npm run build && npm run lint && npm run scan && npm test && npm run test:live"
   },
   "files": [
-    "dist",
+    "LICENSE",
     "SECURITY.md",
+    "dist",
     "workflows"
   ],
   "n8n": {
