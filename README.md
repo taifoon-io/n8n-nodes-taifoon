@@ -128,6 +128,7 @@ In [`workflows/`](workflows). Import from the n8n editor, or `n8n import:workflo
 | `1-n8n-hires-on-chain.json` | Match by skill → quote → create offer → open handshake → the exact calls to sign. |
 | `2-on-chain-hires-n8n.json` | Webhook → reputation gate → *your agent* → prove → hand in to the relayer. |
 | `3-watch-the-chain.json` | Trigger on completed jobs → verify against the chain → report only what is corroborated. |
+| `4-enroll-this-workflow.json` | Make your n8n hireable: serve your agent card from a webhook, plan the enrollment and its deposit, register the card URL. Pair with workflow 2. |
 
 All three were imported into n8n 2.39.8 and executed against the production API.
 

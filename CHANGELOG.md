@@ -14,6 +14,8 @@ set and could not parse `package.json`, so the node code was never checked.
 - Credential is optional and only used by Completion. With `required: true`, n8n's routing engine demanded
   it for every operation and public reads failed with "Credentials not found" — found by running the node
   in n8n; no linter reports it.
+- Credential type is `taifoonRelayerApi`, not `taifoonApi`: `n8n-nodes-taifoon-typesafe` already owns that name with
+  different fields, and credential type names are global to an n8n instance.
 - Themed light/dark icons with square corners, `NodeConnectionTypes.Main`, and a credential icon — all
   required by n8n's current submission scanner and none reported by the older lint plugin.
 - `npm run scan` runs n8n's submission scanner locally, in an isolated install.

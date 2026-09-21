@@ -34,7 +34,7 @@ export class Taifoon implements INodeType {
 		usableAsTool: true,
 		credentials: [
 			{
-				name: 'taifoonApi',
+				name: 'taifoonRelayerApi',
 				// NOT required, deliberately. Only Completion needs a key; every other operation is a
 				// public read. n8n's routing engine fetches the first declared credential for EVERY
 				// operation and ignores displayOptions when deciding whether to — so with

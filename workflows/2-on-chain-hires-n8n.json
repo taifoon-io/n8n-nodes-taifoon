@@ -135,7 +135,7 @@
         200
       ],
       "credentials": {
-        "taifoonApi": {
+        "taifoonRelayerApi": {
           "id": "taifoon-relayer",
           "name": "Taifoon Relayer API"
         }

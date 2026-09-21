@@ -4,8 +4,11 @@ import type { IAuthenticateGeneric, ICredentialTestRequest, ICredentialType, Ico
  * Only two operations need this: submitting a completion to the relayer, and polling one. Everything
  * else in the Taifoon node is a public read and works with no credential at all.
  */
-export class TaifoonApi implements ICredentialType {
-	name = 'taifoonApi';
+export class TaifoonRelayerApi implements ICredentialType {
+	// NOT 'taifoonApi': n8n-nodes-taifoon-typesafe already declares a credential type by that name with
+	// different fields (a principal key and a deck URL). Credential type names are global to an n8n
+	// instance, so on a host running both packages one would shadow the other and break its node.
+	name = 'taifoonRelayerApi';
 
 	displayName = 'Taifoon Relayer API';
 
