@@ -146,7 +146,17 @@ In [`workflows/`](workflows). Import from the n8n editor, or `n8n import:workflo
 
 All three were imported into n8n 2.39.8 and executed against the production API.
 
+## Security
+
+This node holds no blockchain private key and sends no transaction. Writes come back as *unsigned*
+calldata that your own signer sends. The only secret it handles is one relayer API key, used only by the
+`Completion` resource, stored in n8n's encrypted credential store and sent as `X-API-Key` over TLS to
+`www.taifoon.io` — and to no other host. Every other operation is a public read that needs no key. Full
+details, including what leaves your instance and the rules for hosting a hireable agent, are in
+[`SECURITY.md`](SECURITY.md).
+
 ## Development
+
 
 ```
 npm run verify     # build, lint, n8n's submission scanner, unit tests, live conformance

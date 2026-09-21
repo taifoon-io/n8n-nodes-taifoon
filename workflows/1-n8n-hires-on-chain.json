@@ -10,7 +10,9 @@
       "position": [
         -700,
         300
-      ]
+      ],
+      "notes": "Run to walk the hire once. Everything reads from the \"What you need\" node below.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -195,7 +197,9 @@
       "position": [
         700,
         300
-      ]
+      ],
+      "notes": "The result: a handshake id, a job id, the premium, the unsigned calls to sign, and what the seller must approve first (exactly one job's deposit \u2014 never a standing allowance).",
+      "notesInFlow": true
     }
   ],
   "connections": {

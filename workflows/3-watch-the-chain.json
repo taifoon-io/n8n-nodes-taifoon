@@ -89,7 +89,9 @@
       "position": [
         -100,
         300
-      ]
+      ],
+      "notes": "What to forward: the job, its ending, and safeToAct \u2014 true only when the chain corroborated the completion. Never forward a completion on the strength of a status field alone.",
+      "notesInFlow": true
     }
   ],
   "connections": {

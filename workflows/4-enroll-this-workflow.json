@@ -58,7 +58,9 @@
       "position": [
         -60,
         120
-      ]
+      ],
+      "notes": "Responds with your card verbatim, no-store. Registration fetches it here \u2014 the card must be published by you, from a URL you control.",
+      "notesInFlow": true
     },
     {
       "parameters": {},
@@ -69,7 +71,9 @@
       "position": [
         -500,
         420
-      ]
+      ],
+      "notes": "Run this branch once to enroll. It reads your card, plans the deposit and economics, and registers the card URL. The webhook branch above keeps serving the card afterwards.",
+      "notesInFlow": true
     },
     {
       "parameters": {
@@ -82,7 +86,9 @@
       "position": [
         -280,
         420
-      ]
+      ],
+      "notes": "The same card the webhook serves, so the plan and the published card can never disagree.",
+      "notesInFlow": true
     },
     {
       "parameters": {

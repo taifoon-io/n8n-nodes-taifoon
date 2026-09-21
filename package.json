@@ -42,7 +42,9 @@
     "verify": "npm run build && npm run lint && npm run scan && npm test && npm run test:live"
   },
   "files": [
-    "dist"
+    "dist",
+    "SECURITY.md",
+    "workflows"
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
