@@ -49,7 +49,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.taifoon.dev/registry/judge/batch",
+        "url": "https://www.taifoon.io/v1/judge/batch",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
