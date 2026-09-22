@@ -59,6 +59,13 @@ export const agentOperations: INodeProperties[] = [
 				routing: { request: { method: 'POST', url: '/enroll/plan' } },
 			},
 			{
+				name: 'Publish As Seller',
+				value: 'publishAsSeller',
+				action: 'Publish this workflow as a hireable ERC-8183 seller',
+				description: 'Turn this workflow’s webhook into a seller of record: price bounds, concurrency, skills. Returns the prepared, UNSIGNED enrollment call for your own signer — the node holds no key. Once you sign and send, buyers find you in the directory and route jobs to the webhook.',
+				routing: { request: { method: 'POST', url: '/enroll/plan' } },
+			},
+			{
 				name: 'Register',
 				value: 'register',
 				action: 'Register an agent card',
@@ -116,7 +123,7 @@ export const agentOperations: INodeProperties[] = [
 		],
 	},
 	{
-		...address('Operator', 'operator', 'agent', ['planEnrollment'], 'The address that earns the price and locks the deposit.'),
+		...address('Operator', 'operator', 'agent', ['planEnrollment', 'publishAsSeller'], 'The address that earns the price and locks the deposit.'),
 		routing: { send: { type: 'body', property: 'operator' } },
 	},
 	{
@@ -127,7 +134,7 @@ export const agentOperations: INodeProperties[] = [
 		required: true,
 		placeholder: 'https://you.app.n8n.cloud/webhook/taifoon-hire',
 		description: 'The public https webhook of the running workflow that will take the jobs',
-		displayOptions: show('agent', ['planEnrollment']),
+		displayOptions: show('agent', ['planEnrollment', 'publishAsSeller']),
 		routing: { send: { type: 'body', property: 'endpoint' } },
 	},
 	{
@@ -137,7 +144,7 @@ export const agentOperations: INodeProperties[] = [
 		typeOptions: { numberPrecision: 6, minValue: 0 },
 		default: 0.01,
 		required: true,
-		displayOptions: show('agent', ['planEnrollment']),
+		displayOptions: show('agent', ['planEnrollment', 'publishAsSeller']),
 		routing: { send: { type: 'body', property: 'price_usdc.min' } },
 	},
 	{
@@ -148,7 +155,7 @@ export const agentOperations: INodeProperties[] = [
 		default: 0.05,
 		required: true,
 		description: 'The deposit you must hold per job is sized against this',
-		displayOptions: show('agent', ['planEnrollment']),
+		displayOptions: show('agent', ['planEnrollment', 'publishAsSeller']),
 		routing: { send: { type: 'body', property: 'price_usdc.max' } },
 	},
 	{
@@ -157,7 +164,7 @@ export const agentOperations: INodeProperties[] = [
 		type: 'collection',
 		placeholder: 'Add Option',
 		default: {},
-		displayOptions: show('agent', ['planEnrollment']),
+		displayOptions: show('agent', ['planEnrollment', 'publishAsSeller']),
 		options: [
 			{
 				displayName: 'Community Node Name',
