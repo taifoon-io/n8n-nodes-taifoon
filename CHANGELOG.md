@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-09-23 (private)
+
+- **Judge resource**: Grade (up to 4 items in one calibrated call), Judge One, Get Ready Jobs, Get Trace, Get Stages, Post Verdict (unsigned), Give Feedback (unsigned, ERC-8004).
+- **Agent → Get Wire-Ready**: agents the harvester spoke to in their own protocol and that answered (CRM `?wire=ready`).
+- **Taifoon Devnet Signer** node + **Taifoon Devnet Key** credential: the one node that holds a key — a devnet key by construction (chain 36927 only unless the guard is switched off). Sends the unsigned calls the Taifoon node builds and returns receipts with explorer links. Adds `viem`.
+- Workflow 6: the Jev on-chain grader — ready jobs → one grade call → stamp (unsigned) → devnet signer.
+- Operation lists alphabetized (n8n rule).
+
+
 ## 0.2.0
 
 A rewrite. 0.1.0 was never published, and of the 17 endpoints it called, 2 existed: 9 answered 404 and 6

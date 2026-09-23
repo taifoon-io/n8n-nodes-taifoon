@@ -1,0 +1,22 @@
+{
+  "name": "Taifoon — Jev on-chain grader (grade → stamp → devnet)",
+  "nodes": [
+    { "parameters": {}, "id": "trigger", "name": "When clicking ‘Execute workflow’", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [0, 0] },
+    { "parameters": { "resource": "judge", "operation": "getReady", "readyChain": 8453, "readyLimit": 4 }, "id": "ready", "name": "Ready jobs (Base)", "type": "CUSTOM.taifoon", "typeVersion": 1, "position": [220, 0] },
+    { "parameters": { "jsCode": "// four calibrated jobs → one battery\nconst jobs = ($input.first().json.jobs || []).filter(j => j.record && j.record.calibrated).slice(0, 4);\nreturn [{ json: { items: jobs.map(j => ({ id: j.id, state: j.state })) } }];" }, "id": "pick", "name": "Pick 4 calibrated", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [440, 0] },
+    { "parameters": { "resource": "judge", "operation": "grade", "items": "={{ $json.items }}" }, "id": "grade", "name": "Grade (one call)", "type": "CUSTOM.taifoon", "typeVersion": 1, "position": [660, 0], "credentials": { "taifoonRelayerApi": { "id": "tfntypesafe00002", "name": "Taifoon Relayer API" } } },
+    { "parameters": { "jsCode": "// one item per graded row\nreturn ($input.first().json.graded || []).map(g => ({ json: g }));" }, "id": "rows", "name": "One row per grade", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [880, 0] },
+    { "parameters": { "resource": "assurance", "operation": "stampGrade", "chainId": 36927, "stampSubject": "={{ $json.subject }}", "stampDigest": "={{ $json.digest }}", "stampVerdict": "={{ String($json.stamp_verdict) }}", "stampMode": "2", "stampModel": "={{ $json.canonical.model }}", "stampUri": "=https://www.taifoon.io/v1/judge/trace/8453/{{ $json.id }}" }, "id": "stamp", "name": "Stamp Grade (unsigned)", "type": "CUSTOM.taifoon", "typeVersion": 1, "position": [1100, 0] },
+    { "parameters": { "callsField": "calls", "sendRequires": false, "wait": true }, "id": "send", "name": "Taifoon Devnet Signer", "type": "CUSTOM.taifoonDevnetSigner", "typeVersion": 1, "position": [1320, 0], "credentials": { "taifoonDevnetKeyApi": { "id": "tfndevnetkey0001", "name": "Taifoon Devnet Key (anvil #0)" } } }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": { "main": [[{ "node": "Ready jobs (Base)", "type": "main", "index": 0 }]] },
+    "Ready jobs (Base)": { "main": [[{ "node": "Pick 4 calibrated", "type": "main", "index": 0 }]] },
+    "Pick 4 calibrated": { "main": [[{ "node": "Grade (one call)", "type": "main", "index": 0 }]] },
+    "Grade (one call)": { "main": [[{ "node": "One row per grade", "type": "main", "index": 0 }]] },
+    "One row per grade": { "main": [[{ "node": "Stamp Grade (unsigned)", "type": "main", "index": 0 }]] },
+    "Stamp Grade (unsigned)": { "main": [[{ "node": "Taifoon Devnet Signer", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "note": "Jev on-chain grader: four calibrated Base jobs graded in ONE call, each grade stamped on the devnet registry and sent by the devnet signer (free gas). The credential ids are the hosted instance's; replace with yours." }
+}

@@ -174,3 +174,19 @@ Requires Node 20.15 or newer to build; n8n 2.x itself requires Node 24.
 ## Licence
 
 MIT
+
+## The judge, on chain (0.3.0, private)
+
+`Judge → Grade` asks the calibrated judge one closed question over up to four items in ONE call and returns, per
+item, the full distribution, the confidence, the ending, the **grade digest** and the **subject** (the job on its
+chain). `Assurance → Stamp Grade` turns that into the unsigned call that appends the digest to the immutable grade
+registry; `Judge → Give Feedback (Unsigned)` turns it into an ERC-8004 `giveFeedback`; `Judge → Post Verdict (Unsigned)`
+drives a devnet job's ending through the adapter. None of those sign.
+
+The **Taifoon Devnet Signer** node does — with a devnet key (free gas, public dev accounts; `faucet.taifoon.dev`
+funds any address). It refuses every chain but 36927 unless the credential's guard is switched off, so a workflow
+that closes the loop for a grade cannot spend real gas by accident. `workflows/6-jev-on-chain-grader.json` is the
+whole loop: ready jobs → one grade call → stamp → sent → receipts with explorer links.
+
+`Judge → Get Stages` returns the stages of a hire as the whitepaper defines them (`GET /v1/hiring/stages`); every
+operation's description names its stage.

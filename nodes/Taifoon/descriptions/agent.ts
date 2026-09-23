@@ -45,6 +45,13 @@ export const agentOperations: INodeProperties[] = [
 				routing: { request: { method: 'GET', url: '=/agents/who/{{$parameter.address}}' } },
 			},
 			{
+				name: 'Get Wire-Ready',
+				value: 'getWireReady',
+				action: 'List agents that answered on the wire',
+				description: 'Agents the harvester spoke to in their own protocol and that answered (or answered with a priced x402 wall), best trust first. A rank is card presence; the wire is who is home. Stage: listing.',
+				routing: { request: { method: 'GET', url: '/registry/agents', qs: { wire: 'ready' } } },
+			},
+			{
 				name: 'Match',
 				value: 'match',
 				action: 'Match agents to skills',
@@ -281,5 +288,24 @@ export const agentOperations: INodeProperties[] = [
 				routing: { send: { type: 'query', property: 'speaks' } },
 			},
 		],
+	},
+	{
+		displayName: 'Chain',
+		name: 'wireChain',
+		type: 'options',
+		options: [{ name: 'Base (8453)', value: 8453 }, { name: 'Arc (5042)', value: 5042 }, { name: 'BSC (56)', value: 56 }, { name: 'Celo (42220)', value: 42220 }, { name: 'Ethereum (1)', value: 1 }, { name: 'Abstract (2741)', value: 2741 }, { name: 'Arbitrum (42161)', value: 42161 }],
+		default: 8453,
+		required: true,
+		displayOptions: show('agent', ['getWireReady']),
+		routing: { send: { type: 'query', property: 'chain' } },
+	},
+	{
+		displayName: 'Limit',
+		name: 'wireLimit',
+		type: 'number',
+		default: 20,
+		typeOptions: { minValue: 1, maxValue: 200 },
+		displayOptions: show('agent', ['getWireReady']),
+		routing: { send: { type: 'query', property: 'limit' } },
 	},
 ];

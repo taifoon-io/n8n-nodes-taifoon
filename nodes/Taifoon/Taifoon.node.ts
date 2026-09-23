@@ -7,6 +7,7 @@ import { completionOperations } from './descriptions/completion';
 import { discoveryOperations } from './descriptions/discovery';
 import { handshakeOperations } from './descriptions/handshake';
 import { jobOperations } from './descriptions/job';
+import { judgeOperations } from './descriptions/judge';
 import { proofOperations } from './descriptions/proof';
 
 /**
@@ -62,6 +63,7 @@ export class Taifoon implements INodeType {
 					{ name: 'Discovery', value: 'discovery', description: 'What the chain scanner found, and what it could not reach' },
 					{ name: 'Handshake', value: 'handshake', description: 'Open and follow a brokered hire' },
 					{ name: 'Job', value: 'job', description: 'Poll jobs, read the ledger, create an offer' },
+					{ name: 'Judge', value: 'judge', description: 'Grade work with the calibrated judge and leave the trail on chain (unsigned calls)' },
 					{ name: 'Proof', value: 'proof', description: 'Prove a transaction, or check a claim against the chain' },
 				],
 				default: 'agent',
@@ -72,6 +74,7 @@ export class Taifoon implements INodeType {
 			...discoveryOperations,
 			...handshakeOperations,
 			...jobOperations,
+			...judgeOperations,
 			...proofOperations,
 		],
 	};
