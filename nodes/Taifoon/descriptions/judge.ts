@@ -22,7 +22,7 @@ export const judgeOperations: INodeProperties[] = [
 				value: 'getReady',
 				action: 'List jobs ready for a grade',
 				description: 'Settled or rejected ERC-8183 jobs with their seller record folded in and calibrated:true|false. Stage: record.',
-				routing: { request: { method: 'GET', url: '/judge/ready' } },
+				routing: { request: { method: 'GET', url: '=/judge/ready?chain={{$parameter["readyChain"]}}&limit={{$parameter["readyLimit"]}}' } },
 			},
 			{
 				name: 'Get Stages',
@@ -36,7 +36,7 @@ export const judgeOperations: INodeProperties[] = [
 				value: 'getTrace',
 				action: 'Read a job s on chain trail',
 				description: 'Every ERC-8183 event of a job read live with explorer links, the deterministic ending, the recorded grade, the registry stamps and the devnet feedback. Stage: settlement → record.',
-				routing: { request: { method: 'GET', url: '=/judge/trace/{{$parameter["chainId"]}}/{{$parameter["jobId"]}}' } },
+				routing: { request: { method: 'GET', url: '=/judge/trace/{{$parameter["traceChain"]}}/{{$parameter["traceJobId"]}}' } },
 			},
 			{
 				name: 'Give Feedback (Unsigned)',
@@ -125,10 +125,9 @@ export const judgeOperations: INodeProperties[] = [
 		displayName: 'Chain',
 		name: 'readyChain',
 		type: 'options',
-		options: [{ name: 'Every Chain', value: 0 }, { name: 'Base (8453)', value: 8453 }, { name: 'Arc (5042)', value: 5042 }, { name: 'Robinhood (4663)', value: 4663 }],
-		default: 0,
+		options: [{ name: 'Base (8453)', value: 8453 }, { name: 'Arc (5042)', value: 5042 }, { name: 'Robinhood (4663)', value: 4663 }],
+		default: 8453,
 		displayOptions: show('judge', ['getReady']),
-		routing: { send: { type: 'query', property: 'chain', value: '={{ $value || undefined }}' } },
 	},
 	{
 		displayName: 'Limit',
@@ -137,7 +136,6 @@ export const judgeOperations: INodeProperties[] = [
 		default: 40,
 		typeOptions: { minValue: 1, maxValue: 200 },
 		displayOptions: show('judge', ['getReady']),
-		routing: { send: { type: 'query', property: 'limit' } },
 	},
 	// ── trace / verdict ──
 	{
@@ -147,8 +145,17 @@ export const judgeOperations: INodeProperties[] = [
 		options: ASSURANCE_CHAINS,
 		default: 8453,
 		required: true,
-		displayOptions: show('judge', ['getTrace', 'postVerdict', 'giveFeedback']),
-		routing: { send: { type: 'body', property: 'chainId', value: '={{ $parameter["operation"] === "getTrace" ? undefined : $value }}' } },
+		displayOptions: show('judge', ['postVerdict', 'giveFeedback']),
+		routing: { send: { type: 'body', property: 'chainId' } },
+	},
+	{
+		displayName: 'Chain',
+		name: 'traceChain',
+		type: 'options',
+		options: [{ name: 'Base (8453)', value: 8453 }, { name: 'Arc (5042)', value: 5042 }, { name: 'Taifoon Devnet (36927)', value: 36927 }],
+		default: 8453,
+		required: true,
+		displayOptions: show('judge', ['getTrace']),
 	},
 	{
 		displayName: 'Job ID',
@@ -157,8 +164,17 @@ export const judgeOperations: INodeProperties[] = [
 		default: '',
 		required: true,
 		placeholder: '81067 (ERC-8183 ID) or 0x… (bytes32 on the assurance hook)',
-		displayOptions: show('judge', ['getTrace', 'postVerdict']),
-		routing: { send: { type: 'body', property: 'action.jobId', value: '={{ $parameter["operation"] === "getTrace" ? undefined : $value }}' } },
+		displayOptions: show('judge', ['postVerdict']),
+		routing: { send: { type: 'body', property: 'action.jobId' } },
+	},
+	{
+		displayName: 'Job ID',
+		name: 'traceJobId',
+		type: 'string',
+		default: '',
+		required: true,
+		placeholder: '81067 (ERC-8183 ID)',
+		displayOptions: show('judge', ['getTrace']),
 	},
 	{ displayName: 'Kind', name: 'verdictKind', type: 'hidden', default: 'post-verdict', displayOptions: show('judge', ['postVerdict']), routing: { send: { type: 'body', property: 'action.kind' } } },
 	{
