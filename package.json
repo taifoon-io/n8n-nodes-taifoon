@@ -50,12 +50,10 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "dist/credentials/TaifoonDevnetKeyApi.credentials.js",
       "dist/credentials/TaifoonRelayerApi.credentials.js"
     ],
     "nodes": [
       "dist/nodes/Taifoon/Taifoon.node.js",
-      "dist/nodes/TaifoonDevnetSigner/TaifoonDevnetSigner.node.js",
       "dist/nodes/TaifoonTrigger/TaifoonTrigger.node.js"
     ]
   },
@@ -71,8 +69,5 @@
   },
   "peerDependencies": {
     "n8n-workflow": "*"
-  },
-  "dependencies": {
-    "viem": "^2.56.8"
   }
 }
