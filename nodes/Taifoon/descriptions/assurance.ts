@@ -21,7 +21,7 @@ export const assuranceOperations: INodeProperties[] = [
 				value: 'stampGrade',
 				action: 'Stamp a grade on chain',
 				description: 'The unsigned call that appends a grade digest to the GradeStampRegistry (immutable, append-only; on the Taifoon devnet today). Any subject, any stamper. Nothing is signed or sent.',
-				routing: { request: { method: 'POST', url: '/assurance/call', body: { action: { kind: 'stamp' } } } },
+				routing: { request: { method: 'POST', url: '/assurance/call' } },
 			},
 			{
 				name: 'Get Deployment',
@@ -80,6 +80,14 @@ export const assuranceOperations: INodeProperties[] = [
 		description: 'What the seller will lock. It must exceed the price, or the quote refuses and says why.',
 		displayOptions: show('assurance', ['getQuote']),
 		routing: { send: { type: 'body', property: 'deposit', value: '={{ $value || undefined }}' } },
+	},
+	{
+		displayName: 'Kind',
+		name: 'stampKind',
+		type: 'hidden',
+		default: 'stamp',
+		displayOptions: show('assurance', ['stampGrade']),
+		routing: { send: { type: 'body', property: 'action.kind' } },
 	},
 	{
 		displayName: 'Subject (bytes32)',
