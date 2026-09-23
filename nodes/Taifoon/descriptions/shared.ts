@@ -9,7 +9,7 @@ export const CHAINS = [
 ];
 
 /** The two chains the assurance contracts are deployed on. */
-export const ASSURANCE_CHAINS = CHAINS.slice(0, 2);
+export const ASSURANCE_CHAINS = [...CHAINS.slice(0, 2), { name: 'Taifoon Devnet (36927) · free gas', value: 36927 }];
 
 export const show = (resource: string, operation: string[]) => ({ show: { resource: [resource], operation } });
 
