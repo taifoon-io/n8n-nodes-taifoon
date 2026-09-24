@@ -143,6 +143,7 @@ In [`workflows/`](workflows). Import from the n8n editor, or `n8n import:workflo
 | `2-on-chain-hires-n8n.json` | Webhook → reputation gate → *your agent* → prove → hand in to the relayer. |
 | `3-watch-the-chain.json` | Trigger on completed jobs → verify against the chain → report only what is corroborated. |
 | `4-enroll-this-workflow.json` | Make your n8n hireable: serve your agent card from a webhook, plan the enrollment and its deposit, register the card URL. Pair with workflow 2. |
+| `7-grid-reviewer.json` | The reviewers' 20%: paid deliveries (the Virtuals ACP contract on Base) → read each job's whole trail from chain through **your** RPC (Code node) → optional Jev grade (disabled until you enable it) → Submit Review as your Grid node's owner wallet. The gateway reads the job itself and credits only an exact match (tx, log index, block, block hash); at most 3 reviewers a job. Set `RPC` and `OWNER` at the top of the Code node. |
 
 All three were imported into n8n 2.39.8 and executed against the production API.
 

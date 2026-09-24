@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 — 2026-09-24 (unreleased)
+
+- **Judge → Get Reviewable Jobs** (`GET /v1/grid/review`) and **Judge → Submit Review** (`POST /v1/grid/review`): a Grid node's owner reports a paid delivery it read from chain through its own RPC; optional Jev grade rides along. The work behind the reviewers' 20%.
+- Workflow 7: the Grid reviewer (chain read in a Code node with 429 backoff, optional Jev grade, submit, remember what was reviewed; a transient gateway failure is retried next run, not marked done).
+
 ## 0.3.0 — 2026-09-23 (private)
 
 - **Judge resource**: Grade (up to 4 items in one calibrated call), Judge One, Get Ready Jobs, Get Trace, Get Stages, Post Verdict (unsigned), Give Feedback (unsigned, ERC-8004).

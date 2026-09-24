@@ -1,0 +1,212 @@
+{
+  "name": "7 · Grid reviewer — the reviewers' 20%",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t1",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "t2",
+      "name": "Every hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "judge",
+        "operation": "getReviewable"
+      },
+      "id": "n1",
+      "name": "Paid deliveries to review",
+      "type": "CUSTOM.taifoon",
+      "typeVersion": 1,
+      "position": [
+        240,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Read each paid job from chain through YOUR RPC — the same scan the gateway does (1,000-block chunks from\n// ~600 blocks before creation; stop at JobExpired or one quiet chunk after a completion; at most 96 chunks).\n// Set RPC to your own Base endpoint: the review is only independent if the read is yours.\nconst RPC = 'https://mainnet.base.org';\nconst OWNER = '0xYourGridOwnerWallet';   // the wallet your Grid node joined with (TAIFOON_OWNER)\nconst PER_RUN = 2;                        // jobs reviewed per run\nconst TOPIC0 = {\n  '0xb0f0239bfdd96453e24733e18bfc24b70d8fadf123dd977473518dd577ee79b9': 'JobCreated',\n  '0x869e2577b006bf47ee981cf6fec2e25583548081c14b98deab587f77b5068038': 'BudgetSet',\n  '0xe3fbcc1ea1bdc559ec7f0347efde7655e58b5f45a30b0e4470a583c3ef5496b3': 'JobFunded',\n  '0x80c17db79857f338a6a6df68a6883ecc0ce78e2202fe61ed979733573f40538e': 'JobSubmitted',\n  '0x0fd54bd364fa9e67f17b091aefe930932c09fe7651cf5ad02c71a418f3341444': 'JobCompleted',\n  '0x97237956f8810192811e2c3f273fd02c5d6295206fdd9c62e6fe2bfc19ba9232': 'JobExpired',\n  '0x21d71db5be59bb9fa133895586b7404307dd33fb93b16db09dc6f1d9d7d231b0': 'PaymentReleased',\n  '0x7ca5472b7ea78c2c0141c5a12ee6d170cf4ce8ed06be3d22c8252ddfc7a6a2c4': 'Refunded',\n  '0xae7362b1af91f4492868987b9c73990d780060811551b58728fbe96fd1bab275': 'JobRejected',\n};\nconst PRE = ['JobCreated', 'BudgetSet', 'JobFunded', 'JobSubmitted'];\nconst sleep = (ms) => new Promise((r) => setTimeout(r, ms));\n// public RPCs rate-limit bursts of getLogs (HTTP 429): retry with a growing pause, like the gateway does\nconst rpc = async (method, params) => {\n  let last = '';\n  for (let a = 0; a < 6; a++) {\n    try {\n      const r = await this.helpers.httpRequest({ method: 'POST', url: RPC, body: { jsonrpc: '2.0', id: 1, method, params }, json: true });\n      if (!r.error) return r.result;\n      last = JSON.stringify(r.error).slice(0, 160);\n    } catch (e) { last = e.message; }\n    await sleep(500 * (a + 1));\n  }\n  throw new Error(`${method}: ${last}`);\n};\nconst done = $getWorkflowStaticData('global');\ndone.reviewed = done.reviewed || {};\nconst jobs = ($input.first().json.jobs || []).filter((j) => !done.reviewed[`${j.chainId}:${j.id}`]).slice(0, PER_RUN);\nconst out = [];\nfor (const job of jobs) {\n  const head = parseInt(await rpc('eth_blockNumber', []), 16);\n  let from = job.createdAt ? Math.max(0, head - Math.ceil((Date.now() / 1000 - job.createdAt) / 2) - 600) : Math.max(0, head - 4000);\n  const idTopic = '0x' + BigInt(job.id).toString(16).padStart(64, '0');\n  const evidence = []; let chunks = 0; let quiet = 0;\n  while (from <= head && chunks < 96) {\n    const to = Math.min(head, from + 999);\n    const logs = await rpc('eth_getLogs', [{ address: job.contract, fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16), topics: [null, idTopic] }]);\n    chunks++;\n    for (const l of logs) evidence.push({ event: TOPIC0[l.topics[0].toLowerCase()] || 'unknown', tx: l.transactionHash, log_index: parseInt(l.logIndex, 16), block: parseInt(l.blockNumber, 16), block_hash: l.blockHash.toLowerCase() });\n    if (evidence.some((e) => e.event === 'JobExpired')) break;\n    if (evidence.some((e) => ['JobCompleted', 'PaymentReleased', 'JobRejected'].includes(e.event)) && logs.length === 0) quiet++;\n    if (quiet >= 1) break;\n    from = to + 1;\n    if (chunks % 4 === 0) await sleep(250);\n  }\n  evidence.sort((a, b) => a.block - b.block || a.log_index - b.log_index);\n  const seen = evidence.map((e) => e.event);\n  const verdict = [...seen].sort().join() === [...(job.events || [])].sort().join() ? 'agree' : 'disagree';\n  out.push({ json: { owner: OWNER, chainId: job.chainId, jobId: String(job.id), verdict, evidence, points: job.points,\n    // what the optional Jev grade is shown: the pre-verdict trail only, never the ending\n    items: [{ id: String(job.id), chainId: job.chainId, state: JSON.stringify(evidence.filter((e) => PRE.includes(e.event)).map((e) => e.event)) }] } });\n}\nreturn out;"
+      },
+      "id": "n2",
+      "name": "Read from your RPC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "judge",
+        "operation": "grade",
+        "items": "={{ $json.items }}",
+        "question": "Was the work delivered as specified?"
+      },
+      "id": "n3",
+      "name": "Jev grade (optional — enable)",
+      "type": "CUSTOM.taifoon",
+      "typeVersion": 1,
+      "position": [
+        720,
+        100
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Attach the Jev grade when the optional node ran; when it is disabled its input passes through (no `graded`).\nconst rows = $('Read from your RPC').all();\nreturn $input.all().map((it, i) => {\n  const g = it.json.graded && it.json.graded[0];\n  return { json: { ...rows[i].json, jev: g ? { value: g.value, confidence: g.confidence } : null } };\n});"
+      },
+      "id": "n4",
+      "name": "Attach grade",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "judge",
+        "operation": "submitReview",
+        "reviewOwner": "={{ $json.owner }}",
+        "reviewChain": 8453,
+        "reviewJobId": "={{ $json.jobId }}",
+        "reviewVerdict": "={{ $json.verdict }}",
+        "reviewEvidence": "={{ $json.evidence }}",
+        "reviewJev": "={{ $json.jev }}"
+      },
+      "id": "n5",
+      "name": "Submit review",
+      "type": "CUSTOM.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        100
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Remember what was reviewed, so the next run moves on (an active workflow keeps this between runs).\nconst done = $getWorkflowStaticData('global'); done.reviewed = done.reviewed || {};\nconst rows = $('Attach grade').all();\nreturn $input.all().map((it, i) => {\n  const r = rows[i].json;\n  // a transient failure (the gateway could not read the chain, an HTTP error) is retried next run; a verdict is final\n  if (!it.json.error && 'credited' in it.json) done.reviewed[`${r.chainId}:${r.jobId}`] = it.json.credited ? 'credited' : (it.json.why || 'reviewed');\n  return { json: { jobId: r.jobId, verdict: r.verdict, credited: it.json.credited, points: it.json.points, why: it.json.why, jev: r.jev } };\n});"
+      },
+      "id": "n6",
+      "name": "Remember reviewed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Paid deliveries to review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every hour": {
+      "main": [
+        [
+          {
+            "node": "Paid deliveries to review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Paid deliveries to review": {
+      "main": [
+        [
+          {
+            "node": "Read from your RPC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read from your RPC": {
+      "main": [
+        [
+          {
+            "node": "Jev grade (optional — enable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jev grade (optional — enable)": {
+      "main": [
+        [
+          {
+            "node": "Attach grade",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach grade": {
+      "main": [
+        [
+          {
+            "node": "Submit review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit review": {
+      "main": [
+        [
+          {
+            "node": "Remember reviewed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
