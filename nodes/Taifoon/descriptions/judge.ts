@@ -22,7 +22,9 @@ export const judgeOperations: INodeProperties[] = [
 				value: 'getReady',
 				action: 'List jobs ready for a grade',
 				description: 'Settled or rejected ERC-8183 jobs with their seller record folded in and calibrated:true|false. Stage: record.',
-				routing: { request: { method: 'GET', url: '=/judge/ready?chain={{$parameter["readyChain"]}}&limit={{$parameter["readyLimit"]}}' } },
+				// the query rides as `qs`, never inside an expression URL: n8n encodes the `?` of an expression URL, the gateway then
+				// sees the path "/judge/ready?chain=…" and answers 404 "no operation" (the 2026-09-23 defect)
+				routing: { request: { method: 'GET', url: '/judge/ready', qs: { chain: '={{$parameter["readyChain"]}}', limit: '={{$parameter["readyLimit"]}}' } } },
 			},
 			{
 				name: 'Get Stages',
