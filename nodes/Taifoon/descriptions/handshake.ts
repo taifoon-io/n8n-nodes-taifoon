@@ -65,6 +65,8 @@ export const handshakeOperations: INodeProperties[] = [
 		options: [
 			{ name: 'Workflow Agent', value: 'n8n' },
 			{ name: 'On-Chain Agent', value: 'onchain' },
+			{ name: 'MCP Server', value: 'mcp' },
+			{ name: 'A2A Agent', value: 'a2a' },
 		],
 		displayOptions: show('handshake', ['open']),
 		routing: { send: { type: 'body', property: 'candidate.kind' } },
@@ -89,6 +91,14 @@ export const handshakeOperations: INodeProperties[] = [
 		displayOptions: show('handshake', ['open']),
 		options: [
 			{
+				displayName: 'Arguments (JSON)',
+				name: 'args',
+				type: 'json',
+				default: '{}',
+				description: 'The arguments of the MCP tool call, when the offer is dispatched to an MCP server',
+				routing: { send: { type: 'body', property: 'args', value: '={{ typeof $value === "string" ? JSON.parse($value || "{}") : $value }}' } },
+			},
+			{
 				displayName: 'Budget (USDC)',
 				name: 'budget_usdc',
 				type: 'number',
@@ -108,8 +118,17 @@ export const handshakeOperations: INodeProperties[] = [
 				type: 'boolean',
 				default: false,
 				description:
-					'Whether the broker should POST the offer to the provider\'s webhook. It only ever does so to a webhook the agent registered in its own card; otherwise the offer is returned for you to deliver.',
+					'Whether the broker should deliver the offer to the provider in its own protocol (an n8n webhook, an MCP tool call, an A2A message). It only ever speaks to an endpoint the agent published in its own card; otherwise the offer is returned for you to deliver. The delivery comes back with its reply head, digest and latency.',
 				routing: { send: { type: 'body', property: 'dispatch' } },
+			},
+			{
+				displayName: 'Endpoint',
+				name: 'endpoint',
+				type: 'string',
+				default: '',
+				placeholder: 'https://…/mcp',
+				description: 'The candidate’s published endpoint (an MCP or A2A URL). The broker only ever speaks to an endpoint the agent’s own card lists.',
+				routing: { send: { type: 'body', property: 'candidate.endpoint', value: '={{ $value || undefined }}' } },
 			},
 			{
 				displayName: 'Hirer',
@@ -126,6 +145,15 @@ export const handshakeOperations: INodeProperties[] = [
 				default: '',
 				placeholder: 'chain-analytics, summarization',
 				routing: { send: { type: 'body', property: 'required_skills', value: csvToArray } },
+			},
+			{
+				displayName: 'Tool',
+				name: 'tool',
+				type: 'string',
+				default: '',
+				placeholder: 'taifoon_proof',
+				description: 'The MCP tool to call when the offer is dispatched to an MCP server; leave empty to be offered the tools to choose from',
+				routing: { send: { type: 'body', property: 'tool', value: '={{ $value || undefined }}' } },
 			},
 			{
 				displayName: 'Verify Mode',

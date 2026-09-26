@@ -18,6 +18,13 @@ export const judgeOperations: INodeProperties[] = [
 		displayOptions: { show: { resource: ['judge'] } },
 		options: [
 			{
+				name: 'Compose Verdict',
+				value: 'compose',
+				action: 'Compose the verdict on a hire',
+				description: 'RUBRIC_v1 on a handshake or a job: code proves the facts, Jev answers six atomic questions in one call, code composes the verdict. Answers with the receipt and the recorded decision (ID, digest, anchor). Stage: verdict.',
+				routing: { request: { method: 'POST', url: '/judge/compose' } },
+			},
+			{
 				name: 'Get Ready Jobs',
 				value: 'getReady',
 				action: 'List jobs ready for a grade',
@@ -85,6 +92,56 @@ export const judgeOperations: INodeProperties[] = [
 		],
 		default: 'grade',
 	},
+	// ── compose ──
+	{
+		displayName: 'Subject',
+		name: 'composeSubject',
+		type: 'options',
+		default: 'handshake',
+		options: [
+			{ name: 'Handshake', value: 'handshake', description: 'A brokered hire with its delivery on record' },
+			{ name: 'Job', value: 'job', description: 'An ERC-8183 job read from the chain' },
+		],
+		displayOptions: show('judge', ['compose']),
+	},
+	{
+		displayName: 'Handshake ID',
+		name: 'composeHandshakeId',
+		type: 'string',
+		default: '',
+		required: true,
+		placeholder: 'hs_…',
+		displayOptions: { show: { resource: ['judge'], operation: ['compose'], composeSubject: ['handshake'] } },
+		routing: { send: { type: 'body', property: 'handshake_id' } },
+	},
+	{
+		displayName: 'Job ID',
+		name: 'composeJobId',
+		type: 'string',
+		default: '',
+		required: true,
+		placeholder: '80926 or 0x…',
+		displayOptions: { show: { resource: ['judge'], operation: ['compose'], composeSubject: ['job'] } },
+		routing: { send: { type: 'body', property: 'jobId' } },
+	},
+	{
+		displayName: 'Chain',
+		name: 'composeChainId',
+		type: 'options',
+		default: 8453,
+		options: ASSURANCE_CHAINS,
+		displayOptions: { show: { resource: ['judge'], operation: ['compose'], composeSubject: ['job'] } },
+		routing: { send: { type: 'body', property: 'chainId' } },
+	},
+	{
+		displayName: 'Price (USDC)',
+		name: 'composePriceUsdc',
+		type: 'number',
+		default: 0,
+		description: 'The price the verdict is composed against (the auto-complete cap is 50 USDC); 0 = not given',
+		displayOptions: show('judge', ['compose']),
+		routing: { send: { type: 'body', property: 'price_usdc', value: '={{ $value || undefined }}' } },
+	},
 	// ── grade ──
 	{
 		displayName: 'Items (JSON)',
@@ -133,7 +190,7 @@ export const judgeOperations: INodeProperties[] = [
 		typeOptions: { password: true },
 		default: '',
 		description: 'Optional. Your own TypeSafe key: the call is billed to it and nobody else is in the path. Empty = the free calls on your API key’s quota.',
-		displayOptions: show('judge', ['grade', 'judgeRef']),
+		displayOptions: show('judge', ['grade', 'judgeRef', 'compose']),
 		routing: { send: { type: 'body', property: 'key', value: '={{ $value || undefined }}' } },
 	},
 	// ── review ──

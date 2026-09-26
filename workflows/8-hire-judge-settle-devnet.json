@@ -1,0 +1,124 @@
+[
+  {
+    "id": "tfnhiresettle001",
+    "name": "Taifoon — HIRE → JUDGE → SETTLE (devnet 36927)",
+    "active": false,
+    "settings": { "executionOrder": "v1" },
+    "nodes": [
+      {
+        "parameters": {},
+        "id": "n0", "name": "Start", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [0, 300]
+      },
+      {
+        "parameters": {
+          "assignments": { "assignments": [
+            { "id": "i1", "name": "task", "value": "Verify Base block 51828000 under the SuperRoot and return the portable V5 proof (class proof.verify.v5).", "type": "string" },
+            { "id": "i2", "name": "candidate", "value": "0x3574999dd4c96eb73bd6e11d4177010c83e14f5b", "type": "string" },
+            { "id": "i3", "name": "endpoint", "value": "https://www.taifoon.io/api/mcp", "type": "string" },
+            { "id": "i4", "name": "tool", "value": "taifoon_proof", "type": "string" },
+            { "id": "i5", "name": "block_number", "value": 51828000, "type": "number" },
+            { "id": "i6", "name": "buyer", "value": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "type": "string" },
+            { "id": "i7", "name": "seller", "value": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", "type": "string" },
+            { "id": "i8", "name": "price", "value": "1000000", "type": "string" },
+            { "id": "i9", "name": "chainId", "value": 36927, "type": "number" }
+          ] },
+          "options": {}
+        },
+        "id": "n1", "name": "Inputs", "type": "n8n-nodes-base.set", "typeVersion": 3.4, "position": [220, 300],
+        "notes": "The hire: our own proof worker card (MCP, registered under /v1/our-cards) does one proof.verify.v5 job. Buyer = anvil #0, seller of record = anvil #1 — public devnet accounts; the devnet has free gas."
+      },
+      {
+        "parameters": {
+          "resource": "handshake", "operation": "open",
+          "candidateAddress": "={{ $json.candidate }}", "candidateKind": "mcp", "task": "={{ $json.task }}",
+          "openOptions": {
+            "args": "={{ JSON.stringify({ chain_id: 8453, block_number: $json.block_number }) }}",
+            "chain": "={{ String($json.chainId) }}",
+            "dispatch": true,
+            "endpoint": "={{ $json.endpoint }}",
+            "hirer": "={{ $json.buyer }}",
+            "required_skills": "proof.verify.v5",
+            "tool": "={{ $json.tool }}"
+          }
+        },
+        "id": "n2", "name": "Offer + deliver", "type": "n8n-nodes-taifoon.taifoon", "typeVersion": 1, "position": [440, 300],
+        "notes": "Offer: the broker opens the handshake and, with dispatch, calls the agent's MCP tool itself. Delivery: the reply comes back with its keccak digest — the evidence the seller seals."
+      },
+      {
+        "parameters": {
+          "jsCode": "// Delivery: what came back over the wire. No digest = nothing to settle; say why and stop.\nconst r = $input.first().json;\nconst d = r.delivery || {};\nconst digest = d.reply_digest || d.digest || null;\nif (!r.handshake_id) throw new Error('no handshake id in ' + JSON.stringify(r).slice(0, 300));\nif (!digest) throw new Error('no delivery digest: dispatch status ' + (d.status || 'none') + (d.reason ? ' — ' + d.reason : ''));\nreturn [{ json: { handshake_id: r.handshake_id, delivery_status: d.status || null, protocol: d.protocol || null, latency_ms: d.latency_ms ?? null, reply_head: d.reply_head || null, evidence: digest, target: r.target || null } }];"
+        },
+        "id": "n3", "name": "Delivery", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [660, 300]
+      },
+      {
+        "parameters": {
+          "resource": "judge", "operation": "compose",
+          "composeSubject": "handshake", "composeHandshakeId": "={{ $json.handshake_id }}", "composePriceUsdc": 1
+        },
+        "credentials": { "taifoonRelayerApi": { "id": "tfnrelayerkey001", "name": "Taifoon Relayer Key (hire workflow)" } },
+        "id": "n4", "name": "Judge", "type": "n8n-nodes-taifoon.taifoon", "typeVersion": 1, "position": [880, 300],
+        "notes": "Grade: RUBRIC_v1 — code proves the facts of the handshake, Jev answers six atomic questions in ONE call, code composes the verdict. The decision is recorded and anchored on the devnet; its id is carried into the settlement record. Counted on the relayer key's own quota."
+      },
+      {
+        "parameters": {
+          "jsCode": "// The verdict, with what the settlement needs carried forward.\nconst j = $input.first().json;\nconst del = $('Delivery').first().json;\nconst inp = $('Inputs').first().json;\nif (j.ok === false) throw new Error('judge refused: ' + (j.error || JSON.stringify(j).slice(0, 300)));\nconst decision = j.decision || {};\nconst composed = (j.receipt && j.receipt.composed) || j.composed || {};\nreturn [{ json: { ...inp, handshake_id: del.handshake_id, evidence: del.evidence, reply_head: del.reply_head, decision_id: decision.id || null, decision_digest: decision.digest || null, decision_anchor: decision.anchor || null, verdict: composed.verdict || composed.ending || composed.tier || null, judge_called: j.judge_called ?? null, model: j.model || null, quota: j.quota || null } }];"
+        },
+        "id": "n5", "name": "Verdict", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1100, 300]
+      },
+      {
+        "parameters": {
+          "resource": "settlement", "operation": "settle",
+          "kind": "agent", "chainId": 36927,
+          "buyer": "={{ $json.buyer }}", "seller": "={{ $json.seller }}", "price": "={{ $json.price }}",
+          "evidence": "={{ $json.evidence }}", "refId": "={{ $json.handshake_id }}",
+          "settleOptions": {
+            "endpoint": "={{ $json.endpoint }}",
+            "note": "={{ 'agent ' + $json.candidate + ' · decision ' + ($json.decision_id || 'none') + ' · verdict ' + ($json.verdict || 'n/a') }}"
+          }
+        },
+        "credentials": { "taifoonRelayerApi": { "id": "tfnrelayerkey001", "name": "Taifoon Relayer Key (hire workflow)" } },
+        "id": "n6", "name": "Settle", "type": "n8n-nodes-taifoon.taifoon", "typeVersion": 1, "position": [1320, 300],
+        "notes": "Settlement plan: the unsigned calls in order, each labelled with who sends it. The four legs below send them with the two devnet keys."
+      },
+      {
+        "parameters": { "callsField": "calls", "onlySigner": "seller", "onlyActions": "approve-deposit", "sendRequires": false, "wait": true },
+        "credentials": { "taifoonDevnetKeyApi": { "id": "tfndevnetkey0002", "name": "Taifoon Devnet Key (anvil #1, seller of record)" } },
+        "id": "n7", "name": "Seller · approve deposit", "type": "n8n-nodes-taifoon-devnet-signer.taifoonDevnetSigner", "typeVersion": 1, "position": [1540, 300]
+      },
+      {
+        "parameters": { "callsField": "calls", "onlySigner": "buyer", "onlyActions": "fund-job", "sendRequires": false, "wait": true },
+        "credentials": { "taifoonDevnetKeyApi": { "id": "tfndevnetkey0001", "name": "Taifoon Devnet Key (anvil #0)" } },
+        "id": "n8", "name": "Buyer · approve + fund", "type": "n8n-nodes-taifoon-devnet-signer.taifoonDevnetSigner", "typeVersion": 1, "position": [1760, 300]
+      },
+      {
+        "parameters": { "callsField": "calls", "onlySigner": "seller", "onlyActions": "submit", "sendRequires": false, "wait": true },
+        "credentials": { "taifoonDevnetKeyApi": { "id": "tfndevnetkey0002", "name": "Taifoon Devnet Key (anvil #1, seller of record)" } },
+        "id": "n9", "name": "Seller · submit", "type": "n8n-nodes-taifoon-devnet-signer.taifoonDevnetSigner", "typeVersion": 1, "position": [1980, 300]
+      },
+      {
+        "parameters": { "callsField": "calls", "onlySigner": "", "onlyActions": "complete,capture", "sendRequires": false, "wait": true },
+        "credentials": { "taifoonDevnetKeyApi": { "id": "tfndevnetkey0001", "name": "Taifoon Devnet Key (anvil #0)" } },
+        "id": "n10", "name": "Buyer · complete + capture", "type": "n8n-nodes-taifoon-devnet-signer.taifoonDevnetSigner", "typeVersion": 1, "position": [2200, 300]
+      },
+      {
+        "parameters": {
+          "jsCode": "// The record: every transaction with its proof and explorer link, the decision, the job.\nconst legs = ['Seller · approve deposit', 'Buyer · approve + fund', 'Seller · submit', 'Buyer · complete + capture'];\nconst txs = [];\nfor (const n of legs) for (const s of ($(n).first().json.sent || [])) txs.push({ leg: n, action: s.action, tx: s.tx, status: s.status, block: s.block, proof: 'https://www.taifoon.io/v1/proof/tx/36927/' + s.tx, scan: 'https://www.taifoon.io/scan/36927/tx/' + s.tx });\nconst s = $('Settle').first().json;\nconst v = $('Verdict').first().json;\nconst complete = txs.find((t) => t.action === 'complete') || null;\nreturn [{ json: { handshake_id: v.handshake_id, decision_id: v.decision_id, decision_digest: v.decision_digest, verdict: v.verdict, jobId: s.jobId, correlator: s.correlator, chainId: 36927, hook: s.hook, token: s.token, price: s.price, premium: s.premium, deposit: s.deposit, evidence: v.evidence, settlement_tx: complete ? complete.tx : null, settlement_proof: complete ? complete.proof : null, transactions: txs, all_mined: txs.length === 6 && txs.every((t) => t.status === 'success') } }];"
+        },
+        "id": "n11", "name": "Receipt", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [2420, 300]
+      }
+    ],
+    "connections": {
+      "Start": { "main": [[{ "node": "Inputs", "type": "main", "index": 0 }]] },
+      "Inputs": { "main": [[{ "node": "Offer + deliver", "type": "main", "index": 0 }]] },
+      "Offer + deliver": { "main": [[{ "node": "Delivery", "type": "main", "index": 0 }]] },
+      "Delivery": { "main": [[{ "node": "Judge", "type": "main", "index": 0 }]] },
+      "Judge": { "main": [[{ "node": "Verdict", "type": "main", "index": 0 }]] },
+      "Verdict": { "main": [[{ "node": "Settle", "type": "main", "index": 0 }]] },
+      "Settle": { "main": [[{ "node": "Seller · approve deposit", "type": "main", "index": 0 }]] },
+      "Seller · approve deposit": { "main": [[{ "node": "Buyer · approve + fund", "type": "main", "index": 0 }]] },
+      "Buyer · approve + fund": { "main": [[{ "node": "Seller · submit", "type": "main", "index": 0 }]] },
+      "Seller · submit": { "main": [[{ "node": "Buyer · complete + capture", "type": "main", "index": 0 }]] },
+      "Buyer · complete + capture": { "main": [[{ "node": "Receipt", "type": "main", "index": 0 }]] }
+    }
+  }
+]

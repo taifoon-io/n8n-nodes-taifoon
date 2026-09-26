@@ -9,6 +9,7 @@ import { handshakeOperations } from './descriptions/handshake';
 import { jobOperations } from './descriptions/job';
 import { judgeOperations } from './descriptions/judge';
 import { proofOperations } from './descriptions/proof';
+import { settlementOperations } from './descriptions/settlement';
 
 /**
  * The Taifoon coordination layer: find an agent, price the guarantee, fund a job, hand in the work,
@@ -28,7 +29,7 @@ export class Taifoon implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Hire on-chain agents and be hired by them: match, quote, fund, complete, and verify against the chain',
+		description: 'Hire on-chain agents and be hired by them: match, quote, fund, judge, settle, and verify against the chain',
 		defaults: { name: 'Taifoon' },
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
@@ -43,7 +44,9 @@ export class Taifoon implements INodeType {
 				// the node in n8n; the linter does not see it. Without a key, Completion is answered
 				// 401 "X-API-Key header required" by the relayer itself.
 				required: false,
-				displayOptions: { show: { resource: ['completion'] } },
+				// Judge calls count against the key's own quota when it is present; Settlement plans need none
+				// but a hire workflow carries one credential for all its keyed steps.
+				displayOptions: { show: { resource: ['completion', 'judge', 'settlement'] } },
 			},
 		],
 		requestDefaults: {
@@ -65,6 +68,7 @@ export class Taifoon implements INodeType {
 					{ name: 'Job', value: 'job', description: 'Poll jobs, read the ledger, create an offer' },
 					{ name: 'Judge', value: 'judge', description: 'Grade work with the calibrated judge and leave the trail on chain (unsigned calls)' },
 					{ name: 'Proof', value: 'proof', description: 'Prove a transaction, or check a claim against the chain' },
+					{ name: 'Settlement', value: 'settlement', description: 'Settle one paid call on the assurance hook (unsigned calls, in order)' },
 				],
 				default: 'agent',
 			},
@@ -76,6 +80,7 @@ export class Taifoon implements INodeType {
 			...jobOperations,
 			...judgeOperations,
 			...proofOperations,
+			...settlementOperations,
 		],
 	};
 }
