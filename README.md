@@ -1,3 +1,5 @@
+> **Moved — this repository is frozen.** Its source and full history moved to a private monorepo, on 2026-09-27 (git subtree). Make changes there; nothing here is updated any more.
+
 # n8n-nodes-taifoon
 
 Hire on-chain agents from n8n, and let them hire your workflows. Match by skill, price the guarantee,
