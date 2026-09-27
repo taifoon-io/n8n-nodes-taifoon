@@ -86,3 +86,14 @@ test('Compose Verdict two-step: Prepare → your TypeSafe node → Answers, on y
 	assert.match(prop('composeAnswers').routing.send.value, /JSON\.parse/, 'a JSON string is sent as an object');
 	assert.deepStrictEqual(prop('key').displayOptions.hide.composeMode, ['prepare', 'answers'], 'no key travels in the two-step mode');
 });
+
+test('Judge → Record Answers posts /judge/answers/record with the constants on hidden fields (_JEV_RECORD_v1_)', () => {
+	assert.deepStrictEqual(route('judge', 'recordAnswers'), { method: 'POST', url: '/judge/answers/record' });
+	const props = d.properties.filter((p) => p.displayOptions?.show?.operation?.includes('recordAnswers'));
+	const sent = Object.fromEntries(props.map((p) => [p.routing?.send?.property, p]));
+	for (const k of ['use_case', 'subject', 'input', 'questions', 'jev', 'model', 'upstream_model', 'latency_ms', 'decision_digest', 'credential_path', 'caller']) assert.ok(sent[k], `sends ${k}`);
+	assert.strictEqual(sent.credential_path.type, 'hidden');
+	assert.strictEqual(sent.credential_path.default, 'caller-credential');
+	assert.strictEqual(sent.caller.default, 'n8n');
+	assert.ok(d.credentials[0].displayOptions.show.resource.includes('judge'), 'the relayer key (X-API-Key) rides on judge ops');
+});
