@@ -131,39 +131,126 @@
         ]
       },
       {
-        "parameters": {
-          "resource": "judge",
-          "operation": "compose",
-          "composeSubject": "handshake",
-          "composeHandshakeId": "={{ $json.handshake_id }}",
-          "composePriceUsdc": 1
-        },
-        "credentials": {
-          "taifoonRelayerApi": {
-            "id": "tfnrelayerkey001",
-            "name": "Taifoon Relayer Key (hire workflow)"
-          }
-        },
-        "id": "n4",
-        "name": "Judge",
+        "name": "Judge · prepare",
         "type": "n8n-nodes-taifoon.taifoon",
         "typeVersion": 1,
         "position": [
           880,
           300
         ],
-        "notes": "Grade: RUBRIC_v1 — code proves the facts of the handshake, Jev answers six atomic questions in ONE call, code composes the verdict. The decision is recorded and anchored on the devnet; its id is carried into the settlement record. Counted on the relayer key's own quota."
+        "parameters": {
+          "resource": "judge",
+          "operation": "compose",
+          "composeSubject": "handshake",
+          "composeHandshakeId": "={{ $json.handshake_id }}",
+          "composePriceUsdc": 1,
+          "composeMode": "prepare"
+        },
+        "credentials": {
+          "taifoonRelayerApi": {
+            "id": "tfnrelayerkey001",
+            "name": "Taifoon Relayer Key (hire workflow)"
+          }
+        }
+      },
+      {
+        "name": "Hard fail?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1100,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "h1",
+                "leftValue": "={{ $json.hard_fail === true }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "name": "Jev · TypeSafe (our credential)",
+        "type": "@taifoon/n8n-nodes-typesafe.taifoonTypeSafe",
+        "typeVersion": 1,
+        "position": [
+          1320,
+          420
+        ],
+        "parameters": {
+          "operation": "ask",
+          "connection": "direct",
+          "state": "={{ JSON.stringify($json.jev.state) }}",
+          "questions": {},
+          "questionsJson": "={{ JSON.stringify($json.jev.questions) }}",
+          "routing": "{}",
+          "replyLanguage": "off",
+          "failClosed": true
+        },
+        "credentials": {
+          "taifoonTypeSafeApi": {
+            "id": "tfntypesafe00002",
+            "name": "TypeSafe (taifoonTypeSafeApi)"
+          }
+        },
+        "notes": "The instance's own TypeSafe key, used only through this credential. Routing is empty on purpose: the whole distribution goes to the layer, which composes the verdict."
+      },
+      {
+        "name": "Judge · answers",
+        "type": "n8n-nodes-taifoon.taifoon",
+        "typeVersion": 1,
+        "position": [
+          1540,
+          420
+        ],
+        "parameters": {
+          "resource": "judge",
+          "operation": "compose",
+          "composeSubject": "handshake",
+          "composeHandshakeId": "={{ $('Delivery').first().json.handshake_id }}",
+          "composePriceUsdc": 1,
+          "composeMode": "answers",
+          "composeAnswers": "={{ JSON.stringify($json.answers) }}",
+          "composeModel": "={{ $json.model }}",
+          "composePrepareDigest": "={{ $('Judge · prepare').first().json.prepare_digest }}",
+          "composeAnsweredBy": "n8n-typesafe",
+          "composeExecutionId": "={{ $execution.id }}",
+          "composeLatencyMs": "={{ $json.latency_ms }}"
+        },
+        "credentials": {
+          "taifoonRelayerApi": {
+            "id": "tfnrelayerkey001",
+            "name": "Taifoon Relayer Key (hire workflow)"
+          }
+        }
       },
       {
         "parameters": {
-          "jsCode": "// The verdict, with what the settlement needs carried forward. The receipt is the composed verdict:\n// verdict (complete | reject | needs_review), auto, reasons[], receiptHash — anyone can recompute it from the state and the answers.\nconst j = $input.first().json;\nconst del = $('Delivery').first().json;\nconst inp = $('Inputs').first().json;\nif (j.ok === false) throw new Error('judge refused: ' + (j.error || JSON.stringify(j).slice(0, 300)));\nconst decision = j.decision || {};\nconst rc = j.receipt || {};\nreturn [{ json: { ...inp, handshake_id: del.handshake_id, evidence: del.evidence, reply_head: del.reply_head, decision_id: decision.id || null, decision_digest: decision.digest || null, decision_anchor: decision.anchor || null, verdict: rc.verdict || null, verdict_auto: rc.auto ?? null, reasons: rc.reasons || [], receipt_hash: rc.receiptHash || null, next: j.next || null, judge_called: j.judge_called ?? null, model: j.model || null, quota: j.quota || null } }];"
+          "jsCode": "// The verdict, with what the settlement needs carried forward. Two roads reach here: a hard fail straight from\n// Judge · prepare (the facts decided; Jev was not asked), or Judge · answers (our TypeSafe credential answered, the layer composed).\n// The receipt is the composed verdict: verdict (complete | reject | needs_review), auto, reasons[], receiptHash.\nconst j = $input.first().json;\nconst del = $('Delivery').first().json;\nconst inp = $('Inputs').first().json;\nif (j.ok === false) throw new Error('judge refused: ' + (j.code ? j.code + ': ' : '') + (j.error || JSON.stringify(j).slice(0, 300)));\nconst decision = j.decision || {};\nconst rc = j.receipt || {};\nreturn [{ json: { ...inp, handshake_id: del.handshake_id, evidence: del.evidence, reply_head: del.reply_head, decision_id: decision.id || null, decision_digest: decision.digest || null, decision_anchor: decision.anchor || null, verdict: rc.verdict || null, verdict_auto: rc.auto ?? null, forced: rc.forced || null, reasons: rc.reasons || [], receipt_hash: rc.receiptHash || null, next: j.next || null, judge_called: j.judge_called ?? null, model: j.model || null, judge_latency_ms: j.latency_ms ?? null, answers_source: j.answers_source || null, execution: j.execution || null, prepare_digest: j.prepare_digest || null, quota: j.quota || null } }];"
         },
         "id": "n5",
         "name": "Verdict",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          1100,
+          1760,
           300
         ]
       },
@@ -194,7 +281,7 @@
         "type": "n8n-nodes-taifoon.taifoon",
         "typeVersion": 1,
         "position": [
-          1320,
+          1980,
           300
         ],
         "notes": "Settlement plan: the unsigned calls in order, each labelled with who sends it. The four legs below send them with the two devnet keys."
@@ -218,7 +305,7 @@
         "type": "n8n-nodes-taifoon-devnet-signer.taifoonDevnetSigner",
         "typeVersion": 1,
         "position": [
-          1540,
+          2200,
           300
         ]
       },
@@ -241,7 +328,7 @@
         "type": "n8n-nodes-taifoon-devnet-signer.taifoonDevnetSigner",
         "typeVersion": 1,
         "position": [
-          1760,
+          2420,
           300
         ]
       },
@@ -264,7 +351,7 @@
         "type": "n8n-nodes-taifoon-devnet-signer.taifoonDevnetSigner",
         "typeVersion": 1,
         "position": [
-          1980,
+          2640,
           300
         ]
       },
@@ -287,20 +374,20 @@
         "type": "n8n-nodes-taifoon-devnet-signer.taifoonDevnetSigner",
         "typeVersion": 1,
         "position": [
-          2420,
+          3080,
           160
         ]
       },
       {
         "parameters": {
-          "jsCode": "// The record: every transaction with its proof and explorer link, the decision, the job, and whether money moved.\nconst legs = ['Seller · approve deposit', 'Buyer · approve + fund', 'Seller · submit', 'Buyer · complete + capture'];\nconst txs = [];\nfor (const n of legs) { let sent = []; try { sent = $(n).first().json.sent || []; } catch (e) { /* a leg the verdict skipped */ }\n  for (const s of sent) txs.push({ leg: n, action: s.action, tx: s.tx, status: s.status, block: s.block, proof: 'https://www.taifoon.io/v1/proof/tx/36927/' + s.tx, scan: 'https://www.taifoon.io/scan/36927/tx/' + s.tx }); }\nlet held = null; try { held = $('Held for review').first().json; } catch (e) { held = null; }\nconst s = $('Settle').first().json;\nconst v = $('Verdict').first().json;\nconst complete = txs.find((t) => t.action === 'complete') || null;\nreturn [{ json: { handshake_id: v.handshake_id, decision_id: v.decision_id, decision_digest: v.decision_digest, decision_anchor_tx: v.decision_anchor ? v.decision_anchor.tx : null, verdict: v.verdict, verdict_auto: v.verdict_auto, reasons: v.reasons, receipt_hash: v.receipt_hash, ending: complete ? 'completed: seller paid, deposit returned, payment captured' : held ? 'held: ' + held.next : 'incomplete', jobId: s.jobId, correlator: s.correlator, chainId: 36927, hook: s.hook, token: s.token, price: s.price, premium: s.premium, deposit: s.deposit, evidence: v.evidence, settlement_tx: complete ? complete.tx : null, settlement_proof: complete ? complete.proof : null, transactions: txs, all_mined: txs.every((t) => t.status === 'success') && txs.length === (complete ? 6 : 4) } }];"
+          "jsCode": "// The record: every transaction with its proof and explorer link, the decision, the job, and whether money moved.\nconst legs = ['Seller · approve deposit', 'Buyer · approve + fund', 'Seller · submit', 'Buyer · complete + capture'];\nconst txs = [];\nfor (const n of legs) { let sent = []; try { sent = $(n).first().json.sent || []; } catch (e) { /* a leg the verdict skipped */ }\n  for (const s of sent) txs.push({ leg: n, action: s.action, tx: s.tx, status: s.status, block: s.block, proof: 'https://www.taifoon.io/v1/proof/tx/36927/' + s.tx, scan: 'https://www.taifoon.io/scan/36927/tx/' + s.tx }); }\nlet held = null; try { held = $('Held for review').first().json; } catch (e) { held = null; }\nconst s = $('Settle').first().json;\nconst v = $('Verdict').first().json;\nconst complete = txs.find((t) => t.action === 'complete') || null;\nreturn [{ json: { handshake_id: v.handshake_id, decision_id: v.decision_id, decision_digest: v.decision_digest, decision_anchor_tx: v.decision_anchor ? v.decision_anchor.tx : null, verdict: v.verdict, verdict_auto: v.verdict_auto, reasons: v.reasons, receipt_hash: v.receipt_hash, judge: { called: v.judge_called, model: v.model, latency_ms: v.judge_latency_ms, answers_source: v.answers_source, execution: v.execution, prepare_digest: v.prepare_digest, quota: v.quota }, ending: complete ? 'completed: seller paid, deposit returned, payment captured' : held ? 'held: ' + held.next : 'incomplete', jobId: s.jobId, correlator: s.correlator, chainId: 36927, hook: s.hook, token: s.token, price: s.price, premium: s.premium, deposit: s.deposit, evidence: v.evidence, settlement_tx: complete ? complete.tx : null, settlement_proof: complete ? complete.proof : null, transactions: txs, all_mined: txs.every((t) => t.status === 'success') && txs.length === (complete ? 6 : 4) } }];"
         },
         "id": "n11",
         "name": "Receipt",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          2640,
+          3300,
           300
         ]
       },
@@ -333,7 +420,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
-          2200,
+          2860,
           300
         ],
         "notes": "The ending follows the verdict. complete → the buyer completes and the payment is captured. reject or needs_review → the job stays funded and submitted on the hook; the evaluator path (bonded judge / challenge) or the buyer's own reject decides it. Money never moves on a verdict that did not say complete."
@@ -347,7 +434,7 @@
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
-          2420,
+          3080,
           480
         ]
       }
@@ -390,18 +477,7 @@
         "main": [
           [
             {
-              "node": "Judge",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Judge": {
-        "main": [
-          [
-            {
-              "node": "Verdict",
+              "node": "Judge · prepare",
               "type": "main",
               "index": 0
             }
@@ -497,6 +573,57 @@
           [
             {
               "node": "Receipt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Judge · prepare": {
+        "main": [
+          [
+            {
+              "node": "Hard fail?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Hard fail?": {
+        "main": [
+          [
+            {
+              "node": "Verdict",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Jev · TypeSafe (our credential)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Jev · TypeSafe (our credential)": {
+        "main": [
+          [
+            {
+              "node": "Judge · answers",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Judge · answers": {
+        "main": [
+          [
+            {
+              "node": "Verdict",
               "type": "main",
               "index": 0
             }

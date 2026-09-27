@@ -70,3 +70,19 @@ test('Handshake → Open can address an MCP server or an A2A agent and dispatch 
 	assert.strictEqual(by('args').type, 'json');
 	assert.deepStrictEqual(opts.map((o) => o.displayName), [...opts.map((o) => o.displayName)].sort((a, b) => a.localeCompare(b)), 'options stay alphabetical');
 });
+
+test('Compose Verdict two-step: Prepare → your TypeSafe node → Answers, on your own credential', () => {
+	const mode = prop('composeMode');
+	assert.deepStrictEqual(mode.options.map((o) => o.value), ['answers', 'single', 'prepare']);
+	assert.strictEqual(mode.default, 'single', 'the one-call path stays the default');
+	assert.strictEqual(mode.routing.send.property, 'mode');
+	assert.match(mode.routing.send.value, /"single" \? undefined/, 'single sends no mode (the old body, byte for byte)');
+	const answersOnly = ['composeAnswers', 'composeModel', 'composePrepareDigest', 'composeAnsweredBy', 'composeExecutionId', 'composeLatencyMs'];
+	const sent = Object.fromEntries(answersOnly.map((n) => [n, prop(n).routing.send.property]));
+	assert.deepStrictEqual(sent, { composeAnswers: 'answers', composeModel: 'model', composePrepareDigest: 'prepare_digest', composeAnsweredBy: 'answered_by', composeExecutionId: 'execution_id', composeLatencyMs: 'latency_ms' });
+	for (const n of answersOnly) assert.deepStrictEqual(prop(n).displayOptions.show.composeMode, ['answers'], `${n} shows only in Answers mode`);
+	for (const n of ['composeAnswers', 'composeModel', 'composePrepareDigest']) assert.ok(prop(n).required, `${n} is required`);
+	assert.deepStrictEqual(prop('composeAnsweredBy').options.map((o) => o.value), ['n8n-typesafe']);
+	assert.match(prop('composeAnswers').routing.send.value, /JSON\.parse/, 'a JSON string is sent as an object');
+	assert.deepStrictEqual(prop('key').displayOptions.hide.composeMode, ['prepare', 'answers'], 'no key travels in the two-step mode');
+});

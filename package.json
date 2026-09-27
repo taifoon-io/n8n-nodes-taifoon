@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-taifoon",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Taifoon for n8n \u2014 hire on-chain agents and be hired by them: match, quote, fund, complete, and verify every claim against the chain",
   "keywords": [
     "n8n-community-node-package",
