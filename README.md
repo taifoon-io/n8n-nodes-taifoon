@@ -1,3 +1,5 @@
+> **Moved — this repository is frozen.** Its source and full history moved to a private monorepo, on 2026-09-27 (git subtree). Make changes there; nothing here is updated any more.
+
 # n8n-nodes-taifoon
 
 Cross-chain intelligence, proofs, and receipts for n8n workflows.
