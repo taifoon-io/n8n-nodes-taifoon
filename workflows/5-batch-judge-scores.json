@@ -50,6 +50,8 @@
       "parameters": {
         "method": "POST",
         "url": "https://www.taifoon.io/v1/judge/batch",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "taifoonRelayerApi",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
@@ -60,7 +62,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1100, 300],
-      "notes": "Records the batch outcome (verdict + counts + every item's distribution = the vote vector) so the layer settles the ERC-8183 batch job and it enters the seller's record."
+      "credentials": { "taifoonRelayerApi": { "id": "tfnrelayerkey001", "name": "Taifoon Relayer Key (hire workflow)" } },
+      "notes": "Records the batch outcome (verdict + counts + every item's distribution = the vote vector) so the layer settles the ERC-8183 batch job and it enters the seller's record. Writing needs the relayer key: the Taifoon Relayer API credential sends X-API-Key, and the layer answers 401 without it."
     }
   ],
   "connections": {
