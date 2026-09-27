@@ -21,7 +21,7 @@ export const judgeOperations: INodeProperties[] = [
 				name: 'Compose Verdict',
 				value: 'compose',
 				action: 'Compose the verdict on a hire',
-				description: 'RUBRIC_v1 on a handshake or a job: code proves the facts, Jev answers six atomic questions, code composes the verdict. One call, or two steps (Prepare → your TypeSafe node → Answers) on your own TypeSafe credential. Answers with the receipt and the recorded decision (ID, digest, anchor). Stage: verdict.',
+				description: 'RUBRIC_v1 on a handshake or a job: code proves the facts, Jev answers four atomic questions on the evidence plus those facts, code composes the verdict. One call, or two steps (Prepare → your TypeSafe node → Answers) on your own TypeSafe credential. Answers with the receipt and the recorded decision (ID, digest, anchor). Stage: verdict.',
 				routing: { request: { method: 'POST', url: '/judge/compose' } },
 			},
 			{
@@ -150,7 +150,7 @@ export const judgeOperations: INodeProperties[] = [
 		options: [
 			{ name: 'Answers (From Your TypeSafe Node)', value: 'answers', description: 'Step 2: send the answers your own TypeSafe node gave to the prepared questions; the layer checks the digest and every answer, composes, records (caller-credential) and anchors' },
 			{ name: 'One Call (Layer Asks Jev)', value: 'single', description: 'The layer asks Jev itself, on your free calls or the key below' },
-			{ name: 'Prepare (Your Own TypeSafe Credential)', value: 'prepare', description: 'Step 1: the facts (a hard fail is final here), the exact text Jev must read, the six questions in the TypeSafe node schema and a prepare digest. No judge call.' },
+			{ name: 'Prepare (Your Own TypeSafe Credential)', value: 'prepare', description: 'Step 1: the facts (a hard fail is final here), the exact text Jev must read (the evidence plus the facts code established), the four questions every path asks, in the TypeSafe node schema, and a prepare digest. No judge call.' },
 		],
 		description: 'Two-step keeps the judge on your own TypeSafe credential: Prepare → TypeSafe node (connection Direct) → Answers',
 		displayOptions: show('judge', ['compose']),
@@ -162,7 +162,7 @@ export const judgeOperations: INodeProperties[] = [
 		type: 'json',
 		default: '={{ JSON.stringify($json.answers) }}',
 		required: true,
-		description: 'The TypeSafe node\'s <code>answers</code> (ID → value, confidence, probabilities) for all six questions — the whole distribution, not a Pass/Fail',
+		description: 'The TypeSafe node\'s <code>answers</code> (ID → value, confidence, probabilities) for the four prepared questions — the whole distribution, not a Pass/Fail',
 		displayOptions: { show: { resource: ['judge'], operation: ['compose'], composeMode: ['answers'] } },
 		routing: { send: { type: 'body', property: 'answers', value: '={{ typeof $value === "string" ? JSON.parse($value) : $value }}' } },
 	},

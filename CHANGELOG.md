@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2 — 2026-09-27
+
+- **Judge → Compose Verdict** descriptions follow the layer's _JEV_SAME_INPUT_v1_: every compose path (one call on the trial, one call with a key, Prepare → TypeSafe → Answers) now asks Jev the same four questions on the same text — the evidence plus the facts code established. Prepare returns four questions (was six); Answers takes those four. No parameter changed; workflow 8 needs no edit (it passes `jev.questions` through).
+
 ## 0.3.1 — 2026-09-24 (unreleased)
 
 - **Judge → Get Reviewable Jobs** (`GET /v1/grid/review`) and **Judge → Submit Review** (`POST /v1/grid/review`): a Grid node's owner reports a paid delivery it read from chain through its own RPC; optional Jev grade rides along. The work behind the reviewers' 20%.
