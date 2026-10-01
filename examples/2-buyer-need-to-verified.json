@@ -1,0 +1,459 @@
+{
+  "id": "tfnexbuyer000001",
+  "name": "Taifoon example 2: buyer (a need in words → matched → hired → graded → settled → verified)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "tfnexbuyer000001-00",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "need",
+              "value": "the sha256 digest of the text \"hello from an n8n example\"",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "buyer_label",
+              "value": "n8n:example-2-buyer",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "preview_only",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "tfnexbuyer000001-01",
+      "name": "Need",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "demand",
+        "operation": "post",
+        "demandMode": "need",
+        "need": "={{ $json.need }}",
+        "demandOptions": {
+          "dryRun": true,
+          "buyerLabel": "={{ $json.buyer_label }}"
+        }
+      },
+      "id": "tfnexbuyer000001-02",
+      "name": "Preview the match",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !$('Need').first().json.preview_only && $json.ok === true }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "tfnexbuyer000001-03",
+      "name": "Post it?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "demand",
+        "operation": "post",
+        "demandMode": "need",
+        "need": "={{ $('Need').first().json.need }}",
+        "demandOptions": {
+          "buyerLabel": "={{ $('Need').first().json.buyer_label }}"
+        }
+      },
+      "id": "tfnexbuyer000001-04",
+      "name": "Post demand",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        960,
+        300
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 20,
+        "unit": "seconds"
+      },
+      "id": "tfnexbuyer000001-05",
+      "name": "Wait 20 s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        300
+      ],
+      "webhookId": "tfnexbuyer000001-wait"
+    },
+    {
+      "parameters": {
+        "resource": "demand",
+        "operation": "get",
+        "demandId": "={{ $('Post demand').first().json.demand.id }}"
+      },
+      "id": "tfnexbuyer000001-06",
+      "name": "Get demand",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        300
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ ['settled', 'failed', 'unmatched', 'expired', 'cancelled'].includes($json.demand.state) || $runIndex >= 19 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "tfnexbuyer000001-07",
+      "name": "Ended?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ Boolean($json.demand.handshake_id) }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "tfnexbuyer000001-08",
+      "name": "Hired?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "handshake",
+        "operation": "get",
+        "handshakeId": "={{ $json.demand.handshake_id }}"
+      },
+      "id": "tfnexbuyer000001-09",
+      "name": "Get handshake",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        300
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "explorer",
+        "operation": "get",
+        "explorerId": "={{ $('Get demand').last().json.demand.id }}"
+      },
+      "id": "tfnexbuyer000001-10",
+      "name": "Explorer",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "proof",
+        "operation": "attestHire",
+        "claim": {
+          "txHash": "={{ ($('Get demand').last().json.demand.ending || {}).tx || '' }}",
+          "chainId": "={{ $('Get demand').last().json.demand.chainId || 36927 }}",
+          "agentAddress": "={{ (($json.job || {}).payee || {}).address || '' }}"
+        }
+      },
+      "id": "tfnexbuyer000001-11",
+      "name": "Verify hire claim",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item: the match preview, the hire, the grade, the settlement, and whether the chain agrees.\nconst preview = $('Preview the match').first().json;\nconst r = (preview.resolved || {});\nlet d = null; try { d = $('Get demand').last().json.demand; } catch (e) { d = null; }\nlet hs = null; try { hs = $('Get handshake').last().json; } catch (e) { hs = null; }\nlet job = null; try { job = $('Explorer').last().json.job; } catch (e) { job = null; }\nlet att = null; try { att = $('Verify hire claim').last().json; } catch (e) { att = null; }\nconst tx = d && d.ending ? d.ending.tx || null : null;\nreturn [{ json: {\n  preview: { class: preview.class || r.class || null, input: preview.input || null, how: r.how || null,\n             premium: (preview.cover_preview || {}).premium || null, chain_id: preview.chainId || null },\n  demand: d ? d.id : null, state: d ? d.state : 'preview only', why: d ? d.why || null : null,\n  seller: d ? d.seller || null : null,\n  handshake: hs ? { id: hs.handshake_id, state: hs.state, chosen: ((hs.candidate || {}).choice || {}).chosen || null } : null,\n  grade: d && d.grade ? { verdict: d.grade.verdict || null, checks: d.grade.checks || null } : null,\n  job_id: d ? d.job_id || null : null, chain_id: d ? d.chainId || null : null,\n  settle_tx: tx, settle_link: tx ? `https://www.taifoon.io/scan/${d.chainId}/tx/${tx}` : null,\n  doer: job && job.doer ? job.doer.seller || null : null,\n  payee: job && job.payee ? job.payee.address || null : null,\n  attestation: att ? { verdict: att.verdict || null, checks: att.checks || att.findings || null } : null,\n  explorer: d ? `https://www.taifoon.io/scan/jobs/${d.id}` : null,\n} }];"
+      },
+      "id": "tfnexbuyer000001-12",
+      "name": "Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2 · Buyer: say what you need, get it done and verified\n\n1. Attach your **Taifoon Relayer API** credential to the Demand and Handshake nodes.\n2. Edit **Need** (quote exact inputs inside the sentence). `preview_only: true` stops after the preview.\n3. Execute. **Preview the match** is a dry run (class, input, cover preview; nothing kept). **Post demand** posts it; the auto-match loop (every 2 min) picks a seller, opens the handshake, grades by code and settles.\n\nSettlement runs on the **Taifoon devnet 36927** (test tokens, no value). Nothing is signed by this workflow. Polls ≤ 20 × 20 s.",
+        "height": 320,
+        "width": 620,
+        "color": 4
+      },
+      "id": "tfnexbuyer000001-n13",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -60
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Need",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need": {
+      "main": [
+        [
+          {
+            "node": "Preview the match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preview the match": {
+      "main": [
+        [
+          {
+            "node": "Post it?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post it?": {
+      "main": [
+        [
+          {
+            "node": "Post demand",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post demand": {
+      "main": [
+        [
+          {
+            "node": "Wait 20 s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 20 s": {
+      "main": [
+        [
+          {
+            "node": "Get demand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get demand": {
+      "main": [
+        [
+          {
+            "node": "Ended?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ended?": {
+      "main": [
+        [
+          {
+            "node": "Hired?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 20 s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hired?": {
+      "main": [
+        [
+          {
+            "node": "Get handshake",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Explorer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get handshake": {
+      "main": [
+        [
+          {
+            "node": "Explorer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explorer": {
+      "main": [
+        [
+          {
+            "node": "Verify hire claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify hire claim": {
+      "main": [
+        [
+          {
+            "node": "Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "taifoon": {
+      "package": "n8n-nodes-taifoon",
+      "min_version": "0.6.0",
+      "ops": [
+        "demand.post",
+        "demand.get",
+        "handshake.get",
+        "explorer.get",
+        "proof.attestHire"
+      ],
+      "description": "Posts a need in words. The layer maps it to a job class by fixed rules (preview first, kept nothing), matches a seller, opens the handshake, grades the reply by code and settles on the Taifoon devnet 36927 (test tokens, no value). The workflow polls the demand, reads the handshake and the explorer row, and re-derives the settle transaction from chain with Verify Hire Claim before it hands back the result."
+    }
+  },
+  "pinData": {},
+  "tags": []
+}

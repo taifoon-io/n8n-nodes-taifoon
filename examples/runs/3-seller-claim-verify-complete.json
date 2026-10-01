@@ -1,0 +1,119 @@
+{
+  "example": "3-seller-claim-verify-complete.json",
+  "workflow": "tfnexseller00001",
+  "name": "Taifoon example 3: seller (claim a listing → verify → receive jobs → submit completion)",
+  "where": "hosted",
+  "n8n": "2.39.8",
+  "node": "0.6.0",
+  "ran_at": "2026-10-01T07:24:06.216Z",
+  "wall_ms": 29433,
+  "status": "success",
+  "started_at": "2026-10-01T07:24:22.108Z",
+  "stopped_at": "2026-10-01T07:24:34.355Z",
+  "nodes": [
+    {
+      "name": "Start",
+      "runs": 1,
+      "status": "success",
+      "ms": 4,
+      "error": null
+    },
+    {
+      "name": "Seller",
+      "runs": 1,
+      "status": "success",
+      "ms": 10,
+      "error": null
+    },
+    {
+      "name": "Register Seller",
+      "runs": 1,
+      "status": "success",
+      "ms": 2999,
+      "error": null
+    },
+    {
+      "name": "Verify Seller",
+      "runs": 1,
+      "status": "success",
+      "ms": 7030,
+      "error": null
+    },
+    {
+      "name": "Get open jobs",
+      "runs": 1,
+      "status": "success",
+      "ms": 976,
+      "error": null
+    },
+    {
+      "name": "Pick a job",
+      "runs": 1,
+      "status": "success",
+      "ms": 73,
+      "error": null
+    },
+    {
+      "name": "Job to hand in?",
+      "runs": 1,
+      "status": "success",
+      "ms": 18,
+      "error": null
+    },
+    {
+      "name": "Submit completion",
+      "runs": 1,
+      "status": "success",
+      "ms": 579,
+      "error": null
+    },
+    {
+      "name": "Completion status",
+      "runs": 1,
+      "status": "success",
+      "ms": 515,
+      "error": null
+    },
+    {
+      "name": "Result",
+      "runs": 1,
+      "status": "success",
+      "ms": 15,
+      "error": null
+    }
+  ],
+  "output": {
+    "listing": {
+      "id": "ls_342365d0791062a7",
+      "state": "listed",
+      "key": "n8n.taifoon.dev/webhook/tfn-digest",
+      "classes": [
+        "mcp.digest"
+      ],
+      "last_probe": {
+        "ok": true,
+        "why": "mcp.digest: every decisive check passed (nonce_echo, task_bound, no_tool_error, digest_exact)"
+      }
+    },
+    "jobs": {
+      "open_for_seller": 0,
+      "source": "pinned",
+      "note": null
+    },
+    "completion": {
+      "accepted": true,
+      "status": "recorded",
+      "phase": "RECORDED",
+      "write": "none",
+      "replay": true,
+      "evidence_digest": "0x6b6fc6cd2db5a6affed47ceb786e445e81a1020f3dbab29a10c9c6693e40b4b6"
+    },
+    "status": {
+      "status": "recorded",
+      "phase": "RECORDED",
+      "settlement_tx": null
+    }
+  },
+  "verdict": "pass",
+  "execution_id": "349"
+}

@@ -1,0 +1,83 @@
+{
+  "example": "6-proof-root-and-tx.json",
+  "workflow": "tfnexproof000001",
+  "name": "Taifoon example 6: proof (latest root → transaction proof → output)",
+  "where": "local",
+  "n8n": "2.39.8",
+  "node": "0.6.0",
+  "ran_at": "2026-10-01T07:23:42.944Z",
+  "wall_ms": 4592,
+  "status": "success",
+  "started_at": "2026-10-01T07:23:46.338Z",
+  "stopped_at": "2026-10-01T07:23:47.312Z",
+  "nodes": [
+    {
+      "name": "Start",
+      "runs": 1,
+      "status": "success",
+      "ms": 1,
+      "error": null
+    },
+    {
+      "name": "Transaction",
+      "runs": 1,
+      "status": "success",
+      "ms": 2,
+      "error": null
+    },
+    {
+      "name": "Latest root",
+      "runs": 1,
+      "status": "success",
+      "ms": 449,
+      "error": null
+    },
+    {
+      "name": "Transaction proof",
+      "runs": 1,
+      "status": "success",
+      "ms": 484,
+      "error": null
+    },
+    {
+      "name": "Proof served?",
+      "runs": 1,
+      "status": "success",
+      "ms": 7,
+      "error": null
+    },
+    {
+      "name": "Output",
+      "runs": 1,
+      "status": "success",
+      "ms": 26,
+      "error": null
+    }
+  ],
+  "output": {
+    "root": {
+      "epoch": 9632888,
+      "root": "91baf273c8212c60fc697c90cdf174a8155a49c747565a91d1756d974f3bb8da",
+      "anchored_at": 1790839412,
+      "anchor_age_s": 14
+    },
+    "tx": "0xf894661d4e1b223a6aaa68be118d5214ddb61427b8c6d0cc6d9b37fec18a15ef",
+    "chain_id": 8453,
+    "block": 51897413,
+    "block_hash": "0x52186ae0e4ee428d167f92d32c96ecddb7d53337c61f6acd71c334efe52d4b6d",
+    "is_finalized": true,
+    "pending_proof": false,
+    "checks": {
+      "receipt_found": true,
+      "tx_succeeded": true,
+      "proof_served": true,
+      "block_hash_matches": true,
+      "within_verifiable_range": true
+    },
+    "last_anchor": null,
+    "source": "receipt read from chain; block proof from the producer; block hash compared between the two",
+    "verdict": "proof served: the transaction is inside the root"
+  },
+  "verdict": "pass",
+  "execution_id": "2"
+}

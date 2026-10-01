@@ -1,0 +1,266 @@
+{
+  "id": "tfnexassure00001",
+  "name": "Taifoon example 5: assurance (pools → quote → unsigned fund-job calls; plan only)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "tfnexassure00001-00",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "chain_id",
+              "value": 36927,
+              "type": "number"
+            },
+            {
+              "id": "f1",
+              "name": "price",
+              "value": "10000",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "deposit",
+              "value": "20000",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "deadline_hours",
+              "value": 24,
+              "type": "number"
+            },
+            {
+              "id": "f4",
+              "name": "token",
+              "value": "0x31854D915F31A1FBe57c2b06B5b60cbbD7D42D5b",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "tfnexassure00001-01",
+      "name": "Job terms",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "assurance",
+        "operation": "getPools",
+        "limit": 100
+      },
+      "id": "tfnexassure00001-02",
+      "name": "Pools",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// The seller with the most settled jobs (its own record prices the premium; pools are never aggregated).\nconst pools = $json.pools || [];\nconst best = pools.filter((p) => /^0x[0-9a-fA-F]{40}$/.test(p.sellerId || '')).sort((a, b) => (b.settled || 0) - (a.settled || 0))[0];\nif (!best) throw new Error('no seller with a record came back from /v1/pools');\nreturn [{ json: { seller: best.sellerId, settled: best.settled, cheated: best.cheated, jobs: best.jobs, pool: best.vault || null, pool_chain: ($json.chain || {}).chainId || null, sellers_seen: pools.length } }];"
+      },
+      "id": "tfnexassure00001-03",
+      "name": "Pick a seller",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "assurance",
+        "operation": "getQuote",
+        "chainId": "={{ $('Job terms').first().json.chain_id }}",
+        "seller": "={{ $json.seller }}",
+        "price": "={{ $('Job terms').first().json.price }}",
+        "deposit": "={{ $('Job terms').first().json.deposit }}"
+      },
+      "id": "tfnexassure00001-04",
+      "name": "Quote",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// The action Build Call encodes. jobId: a fresh random 32 bytes (yours to choose); premium: what the quote charges.\nconst t = $('Job terms').first().json, q = $json, s = $('Pick a seller').first().json;\nif (!q.ok || (q.refusals || []).length) throw new Error('the quote refused these terms: ' + JSON.stringify(q.refusals || q.error));\nconst hex = [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');\nreturn [{ json: { action: { kind: 'fund-job', jobId: '0x' + hex, seller: s.seller, token: t.token, price: String(t.price),\n  premium: String(q.premium.chargedUnits), deposit: String(t.deposit), deadline: Math.floor(Date.now() / 1000) + 3600 * Number(t.deadline_hours) } } }];"
+      },
+      "id": "tfnexassure00001-05",
+      "name": "Fund-job action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "assurance",
+        "operation": "buildCall",
+        "chainId": "={{ $('Job terms').first().json.chain_id }}",
+        "action": "={{ JSON.stringify($json.action) }}"
+      },
+      "id": "tfnexassure00001-06",
+      "name": "Build call",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $('Pick a seller').first().json, q = $('Quote').first().json, a = $('Fund-job action').first().json.action, c = $json;\nreturn [{ json: {\n  seller: s.seller, record: q.record || null,\n  premium: q.premium ? { label: q.premium.label, charged_units: q.premium.chargedUnits, basis: q.premium.basis } : null,\n  terms: q.terms || null, job_id: a.jobId, chain_id: (c.calls || [])[0] ? c.calls[0].chainId : null,\n  calls: (c.calls || []).map((x, i) => ({ step: i + 1, to: x.to, data: x.data, value: x.value, effect: x.effect, signer: x.signer })),\n  note: c.note || null, signed_or_sent: 'nothing: hand these to the named signer, in order',\n} }];"
+      },
+      "id": "tfnexassure00001-07",
+      "name": "Plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 5 · Assurance: price the guarantee, plan the funding\n\nPublic reads; no credential. **Plan only**: nothing is signed or sent.\n\n**Job terms**: price and deposit in the token's smallest unit (the deposit must exceed the price), the chain (36927 = Taifoon devnet, test tokens), the token (devnet dUSDC by default).\n\nOut: the seller's record, the premium interval, and the ordered unsigned calls (approve, fundJob) with their effect and signer.",
+        "height": 280,
+        "width": 560,
+        "color": 4
+      },
+      "id": "tfnexassure00001-n08",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -40
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Job terms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job terms": {
+      "main": [
+        [
+          {
+            "node": "Pools",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pools": {
+      "main": [
+        [
+          {
+            "node": "Pick a seller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick a seller": {
+      "main": [
+        [
+          {
+            "node": "Quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quote": {
+      "main": [
+        [
+          {
+            "node": "Fund-job action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fund-job action": {
+      "main": [
+        [
+          {
+            "node": "Build call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build call": {
+      "main": [
+        [
+          {
+            "node": "Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "taifoon": {
+      "package": "n8n-nodes-taifoon",
+      "min_version": "0.6.0",
+      "ops": [
+        "assurance.getPools",
+        "assurance.getQuote",
+        "assurance.buildCall"
+      ],
+      "description": "Reads the coverage pools, picks the seller with the longest settled record, prices the guarantee for one job from that record, and builds the unsigned fund-job calls on the Taifoon devnet 36927. Nothing is signed or sent: the output is the calldata, its effect in words and who must sign it."
+    }
+  },
+  "pinData": {},
+  "tags": []
+}

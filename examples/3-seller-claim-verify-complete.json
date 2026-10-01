@@ -1,0 +1,390 @@
+{
+  "id": "tfnexseller00001",
+  "name": "Taifoon example 3: seller (claim a listing → verify → receive jobs → submit completion)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "tfnexseller00001-00",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "card_url",
+              "value": "https://your-n8n.example.com/webhook/tfn-digest-card",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "seller_address",
+              "value": "0x0000000000000000000000000000000000000000",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "jobs_chain",
+              "value": 8453,
+              "type": "number"
+            },
+            {
+              "id": "f3",
+              "name": "job_id",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "nonce",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "f5",
+              "name": "job_chain",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "f6",
+              "name": "provider",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "f7",
+              "name": "proof_tx",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "f8",
+              "name": "result",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "tfnexseller00001-01",
+      "name": "Seller",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "operation": "registerSeller",
+        "cardUrl": "={{ $json.card_url }}"
+      },
+      "id": "tfnexseller00001-02",
+      "name": "Register Seller",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "operation": "verifySeller",
+        "sellerListingId": "={{ $json.listing ? $json.listing.id : $json.id }}"
+      },
+      "id": "tfnexseller00001-03",
+      "name": "Verify Seller",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        720,
+        300
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "job",
+        "operation": "getChanged",
+        "since": "0",
+        "changedFilters": {
+          "seller": "={{ $('Seller').first().json.seller_address }}",
+          "status": "open",
+          "chain": "={{ $('Seller').first().json.jobs_chain }}",
+          "limit": 50
+        }
+      },
+      "id": "tfnexseller00001-04",
+      "name": "Get open jobs",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// A job to hand in: one pinned in Seller (job_id + nonce + proof_tx: e.g. from your hire webhook) wins; else the\n// first open job this seller is the provider of. Doing the work is YOUR workflow's part (see templates 12-14):\n// here the result and its proof transaction must already exist.\nconst s = $('Seller').first().json;\nconst jobs = ($json.jobs || []);\nif (s.job_id && s.nonce && s.proof_tx) {\n  return [{ json: { has_job: true, source: 'pinned', job_id: s.job_id, nonce: s.nonce, chain: String(s.job_chain || s.jobs_chain), provider: s.provider || s.seller_address, proof_tx: s.proof_tx, result: s.result || 'done', open_jobs: jobs.length } }];\n}\nconst j = jobs.find((x) => x.status === 'open');\nreturn [{ json: { has_job: false, source: j ? 'feed' : 'none', open_jobs: jobs.length, first_open: j ? { id: j.id, chain: j.chainId, task: j.task || null } : null,\n  note: j ? 'An open job is waiting: do the work, send its proof transaction, then pin job_id + nonce + proof_tx in Seller.' : 'No open job for this seller right now.' } }];"
+      },
+      "id": "tfnexseller00001-05",
+      "name": "Pick a job",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.has_job === true }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "tfnexseller00001-06",
+      "name": "Job to hand in?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "operation": "submit",
+        "jobId": "={{ $json.job_id }}",
+        "nonce": "={{ $json.nonce }}",
+        "chain": "={{ $json.chain }}",
+        "provider": "={{ $json.provider }}",
+        "result": "={{ $json.result }}",
+        "proofTx": "={{ $json.proof_tx }}"
+      },
+      "id": "tfnexseller00001-07",
+      "name": "Submit completion",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        300
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "operation": "getStatus",
+        "jobId": "={{ $('Pick a job').first().json.job_id }}",
+        "statusNonce": "={{ $('Pick a job').first().json.nonce }}"
+      },
+      "id": "tfnexseller00001-08",
+      "name": "Completion status",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        300
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const v = $('Verify Seller').first().json;\nconst l = v.listing || v;\nlet sub = null; try { sub = $('Submit completion').first().json; } catch (e) { sub = null; }\nlet st = null; try { st = $('Completion status').first().json; } catch (e) { st = null; }\nconst pick = $('Pick a job').first().json;\nreturn [{ json: {\n  listing: { id: l.id || null, state: l.state || null, key: l.key || null, classes: l.classes || null,\n             last_probe: (l.probes || [])[0] ? { ok: l.probes[0].ok, why: l.probes[0].why } : null },\n  jobs: { open_for_seller: pick.open_jobs, source: pick.source, note: pick.note || null },\n  completion: sub ? { accepted: sub.accepted, status: sub.status, phase: sub.phase, write: sub.write, replay: Boolean(sub.idempotent_replay), evidence_digest: sub.evidence_digest || null } : null,\n  status: st ? { status: st.status, phase: st.phase, settlement_tx: st.settlement_tx || null } : null,\n} }];"
+      },
+      "id": "tfnexseller00001-09",
+      "name": "Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3 · Seller: list your workflow, take jobs, hand them in\n\nYou need a seller workflow serving a **card** (GET) and a **hire** webhook (POST): templates 12–14 are complete sellers.\n\n1. Put the card URL and your payout address in **Seller**.\n2. Execute once: **Register Seller** answers a nonce. Put it in the card field `taifoon_listing`, save, execute again: **Verify Seller** reads the card and runs one class probe; a pass lists you.\n3. Jobs arrive on your hire webhook (the layer hires you), or poll **Get open jobs** (swap Start for a **Taifoon Trigger** to run on each change).\n4. To hand in a finished job, pin `job_id`, `nonce`, `job_chain`, `proof_tx` in **Seller**. **Submit completion** is idempotent on job ID + nonce: a repeat returns the first outcome, never a second transaction.",
+        "height": 360,
+        "width": 700,
+        "color": 4
+      },
+      "id": "tfnexseller00001-n10",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -80
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Seller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seller": {
+      "main": [
+        [
+          {
+            "node": "Register Seller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Seller": {
+      "main": [
+        [
+          {
+            "node": "Verify Seller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Seller": {
+      "main": [
+        [
+          {
+            "node": "Get open jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get open jobs": {
+      "main": [
+        [
+          {
+            "node": "Pick a job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick a job": {
+      "main": [
+        [
+          {
+            "node": "Job to hand in?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job to hand in?": {
+      "main": [
+        [
+          {
+            "node": "Submit completion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit completion": {
+      "main": [
+        [
+          {
+            "node": "Completion status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Completion status": {
+      "main": [
+        [
+          {
+            "node": "Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "taifoon": {
+      "package": "n8n-nodes-taifoon",
+      "min_version": "0.6.0",
+      "ops": [
+        "account.registerSeller",
+        "account.verifySeller",
+        "job.getChanged",
+        "completion.submit",
+        "completion.getStatus"
+      ],
+      "description": "Lists an n8n seller workflow with the layer (claim its card, the card serves the nonce, verify: the layer reads the card and runs one class probe), then polls for jobs where the seller address is the provider and hands a finished job to the relayer (idempotent on job ID + nonce) and reads its status."
+    }
+  },
+  "pinData": {},
+  "tags": []
+}

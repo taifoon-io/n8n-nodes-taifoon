@@ -1,0 +1,185 @@
+{
+  "id": "tfnexfreekey0001",
+  "name": "Taifoon example 1a: get a free key and check its tenant",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "tfnexfreekey0001-00",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "wallet_address",
+              "value": "0x0000000000000000000000000000000000000000",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "agent_label",
+              "value": "n8n:example-1a",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "tfnexfreekey0001-01",
+      "name": "Wallet",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "operation": "register",
+        "walletAddress": "={{ $json.wallet_address }}",
+        "agentLabel": "={{ $json.agent_label }}"
+      },
+      "id": "tfnexfreekey0001-02",
+      "name": "Register Free Key",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://coord.taifoon.dev/v1/tenant/me",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $json.api_key }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "tfnexfreekey0001-03",
+      "name": "Get My Tenant (new key)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// The tenant and the key PREFIXES only. The raw keys stay in the Register Free Key output (shown once).\nconst reg = $('Register Free Key').first().json;\nconst me = $json || {};\nconst t = me.tenant || {};\nreturn [{ json: {\n  ok: me.ok === true,\n  tenant_id: t.id || null,\n  tenant_via: t.via || null,\n  wallet_label: t.wallet_label || null,\n  key_prefix: reg.key_prefix || null,\n  keys: (me.keys || []).map((k) => ({ prefix: k.prefix, env: k.env, revoked: Boolean(k.revoked) })),\n  next_step: me.next_step ? (me.next_step.title || me.next_step.id) : null,\n  save_it: 'Copy api_key from the Register Free Key output into Credentials → Taifoon Relayer API now. It is not shown again.',\n} }];"
+      },
+      "id": "tfnexfreekey0001-04",
+      "name": "Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1a · Get a free key, check the tenant\n\nNo credential needed.\n\n1. Put **your** wallet address in **Wallet** (a label only; nothing is signed).\n2. Execute. **Register Free Key** answers `api_key` + `keys { live, sandbox }` **once**.\n3. Save `api_key` as a **Taifoon Relayer API** credential, then use example **1b**.\n\nFree keys: 3 a day per IP. Successful executions of this workflow are not saved (settings), so the keys do not stay in execution data.",
+        "height": 300,
+        "width": 520,
+        "color": 4
+      },
+      "id": "tfnexfreekey0001-n05",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -40
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Wallet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wallet": {
+      "main": [
+        [
+          {
+            "node": "Register Free Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Free Key": {
+      "main": [
+        [
+          {
+            "node": "Get My Tenant (new key)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get My Tenant (new key)": {
+      "main": [
+        [
+          {
+            "node": "Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "taifoon": {
+      "package": "n8n-nodes-taifoon",
+      "min_version": "0.6.0",
+      "ops": [
+        "account.register"
+      ],
+      "description": "Registers a free Taifoon key for a wallet label (no credential needed), reads the new tenant with that key, and returns the tenant and key prefixes only. The keys appear once, in the Register Free Key output; successful runs are not saved."
+    }
+  },
+  "pinData": {},
+  "tags": []
+}

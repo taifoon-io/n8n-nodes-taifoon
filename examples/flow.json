@@ -1,0 +1,54 @@
+{
+  "schema": "taifoon.n8n-flow.v1",
+  "_": "The one definition of the n8n flow: each phase, the node operation that does it, the example workflow and node that run it, and what it costs. The README (flow.mjs --write), the tests (flow.test.mjs), the CLI demo (taifoon demo n8n) and the page www.taifoon.io/docs/n8n all read this file. Edit it here, then run node examples/flow.mjs --write.",
+  "package": "n8n-nodes-taifoon",
+  "api": "https://coord.taifoon.dev/v1",
+  "explorer": "https://www.taifoon.io/scan/jobs/{id}",
+  "network": { "chain_id": 36927, "label": "Taifoon devnet 36927: test tokens (dUSDC) with no value" },
+  "roles": [
+    {
+      "id": "buyer",
+      "title": "Buyer",
+      "line": "Say what you need in words. The layer matches a seller, hires it, grades the reply by code and settles; you verify it against the chain.",
+      "phases": [
+        { "id": "key", "title": "Key", "does": "Get a free key for a wallet label (nothing is signed) and read its tenant.", "op": "account.register", "http": "POST /v1/register", "example": "1a-free-key-and-tenant.json", "nodes": ["Register Free Key"], "costs": "free: 3 keys a day per IP" },
+        { "id": "tenant", "title": "Tenant", "does": "Who the saved key belongs to, its keys and the next step.", "op": "account.me", "http": "GET /v1/tenant/me", "example": "1b-my-tenant.json", "nodes": ["Get My Tenant"], "costs": "free" },
+        { "id": "demand", "title": "Demand", "does": "Post the need in words. A dry run first shows the class, the input read from the words and the cover preview, and keeps nothing.", "op": "demand.post", "http": "POST /v1/demands", "example": "2-buyer-need-to-verified.json", "nodes": ["Preview the match", "Post demand"], "costs": "free on the devnet: the key's own demand budget" },
+        { "id": "match", "title": "Match", "does": "The auto-match loop (every 2 minutes) claims the demand and ranks the class's sellers by their own record: open → claimed → matched.", "op": "demand.get", "http": "GET /v1/demands/{id}", "example": "2-buyer-need-to-verified.json", "nodes": ["Get demand"], "costs": "free (reads)" },
+        { "id": "handshake", "title": "Handshake", "does": "The broker offers the job to the chosen seller in its own protocol and holds the reply: the seller, the ranking and the reply digest.", "op": "handshake.get", "http": "GET /v1/handshake/{id}", "example": "2-buyer-need-to-verified.json", "nodes": ["Get handshake"], "costs": "free (reads)" },
+        { "id": "job", "title": "Job", "does": "The job is funded on the devnet, the reply is graded by the class's own check (no model), and the job settles: hired → graded → settling → settled.", "op": "demand.get", "http": "GET /v1/demands/{id}", "example": "2-buyer-need-to-verified.json", "nodes": ["Get demand"], "costs": "free: code grades spend no credit; the devnet escrow uses test tokens" },
+        { "id": "attest", "title": "Attest", "does": "Re-derive the settle transaction and the payee from chain before anyone acts on the result: REAL, FABRICATED or UNVERIFIED.", "op": "proof.attestHire", "http": "POST /v1/attest/hire", "example": "2-buyer-need-to-verified.json", "nodes": ["Verify hire claim"], "costs": "free" },
+        { "id": "explorer", "title": "Explorer", "does": "The job as the explorer shows it: who did the work, who the chain paid, the grade and every transaction with its link.", "op": "explorer.get", "http": "GET /v1/explorer/jobs/{id}", "example": "2-buyer-need-to-verified.json", "nodes": ["Explorer"], "costs": "free" }
+      ]
+    },
+    {
+      "id": "seller",
+      "title": "Seller",
+      "line": "List an n8n workflow as a seller, take jobs on its hire webhook, and hand finished work to the relayer.",
+      "phases": [
+        { "id": "claim", "title": "Claim", "does": "Claim the seller workflow by its card URL. The answer carries a nonce for the card field taifoon_listing.", "op": "account.registerSeller", "http": "POST /v1/listings/claim", "example": "3-seller-claim-verify-complete.json", "nodes": ["Register Seller"], "costs": "free (any key, a free key included)" },
+        { "id": "verify", "title": "Verify", "does": "The layer reads the card for the nonce and sends one class probe to the hire webhook, graded by the class's check. A pass lists the workflow.", "op": "account.verifySeller", "http": "POST /v1/listings/{id}/verify", "example": "3-seller-claim-verify-complete.json", "nodes": ["Verify Seller"], "costs": "free" },
+        { "id": "jobs", "title": "Jobs", "does": "Jobs arrive on the hire webhook when the loop hires the listing; the job feed shows the jobs an address sells, with a cursor.", "op": "job.getChanged", "http": "GET /v1/jobs", "example": "3-seller-claim-verify-complete.json", "nodes": ["Get open jobs"], "costs": "free (reads)" },
+        { "id": "completion", "title": "Completion", "does": "Hand a finished job to the relayer with its proof transaction. Idempotent on job ID + nonce: a repeat returns the first outcome and never a second transaction.", "op": "completion.submit", "http": "POST /v1/jobs/{jobId}/complete", "example": "3-seller-claim-verify-complete.json", "nodes": ["Submit completion"], "costs": "free (the key's write budget)" },
+        { "id": "status", "title": "Status", "does": "Poll the completion until it is recorded or settled.", "op": "completion.getStatus", "http": "GET /v1/jobs/{jobId}/complete?nonce=", "example": "3-seller-claim-verify-complete.json", "nodes": ["Completion status"], "costs": "free (the key's read budget)" }
+      ]
+    },
+    {
+      "id": "around",
+      "title": "Around the flow",
+      "line": "Public reads that need no key: who can do what, what the guarantee costs, and whether a transaction is inside the root.",
+      "phases": [
+        { "id": "discover", "title": "Discover", "does": "What n8n templates and nodes can do, the skill vocabulary, the standards deployed, agent cards and the market; then one provider's record.", "op": "agent.getReputation", "ops": ["discovery.getCapabilities", "discovery.getCapabilitySkills", "discovery.getStandards", "agent.getCards", "agent.getMarket", "agent.getReputation"], "http": "GET /v1/agents/who/{address}", "example": "4-discovery-to-reputation.json", "nodes": ["Capabilities", "Skills", "Standards", "Cards", "Market", "Reputation"], "costs": "free" },
+        { "id": "assure", "title": "Assure", "does": "Price the guarantee from one seller's settled record and build the unsigned fund-job calls. Nothing is signed or sent.", "op": "assurance.buildCall", "ops": ["assurance.getPools", "assurance.getQuote", "assurance.buildCall"], "http": "POST /v1/assurance/call", "example": "5-assurance-quote-and-plan.json", "nodes": ["Pools", "Quote", "Build call"], "costs": "free: a plan, never a transaction" },
+        { "id": "prove", "title": "Prove", "does": "The latest superroot, then the inclusion proof of one transaction with exactly what was checked.", "op": "proof.getTxProof", "ops": ["proof.getRoot", "proof.getTxProof"], "http": "GET /v1/proof/tx/{chain}/{tx}", "example": "6-proof-root-and-tx.json", "nodes": ["Latest root", "Transaction proof"], "costs": "free" }
+      ]
+    }
+  ],
+  "grid": {
+    "earn": "GRID points are earned by bringing a resource the oracle can probe (an RPC endpoint, storage, a GPU) and settle as soulbound GRID every 6 h. Running these workflows earns no GRID.",
+    "join": "https://www.taifoon.io/grid",
+    "spend": "Settled GRID pays for Jev grades and gateway credit at the USDC price (1 GRID = 0.01 USDC), signed by the wallet that holds it.",
+    "spend_api": "GET https://coord.taifoon.dev/v1/judge/credits/grid?wallet=0x…",
+    "in_this_flow": "Nothing in these examples spends credit: demands settle on the devnet, the grades are code grades, and every read is free. A Jev grade (Judge resource) is the first step that spends: 3 free on a key, then a block of 3 for 0.15 USDC or 15 GRID."
+  }
+}

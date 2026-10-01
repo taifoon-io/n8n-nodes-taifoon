@@ -1,0 +1,114 @@
+{
+  "example": "5-assurance-quote-and-plan.json",
+  "workflow": "tfnexassure00001",
+  "name": "Taifoon example 5: assurance (pools → quote → unsigned fund-job calls; plan only)",
+  "where": "local",
+  "n8n": "2.39.8",
+  "node": "0.6.0",
+  "ran_at": "2026-10-01T07:18:39.618Z",
+  "wall_ms": 8524,
+  "status": "success",
+  "started_at": "2026-10-01T07:18:43.022Z",
+  "stopped_at": "2026-10-01T07:18:47.865Z",
+  "nodes": [
+    {
+      "name": "Start",
+      "runs": 1,
+      "status": "success",
+      "ms": 1,
+      "error": null
+    },
+    {
+      "name": "Job terms",
+      "runs": 1,
+      "status": "success",
+      "ms": 3,
+      "error": null
+    },
+    {
+      "name": "Pools",
+      "runs": 1,
+      "status": "success",
+      "ms": 2774,
+      "error": null
+    },
+    {
+      "name": "Pick a seller",
+      "runs": 1,
+      "status": "success",
+      "ms": 46,
+      "error": null
+    },
+    {
+      "name": "Quote",
+      "runs": 1,
+      "status": "success",
+      "ms": 1723,
+      "error": null
+    },
+    {
+      "name": "Fund-job action",
+      "runs": 1,
+      "status": "success",
+      "ms": 6,
+      "error": null
+    },
+    {
+      "name": "Build call",
+      "runs": 1,
+      "status": "success",
+      "ms": 278,
+      "error": null
+    },
+    {
+      "name": "Plan",
+      "runs": 1,
+      "status": "success",
+      "ms": 7,
+      "error": null
+    }
+  ],
+  "output": {
+    "seller": "0x4b33758d85678ea86cd875af8caf318462268ba8",
+    "record": {
+      "settled": 2735,
+      "cheated": 5,
+      "source": "every ERC-8183 job this seller took (2887): 2735 completed and paid, 5 delivered then rejected or paid and never delivered; rejected-before-delivery, unpaid and open jobs excluded"
+    },
+    "premium": {
+      "label": "0.1%–0.4%",
+      "charged_units": "42",
+      "basis": "the upper bound of the 95% Wilson interval on this seller’s cheat rate, applied to the price"
+    },
+    "terms": {
+      "price": "10000",
+      "depositRequired": "10001",
+      "depositOffered": "20000",
+      "rule": "D > P"
+    },
+    "job_id": "0x3790b9ce35d2f0ab4c93b509fe2636423004830e2ca735c9b9ce1830a3c137c0",
+    "chain_id": 36927,
+    "calls": [
+      {
+        "step": 1,
+        "to": "0x31854D915F31A1FBe57c2b06B5b60cbbD7D42D5b",
+        "data": "0x095ea7b30000000000000000000000007110c8951d17b69054395742e265bbd98259564a000000000000000000000000000000000000000000000000000000000000273a",
+        "value": "0",
+        "effect": "Lets the assurance hook move up to 10042 of this token from your address for this job. Nothing moves until the job is funded.",
+        "signer": "the buyer"
+      },
+      {
+        "step": 2,
+        "to": "0x7110c8951d17b69054395742e265bbd98259564a",
+        "data": "0x48625a993790b9ce35d2f0ab4c93b509fe2636423004830e2ca735c9b9ce1830a3c137c00000000000000000000000004b33758d85678ea86cd875af8caf318462268ba800000000000000000000000031854d915f31a1fbe57c2b06b5b60cbbd7d42d5b0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000002a0000000000000000000000000000000000000000000000000000000000004e20000000000000000000000000000000000000000000000000000000006abf5ad700000000000000000000000000000000000000000000000000000000000000780000000000000000000000000000000000000000000000000000000000000000",
+        "value": "0",
+        "effect": "Locks 10042 in escrow from you and 20000 from the seller, creating the insured job. The seller must have approved the hook for exactly this deposit first — for this job, after agreeing to it. A seller should never leave a standing allowance to the hook: the live contract pulls the deposit from whichever seller the funder names.",
+        "signer": "the buyer, after the seller has approved its deposit"
+      }
+    ],
+    "note": "Send these in order from the named signer. Nothing was signed here and no key is held.",
+    "signed_or_sent": "nothing: hand these to the named signer, in order"
+  },
+  "verdict": "pass",
+  "execution_id": "3"
+}

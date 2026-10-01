@@ -1,0 +1,74 @@
+{
+  "example": "1a-free-key-and-tenant.json",
+  "workflow": "tfnexfreekey0001",
+  "name": "Taifoon example 1a: get a free key and check its tenant",
+  "where": "hosted",
+  "n8n": "2.39.8",
+  "node": "0.6.0",
+  "ran_at": "2026-10-01T07:24:45.738Z",
+  "wall_ms": 23632,
+  "minted": "revoked: sandbox 200, live 200",
+  "status": "success",
+  "started_at": "2026-10-01T07:25:01.990Z",
+  "stopped_at": "2026-10-01T07:25:07.372Z",
+  "nodes": [
+    {
+      "name": "Start",
+      "runs": 1,
+      "status": "success",
+      "ms": 6,
+      "error": null
+    },
+    {
+      "name": "Wallet",
+      "runs": 1,
+      "status": "success",
+      "ms": 7,
+      "error": null
+    },
+    {
+      "name": "Register Free Key",
+      "runs": 1,
+      "status": "success",
+      "ms": 2698,
+      "error": null
+    },
+    {
+      "name": "Get My Tenant (new key)",
+      "runs": 1,
+      "status": "success",
+      "ms": 2499,
+      "error": null
+    },
+    {
+      "name": "Summary",
+      "runs": 1,
+      "status": "success",
+      "ms": 155,
+      "error": null
+    }
+  ],
+  "output": {
+    "ok": true,
+    "tenant_id": "acct_792c0e0526e21a146d",
+    "tenant_via": "n8n",
+    "wallet_label": "0x0000000000000000000000000000000000000000",
+    "key_prefix": "tfr_free_aKqeK",
+    "keys": [
+      {
+        "prefix": "tfr_free_oJL5B",
+        "env": "sandbox",
+        "revoked": false
+      },
+      {
+        "prefix": "tfr_free_aKqeK",
+        "env": "live",
+        "revoked": false
+      }
+    ],
+    "next_step": "Post your first demand",
+    "save_it": "Copy api_key from the Register Free Key output into Credentials → Taifoon Relayer API now. It is not shown again."
+  },
+  "verdict": "pass",
+  "execution_id": "353"
+}

@@ -1,0 +1,162 @@
+{
+  "example": "2-buyer-need-to-verified.json",
+  "workflow": "tfnexbuyer000001",
+  "name": "Taifoon example 2: buyer (a need in words → matched → hired → graded → settled → verified)",
+  "where": "local",
+  "n8n": "2.39.8",
+  "node": "0.6.0",
+  "ran_at": "2026-10-01T07:19:05.414Z",
+  "wall_ms": 277507,
+  "status": "success",
+  "started_at": "2026-10-01T07:19:09.053Z",
+  "stopped_at": "2026-10-01T07:23:42.697Z",
+  "nodes": [
+    {
+      "name": "Start",
+      "runs": 1,
+      "status": "success",
+      "ms": 1,
+      "error": null
+    },
+    {
+      "name": "Need",
+      "runs": 1,
+      "status": "success",
+      "ms": 3,
+      "error": null
+    },
+    {
+      "name": "Preview the match",
+      "runs": 1,
+      "status": "success",
+      "ms": 1311,
+      "error": null
+    },
+    {
+      "name": "Post it?",
+      "runs": 1,
+      "status": "success",
+      "ms": 9,
+      "error": null
+    },
+    {
+      "name": "Post demand",
+      "runs": 1,
+      "status": "success",
+      "ms": 705,
+      "error": null
+    },
+    {
+      "name": "Wait 20 s",
+      "runs": 13,
+      "status": "success",
+      "ms": 260067,
+      "error": null
+    },
+    {
+      "name": "Get demand",
+      "runs": 13,
+      "status": "success",
+      "ms": 6962,
+      "error": null
+    },
+    {
+      "name": "Ended?",
+      "runs": 13,
+      "status": "success",
+      "ms": 25,
+      "error": null
+    },
+    {
+      "name": "Hired?",
+      "runs": 1,
+      "status": "success",
+      "ms": 4,
+      "error": null
+    },
+    {
+      "name": "Get handshake",
+      "runs": 1,
+      "status": "success",
+      "ms": 1056,
+      "error": null
+    },
+    {
+      "name": "Explorer",
+      "runs": 1,
+      "status": "success",
+      "ms": 1955,
+      "error": null
+    },
+    {
+      "name": "Verify hire claim",
+      "runs": 1,
+      "status": "success",
+      "ms": 1500,
+      "error": null
+    },
+    {
+      "name": "Result",
+      "runs": 1,
+      "status": "success",
+      "ms": 35,
+      "error": null
+    }
+  ],
+  "output": {
+    "preview": {
+      "class": "mcp.digest",
+      "input": {
+        "algorithm": "sha256",
+        "text": "n8n examples test"
+      },
+      "how": "mcp.digest: 2 of its intent rules matched the words (the next class: 0), and its input was read from them",
+      "premium": "8097",
+      "chain_id": 36927
+    },
+    "demand": "dm_489a9dccea554cbd83fdebec",
+    "state": "settled",
+    "why": null,
+    "seller": "belt.fabtally.com",
+    "handshake": {
+      "id": "hs_9e27dc69c1ebe21b755a4192",
+      "state": "DELIVERED",
+      "chosen": "belt.fabtally.com"
+    },
+    "grade": {
+      "verdict": "pass",
+      "checks": {
+        "digest_exact": true,
+        "no_tool_error": true,
+        "reply_held": true,
+        "task_bound": true
+      }
+    },
+    "job_id": "0xda3eaf456b4dfed76a65f24059a110b743f5c843597fa00c0f5636f0e972d4dc",
+    "chain_id": 36927,
+    "settle_tx": "0x97cff95880e21a3f574fe23b16495c3adaee2ee4c3ad660a8db95c318213d3ad",
+    "settle_link": "https://www.taifoon.io/scan/36927/tx/0x97cff95880e21a3f574fe23b16495c3adaee2ee4c3ad660a8db95c318213d3ad",
+    "doer": "belt.fabtally.com",
+    "payee": "0x7e0246b56d431cf7aa87bd8e49d559af61a632cf",
+    "attestation": {
+      "verdict": "REAL",
+      "checks": [
+        {
+          "claim": "agent address",
+          "outcome": "CONFIRMED",
+          "found": "0x7e0246b56d431cf7aa87bd8e49d559af61a632cf",
+          "why": "is a full 20-byte address"
+        },
+        {
+          "claim": "settlement transaction",
+          "outcome": "CONFIRMED",
+          "found": "0x97cff95880e21a3f574fe23b16495c3adaee2ee4c3ad660a8db95c318213d3ad",
+          "why": "found on chain"
+        }
+      ]
+    },
+    "explorer": "https://www.taifoon.io/scan/jobs/dm_489a9dccea554cbd83fdebec"
+  },
+  "verdict": "pass",
+  "execution_id": "1"
+}

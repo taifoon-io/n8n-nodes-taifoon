@@ -1,0 +1,233 @@
+{
+  "id": "tfnexproof000001",
+  "name": "Taifoon example 6: proof (latest root → transaction proof → output)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "tfnexproof000001-00",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "chain_id",
+              "value": 8453,
+              "type": "number"
+            },
+            {
+              "id": "f1",
+              "name": "tx_hash",
+              "value": "0xf894661d4e1b223a6aaa68be118d5214ddb61427b8c6d0cc6d9b37fec18a15ef",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "tfnexproof000001-01",
+      "name": "Transaction",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "proof",
+        "operation": "getRoot"
+      },
+      "id": "tfnexproof000001-02",
+      "name": "Latest root",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "proof",
+        "operation": "getTxProof",
+        "chainId": "={{ $('Transaction').first().json.chain_id }}",
+        "txHash": "={{ $('Transaction').first().json.tx_hash }}"
+      },
+      "id": "tfnexproof000001-03",
+      "name": "Transaction proof",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ ($json.checks || {}).proof_served === true || !$json.pending_proof || $runIndex >= 3 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "tfnexproof000001-04",
+      "name": "Proof served?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "seconds"
+      },
+      "id": "tfnexproof000001-05",
+      "name": "Wait 10 s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        300
+      ],
+      "webhookId": "tfnexproof000001-wait"
+    },
+    {
+      "parameters": {
+        "jsCode": "const root = $('Latest root').first().json, p = $json;\nreturn [{ json: {\n  root: { epoch: root.epoch, root: root.root, anchored_at: root.anchoredAt, anchor_age_s: (root.cadence || {}).anchor_age_seconds ?? null },\n  tx: p.tx, chain_id: p.chain_id, block: p.block_number, block_hash: p.block_hash,\n  is_finalized: p.is_finalized, pending_proof: Boolean(p.pending_proof), checks: p.checks || null,\n  last_anchor: p.last_anchor || null, source: p.source || null,\n  verdict: p.checks && p.checks.proof_served ? 'proof served: the transaction is inside the root' : 'receipt read from chain; the block proof was not served yet (ask again later)',\n} }];"
+      },
+      "id": "tfnexproof000001-06",
+      "name": "Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 6 · Proof: is this transaction inside the root?\n\nPublic reads; no credential.\n\nPut a chain and a full 66-character transaction hash in **Transaction** and execute. While the producer is still building that block's proof the answer is `pending_proof` with the receipt read from chain; the workflow asks again up to 3 times, 10 s apart.\n\nOut: the root, `is_finalized`, and the list of exactly what was checked.",
+        "height": 260,
+        "width": 560,
+        "color": 4
+      },
+      "id": "tfnexproof000001-n07",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -40
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Transaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transaction": {
+      "main": [
+        [
+          {
+            "node": "Latest root",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Latest root": {
+      "main": [
+        [
+          {
+            "node": "Transaction proof",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transaction proof": {
+      "main": [
+        [
+          {
+            "node": "Proof served?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Proof served?": {
+      "main": [
+        [
+          {
+            "node": "Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 10 s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 10 s": {
+      "main": [
+        [
+          {
+            "node": "Transaction proof",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "taifoon": {
+      "package": "n8n-nodes-taifoon",
+      "min_version": "0.6.0",
+      "ops": [
+        "proof.getRoot",
+        "proof.getTxProof"
+      ],
+      "description": "Reads the latest superroot and how long ago it was anchored, then asks for the inclusion proof of one Base transaction, waiting while the producer is still building that block's proof, and returns exactly what was checked."
+    }
+  },
+  "pinData": {},
+  "tags": []
+}

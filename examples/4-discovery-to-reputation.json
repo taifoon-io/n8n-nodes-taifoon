@@ -1,0 +1,307 @@
+{
+  "id": "tfnexdiscover001",
+  "name": "Taifoon example 4: discovery (capabilities, skills, standards, cards, market → pick a provider → reputation)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "tfnexdiscover001-00",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "speaks",
+              "value": "mcp",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "chain",
+              "value": 8453,
+              "type": "number"
+            },
+            {
+              "id": "f2",
+              "name": "skill_hint",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "tfnexdiscover001-01",
+      "name": "Looking for",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "discovery",
+        "operation": "getCapabilities"
+      },
+      "id": "tfnexdiscover001-02",
+      "name": "Capabilities",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "discovery",
+        "operation": "getCapabilitySkills"
+      },
+      "id": "tfnexdiscover001-03",
+      "name": "Skills",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "discovery",
+        "operation": "getStandards"
+      },
+      "id": "tfnexdiscover001-04",
+      "name": "Standards",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "agent",
+        "operation": "getCards",
+        "cardFilters": {
+          "speaks": "={{ $('Looking for').first().json.speaks }}",
+          "chain": "={{ $('Looking for').first().json.chain }}",
+          "limit": 20
+        }
+      },
+      "id": "tfnexdiscover001-05",
+      "name": "Cards",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "agent",
+        "operation": "getMarket"
+      },
+      "id": "tfnexdiscover001-06",
+      "name": "Market",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// The first card with a full owner address, preferring one whose skills include skill_hint.\nconst want = ($('Looking for').first().json.skill_hint || '').toLowerCase();\nconst cards = $('Cards').first().json.cards || [];\nconst ok = cards.filter((c) => /^0x[0-9a-fA-F]{40}$/.test(c.owner || ''));\nconst pick = (want && ok.find((c) => (c.skills || []).some((s) => String(s).toLowerCase().includes(want)))) || ok[0];\nif (!pick) throw new Error('no card with an owner address came back; widen the filters in Looking for');\nreturn [{ json: { address: pick.owner, name: pick.name, kind: pick.kind, skills: pick.skills, endpoint: pick.endpoint || null, chain: pick.chainId, agent_id: pick.agentId || null, cards_seen: cards.length } }];"
+      },
+      "id": "tfnexdiscover001-07",
+      "name": "Pick a provider",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "agent",
+        "operation": "getReputation",
+        "address": "={{ $json.address }}"
+      },
+      "id": "tfnexdiscover001-08",
+      "name": "Reputation",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cap = $('Capabilities').first().json, sk = $('Skills').first().json, st = $('Standards').first().json;\nconst cards = $('Cards').first().json, m = $('Market').first().json, p = $('Pick a provider').first().json, r = $json;\nreturn [{ json: {\n  capabilities: { templates: (cap.templates || {}).count ?? null, nodes: (cap.nodes || {}).count ?? null, skills_total: cap.skillsTotal ?? null },\n  top_skills: (sk.skills || []).slice(0, 5).map((s) => `${s.tag} (${s.templates} templates, ${s.nodes} nodes)`),\n  standards: (st.deployments || []).slice(0, 6).map((d) => `${d.standard} ${d.role} on ${d.chain}: ${d.address}`),\n  cards: { matching: cards.matching ?? null, returned: cards.returned ?? null },\n  market: { usdc_24h: m.usdc_24h, completion_rate: m.completion_rate, providers: m.provider_count, observed_jobs: m.observed_jobs },\n  provider: p,\n  reputation: { address: r.address, known: r.known, as_provider: r.as_provider, as_client: r.as_client, first_seen: r.first_seen, last_seen: r.last_seen, note: r.note },\n} }];"
+      },
+      "id": "tfnexdiscover001-09",
+      "name": "Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 4 · Discovery: who can do what, and who did what\n\nPublic reads; no credential.\n\nEdit **Looking for** (`speaks`: a2a, mcp, web, service; `chain`; an optional `skill_hint`) and execute.\n\nReputation is **counts from the public job log, not a score**: `known: false` means no job of that address was seen.",
+        "height": 260,
+        "width": 560,
+        "color": 4
+      },
+      "id": "tfnexdiscover001-n10",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -40
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Looking for",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Looking for": {
+      "main": [
+        [
+          {
+            "node": "Capabilities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capabilities": {
+      "main": [
+        [
+          {
+            "node": "Skills",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skills": {
+      "main": [
+        [
+          {
+            "node": "Standards",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Standards": {
+      "main": [
+        [
+          {
+            "node": "Cards",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cards": {
+      "main": [
+        [
+          {
+            "node": "Market",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Market": {
+      "main": [
+        [
+          {
+            "node": "Pick a provider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick a provider": {
+      "main": [
+        [
+          {
+            "node": "Reputation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reputation": {
+      "main": [
+        [
+          {
+            "node": "Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "taifoon": {
+      "package": "n8n-nodes-taifoon",
+      "min_version": "0.6.0",
+      "ops": [
+        "discovery.getCapabilities",
+        "discovery.getCapabilitySkills",
+        "discovery.getStandards",
+        "agent.getCards",
+        "agent.getMarket",
+        "agent.getReputation"
+      ],
+      "description": "Reads what is out there with public reads only (no credential): what n8n templates and nodes can do, the skill vocabulary, which standards are deployed where, agent cards with an owner and a published skill, the market statistics. Picks a provider from the cards and checks its reputation in the public job log."
+    }
+  },
+  "pinData": {},
+  "tags": []
+}

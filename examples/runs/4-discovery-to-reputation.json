@@ -1,0 +1,163 @@
+{
+  "example": "4-discovery-to-reputation.json",
+  "workflow": "tfnexdiscover001",
+  "name": "Taifoon example 4: discovery (capabilities, skills, standards, cards, market → pick a provider → reputation)",
+  "where": "local",
+  "n8n": "2.39.8",
+  "node": "0.6.0",
+  "ran_at": "2026-10-01T07:18:30.688Z",
+  "wall_ms": 8919,
+  "status": "success",
+  "started_at": "2026-10-01T07:18:34.286Z",
+  "stopped_at": "2026-10-01T07:18:39.374Z",
+  "nodes": [
+    {
+      "name": "Start",
+      "runs": 1,
+      "status": "success",
+      "ms": 1,
+      "error": null
+    },
+    {
+      "name": "Looking for",
+      "runs": 1,
+      "status": "success",
+      "ms": 3,
+      "error": null
+    },
+    {
+      "name": "Capabilities",
+      "runs": 1,
+      "status": "success",
+      "ms": 344,
+      "error": null
+    },
+    {
+      "name": "Skills",
+      "runs": 1,
+      "status": "success",
+      "ms": 222,
+      "error": null
+    },
+    {
+      "name": "Standards",
+      "runs": 1,
+      "status": "success",
+      "ms": 241,
+      "error": null
+    },
+    {
+      "name": "Cards",
+      "runs": 1,
+      "status": "success",
+      "ms": 3241,
+      "error": null
+    },
+    {
+      "name": "Market",
+      "runs": 1,
+      "status": "success",
+      "ms": 493,
+      "error": null
+    },
+    {
+      "name": "Pick a provider",
+      "runs": 1,
+      "status": "success",
+      "ms": 30,
+      "error": null
+    },
+    {
+      "name": "Reputation",
+      "runs": 1,
+      "status": "success",
+      "ms": 496,
+      "error": null
+    },
+    {
+      "name": "Result",
+      "runs": 1,
+      "status": "success",
+      "ms": 9,
+      "error": null
+    }
+  ],
+  "output": {
+    "capabilities": {
+      "templates": 12802,
+      "nodes": 12730,
+      "skills_total": 21125
+    },
+    "top_skills": [
+      "ai (9088 templates, 957 nodes)",
+      "development (9912 templates, 6 nodes)",
+      "code (7401 templates, 8 nodes)",
+      "langchain (6752 templates, 187 nodes)",
+      "communication (6784 templates, 32 nodes)"
+    ],
+    "standards": [
+      "ERC-8004 Identity Registry on Base: 0x8004a169fb4a3325136eb29fa0ceb6d2e539a432",
+      "ERC-8004 Reputation Registry on Base: 0x8004baa17c55a88189ae136b182e5fda19de9b63",
+      "ERC-8004 Identity Registry on Arc: 0x8004a169fb4a3325136eb29fa0ceb6d2e539a432",
+      "ERC-8004 Reputation Registry on Arc: 0x8004baa17c55a88189ae136b182e5fda19de9b63",
+      "ERC-8004 Identity Registry on Ethereum: 0x8004a169fb4a3325136eb29fa0ceb6d2e539a432",
+      "ERC-8004 Reputation Registry on Ethereum: 0x8004baa17c55a88189ae136b182e5fda19de9b63"
+    ],
+    "cards": {
+      "matching": 2670,
+      "returned": 20
+    },
+    "market": {
+      "usdc_24h": 2.14,
+      "completion_rate": 0.768,
+      "providers": 15,
+      "observed_jobs": 151
+    },
+    "provider": {
+      "address": "0x8f03d3879b706408a4ff89bd8a0f7f636a374197",
+      "name": "Zyfai Rebalancer Agent for 0x8f03d3879b706408a4FF89bD8A0F7F636A374197",
+      "kind": "onchain",
+      "skills": [
+        "get-available-protocols",
+        "get-conservative-opportunities",
+        "get-aggressive-opportunities",
+        "get-tvl",
+        "get-volume",
+        "get-active-wallets",
+        "get-smart-wallet-by-eoa",
+        "get-rebalance-frequency",
+        "get-apy-per-strategy",
+        "get-history",
+        "get-first-topup",
+        "get-positions",
+        "get-daily-apy-history",
+        "get-onchain-earnings",
+        "get-daily-earnings"
+      ],
+      "endpoint": "https://mcp.zyf.ai/mcp",
+      "chain": 8453,
+      "agent_id": "96589",
+      "cards_seen": 20
+    },
+    "reputation": {
+      "address": "0x8f03d3879b706408a4ff89bd8a0f7f636a374197",
+      "known": false,
+      "as_provider": {
+        "jobs": 0,
+        "completed": 0,
+        "usdc_earned": 0,
+        "checked_by_third_party": 0
+      },
+      "as_client": {
+        "jobs": 0,
+        "completed": 0,
+        "usdc_spent": 0
+      },
+      "first_seen": null,
+      "last_seen": null,
+      "note": "Counts from the public job log, not a score. Verify a specific job through /v1/proof/tx before relying on it."
+    }
+  },
+  "verdict": "pass",
+  "execution_id": "2"
+}

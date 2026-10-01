@@ -1,0 +1,57 @@
+{
+  "example": "1b-my-tenant.json",
+  "workflow": "tfnexmytenant001",
+  "name": "Taifoon example 1b: check my tenant (with the saved key)",
+  "where": "local",
+  "n8n": "2.39.8",
+  "node": "0.6.0",
+  "ran_at": "2026-10-01T07:18:24.798Z",
+  "wall_ms": 5871,
+  "status": "success",
+  "started_at": "2026-10-01T07:18:28.264Z",
+  "stopped_at": "2026-10-01T07:18:30.441Z",
+  "nodes": [
+    {
+      "name": "Start",
+      "runs": 1,
+      "status": "success",
+      "ms": 1,
+      "error": null
+    },
+    {
+      "name": "Get My Tenant",
+      "runs": 1,
+      "status": "success",
+      "ms": 2145,
+      "error": null
+    },
+    {
+      "name": "Summary",
+      "runs": 1,
+      "status": "success",
+      "ms": 27,
+      "error": null
+    }
+  ],
+  "output": {
+    "ok": true,
+    "tenant_id": "acct_87a767be9e99ad6b6b",
+    "tag": "t_97a8fe6a59",
+    "kind": "agent",
+    "via": "key",
+    "caller_env": "live",
+    "keys": [
+      {
+        "prefix": "tfr_Omy6wN",
+        "env": "live",
+        "revoked": false
+      }
+    ],
+    "next_step": {
+      "id": "first-job",
+      "title": "Post your first demand"
+    }
+  },
+  "verdict": "pass",
+  "execution_id": "1"
+}
