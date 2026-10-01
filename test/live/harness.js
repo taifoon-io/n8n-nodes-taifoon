@@ -14,7 +14,7 @@ let idsMemo = null;
 async function sampleIds() {
 	if (idsMemo) return idsMemo;
 	const get = async (p) => { try { const r = await fetch(`${BASE}/${p}`, { headers: { accept: 'application/json', ...(PROBE_KEY ? { 'x-taifoon-probe': PROBE_KEY } : {}) }, signal: AbortSignal.timeout(30_000) }); return r.ok ? r.json() : null; } catch { return null; } };
-	const [cat, ls, dm, st, rv] = await Promise.all([get('catalog?limit=1'), get('listings?limit=1'), get('demands?limit=5&state=settled'), get('settle'), get('grid/review')]);
+	const [cat, ls, dm, st, rv, lg] = await Promise.all([get('catalog?limit=1'), get('listings?limit=1'), get('demands?limit=5&state=settled'), get('settle'), get('grid/review'), get('agents/ledger?limit=20')]);
 	const demand = dm?.demands?.find((d) => d.handshake_id) ?? dm?.demands?.[0];
 	idsMemo = {
 		catalog: cat?.rows?.[0]?.id ?? null,
@@ -24,6 +24,9 @@ async function sampleIds() {
 		settlement: st?.settlements?.[0]?.id ?? null,
 		completionJob: demand?.job_id ?? '81067',
 		traceJob: rv?.jobs?.[0]?.id ?? '81067',
+		// a recent Base transaction (the newest ledger job's last tx): inside the headers the producer retains, so its proof is
+		// served or pending, never the permanent gap (409) an old block now is
+		baseTx: (lg?.jobs ?? []).map((j) => j.last_tx).find((t) => /^0x[0-9a-f]{64}$/i.test(String(t ?? ''))) ?? null,
 	};
 	return idsMemo;
 }

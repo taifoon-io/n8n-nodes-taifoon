@@ -131,7 +131,9 @@ for (const op of operations()) {
 			await t.test(`refusal: ${rf.why} → ${rf.status.join('|')}`, async () => {
 				const params = rf.params ?? s.params(await ids());
 				const r = await callOp(op.resource, op.operation, params, { key: s.key, as: rf.noKey ? 'noKey' : rf.badKey ? 'badKey' : 'ok' });
-				record({ op: id, kind: 'refusal', why: rf.why, status: r.status, ms: Math.round(r.ms), ok: statusIn(r.status, rf.status) });
+				const undone = s.cleanup ? await s.cleanup(r.json) : 0;
+				record({ op: id, kind: 'refusal', why: rf.why, status: r.status, ms: Math.round(r.ms), ok: statusIn(r.status, rf.status) && !undone });
+				assert.equal(undone, 0, `the refusal created ${undone} thing(s), revoked again`);
 				assert.ok(r.status < 500, `a refusal must never be a 5xx (got ${r.status}): ${r.text?.slice(0, 200)}`);
 				assert.ok(statusIn(r.status, rf.status), `status ${r.status}, want ${rf.status}: ${r.text?.slice(0, 300)}`);
 				assert.match(r.type, /application\/json/, 'Content-Type is JSON');
@@ -159,8 +161,7 @@ for (const op of operations()) {
 }
 
 // Public answers outside the node's operations that integrators read beside it: no host, server path or repo path either.
-// todo until the hotfix that strips the GPU product's internal note lands (it named a box and a repo path).
-test('public reads beside the node carry no host, server path or repo path', { skip: !LIVE && 'no TAIFOON_PROBE_KEY', todo: 'hotfix agent: /v1/judge/credits/grid internal note', timeout: 120_000 }, async () => {
+test('public reads beside the node carry no host, server path or repo path', { skip: !LIVE && 'no TAIFOON_PROBE_KEY', timeout: 120_000 }, async () => {
 	for (const p of ['judge/credits/grid', 'judge/credits', 'landscape', 'catalog?limit=5']) {
 		const r = await fetch(`${BASE}/${p}`, { headers: { 'x-taifoon-probe': PROBE_KEY } });
 		noSecrets(await r.text(), `GET /v1/${p}`);

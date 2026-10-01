@@ -39,7 +39,7 @@ Settings → Community Nodes → Install → `n8n-nodes-taifoon`.
 
 **Completion** and **Account → Get My Tenant** need one. **Demand → Post** uses it when attached: the demand then
 counts on the key's own budget and tenant instead of the per-IP visitor budget. Every other operation is a public read and
-works with no credential. Get a free key once with **Account → Register Free Key** (or `taifoon login --free 0x…`); it is
+works with no credential. Get a free key once with **Account → Register Free Key** (or `npx @taifoon/cli login --free`); it is
 shown once, so save it straight into the credential.
 
 | Field | Value |

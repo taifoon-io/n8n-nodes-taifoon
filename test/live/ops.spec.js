@@ -18,6 +18,7 @@
 //              and every refusal must be { ok:false, code, error, next_step } with a JSON Content-Type
 //   budgetMs   the p95 latency this route must stay under (measured 2026-10-01, see docs/api-contract/N8N-OPS.md)
 //   gap        for refusal-only ops: why there is no live success call
+//   cleanup    async (json) => n: undoes what an answer created (Account → Register Free Key revokes any key it was answered)
 //   extra      [{ why, params?, check(json, status) → problems[], todo? }] — what an answer must MEAN beyond its shape; a `todo`
 //              names the change that owns the fix (reported by the run, not failing it, until it lands)
 'use strict';
@@ -41,6 +42,12 @@ const SPEC = {
 		// never an empty wallet here: since 2026-10-01 (_REGISTER_ONE_CALL_v1_) no wallet mints a key too
 		refusals: [{ why: 'not an address', params: { walletAddress: 'not-an-address' }, status: [400], code: 'bad_wallet' }],
 		gap: 'mints a real free key (3 a day per IP) and a tenant; no recorded success body exists, so only the refusal is called',
+		// should a refusal ever mint (a regression), the keys it answered are revoked at once (each revokes itself)
+		cleanup: async (json) => {
+			const keys = [json?.api_key, json?.keys?.live, json?.keys?.sandbox].filter((k) => typeof k === 'string' && k.startsWith('tfr_'));
+			for (const k of [...new Set(keys)]) await fetch('https://coord.taifoon.dev/v1/relayer/keys/revoke', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': k }, body: JSON.stringify({ self: true }) }).catch(() => null);
+			return keys.length;
+		},
 		budgetMs: 4000,
 	},
 	'account.registerSeller': {
@@ -83,7 +90,7 @@ const SPEC = {
 	'assurance.buildCall': {
 		mode: 'plan', key: false, params: () => ({ chainId: 8453, action: JSON.stringify({ kind: 'expire', jobId: ZERO32 }) }), ok: { status: 200, fields: [] },
 		refusals: [{ why: 'an unknown action', params: { chainId: 8453, action: '{"kind":"nope"}' }, status: [400] }], budgetMs: 8000,
-		extra: [{ why: 'fund-job with its terms missing is a 400 naming them (not an encoder error)', todo: 'hotfix agent (2026-10-01): assurance/call missing fields', params: { chainId: 8453, action: JSON.stringify({ kind: 'fund-job', jobId: ZERO32 }) },
+		extra: [{ why: 'fund-job with its terms missing is a 400 naming them (not an encoder error)', params: { chainId: 8453, action: JSON.stringify({ kind: 'fund-job', jobId: ZERO32 }) },
 			check: (j, st) => [st === 400 ? null : `status ${st}`, /BigInt/.test(String(j?.error)) ? 'the error is the encoder\'s' : null, /seller|price|deposit/.test(String(j?.error) + JSON.stringify(j?.missing ?? '')) ? null : 'the missing fields are not named'].filter(Boolean) }],
 	},
 	'assurance.getDeployment': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 4000 },
@@ -118,7 +125,7 @@ const SPEC = {
 	// ── Discovery (the harvest operations were removed in 0.6.1) ──
 	'discovery.getCapabilities': {
 		mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000,
-		extra: [{ why: 'the hosted counts are named in English (measured, customers)', todo: 'hotfix agent (2026-10-01): capabilities hosted keys',
+		extra: [{ why: 'the hosted counts are named in English (measured, customers)',
 			check: (j) => (j?.hosted?.workflows == null ? [] : [typeof j.hosted.measured === 'number' ? null : 'hosted.measured', typeof j.hosted.customers === 'number' ? null : 'hosted.customers'].filter(Boolean)) }],
 	},
 	'discovery.getCapabilitySkills': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
@@ -145,9 +152,9 @@ const SPEC = {
 		mode: 'read', key: false, params: () => ({ since: '0', changedFilters: { limit: 5 } }), ok: { status: 200, fields: ['jobs', 'cursor'], lists: ['jobs'] },
 		refusals: [{ why: 'a cursor that is not one', params: { since: 'yesterday' }, status: [400] }], budgetMs: 8000,
 		extra: [
-			{ why: 'each party names its address and protocol (not under agentId, never null)', todo: 'hotfix agent (2026-10-01): /v1/jobs row fields',
+			{ why: 'each party names its address and protocol (not under agentId, never null)',
 				check: (j) => (j?.jobs ?? []).flatMap((r) => [r.seller?.address ? null : `${r.id}: seller.address`, r.seller?.protocol ? null : `${r.id}: seller.protocol`, r.buyer?.protocol ? null : `${r.id}: buyer.protocol`, 'genome' in r && r.genome === null ? `${r.id}: genome null` : null, 'skill' in r && r.skill === null ? `${r.id}: skill null` : null]).filter(Boolean).slice(0, 5) },
-			{ why: 'chain 36927 lists the devnet hires a seller follows', todo: 'hotfix agent (2026-10-01): /v1/jobs devnet', params: { since: '0', changedFilters: { chain: 36927, limit: 5 } },
+			{ why: 'chain 36927 lists the devnet hires a seller follows', params: { since: '0', changedFilters: { chain: 36927, limit: 5 } },
 				check: (j) => ((j?.jobs ?? []).length > 0 ? [] : ['no devnet jobs']) },
 		],
 	},
@@ -192,14 +199,15 @@ const SPEC = {
 	// ── Proof ──
 	'proof.getRoot': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['root', 'anchoredAt', 'chainsCovered'] }, refusals: [], budgetMs: 6000 },
 	'proof.getTxProof': {
-		mode: 'read', key: false, params: () => ({ chainId: 8453, txHash: SAMPLE_TX }), ok: { status: [200, 404, 409], fields: [] },
-		// 409 PROVABLE_GAP: the sample's block (50555567) is older than the headers the producer retains — a permanent answer (_PROOF_HONEST_v1_)
+		mode: 'read', key: false, params: (ids) => ({ chainId: 8453, txHash: ids.baseTx ?? SAMPLE_TX }), ok: { status: [200, 409], fields: [] },
+		// a recent tx (the newest ledger job's): its proof is served or pending; 409 PROVABLE_GAP only if the producer skipped that
+		// very block — a permanent, documented answer (_PROOF_HONEST_v1_), never a wait
 		refusals: [{ why: 'a shortened hash', params: { chainId: 8453, txHash: '0xcb5b…b6cb' }, status: [400] }], budgetMs: 30000,
 		// a pending proof says where its block sits against the verifiable range (never a null range) and when to ask again
-		extra: [{ why: 'a pending proof names its range and state', todo: 'hotfix agent (2026-10-01): /v1/proof/tx pending state',
+		extra: [{ why: 'a pending proof names its range and state',
 			check: (j) => (!j?.pending_proof ? [] : [typeof j.checks?.within_verifiable_range === 'boolean' ? null : 'checks.within_verifiable_range is not a boolean', typeof j.retry_after_seconds === 'number' ? null : 'no retry_after_seconds', j.proof_state ? null : 'no proof_state'].filter(Boolean)) }],
 	},
-	'proof.attestHire': { mode: 'read', key: false, params: () => ({ claim: { txHash: SAMPLE_TX, chainId: 8453 } }), ok: { status: 200, fields: [] }, refusals: [{ why: 'no claim', params: { claim: {} }, status: [400] }], budgetMs: 20000 },
+	'proof.attestHire': { mode: 'read', key: false, params: (ids) => ({ claim: { txHash: ids.baseTx ?? SAMPLE_TX, chainId: 8453 } }), ok: { status: 200, fields: [] }, refusals: [{ why: 'no claim', params: { claim: {} }, status: [400] }], budgetMs: 20000 },
 
 	// ── Settlement ──
 	'settlement.get': { mode: 'read', key: false, params: (ids) => ({ settlementId: ids.settlement }), ok: { status: 200, fields: [] }, refusals: [{ why: 'unknown id', params: { settlementId: ZERO32 }, status: [404] }], budgetMs: 8000 },
