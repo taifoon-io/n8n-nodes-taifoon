@@ -1,0 +1,78 @@
+{
+  "name": "Taifoon — batch judge scores for the coordination layer (TypeSafe/Jev)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger",
+      "name": "Grade a batch",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "jsInput": "run-once",
+        "jsCode": "// Prepare a LARGE batch of items to grade. In production, replace this with a read of the job's\n// invocation set (or a Split In Batches over thousands of items). Each item becomes one REF\n// verdict question against the closed choice vocabulary. The listing's batch_threshold and the\n// REF pins travel with the batch so the coordination layer can decide + record deterministically.\nconst jobId = $json.jobId || 'batch-demo';\nconst threshold = $json.threshold ?? 0.01;      // pass rate the listing declared\nconst minConfidence = $json.minConfidence ?? 0.6;\n// demo items; swap for the real invocation set\nconst items = ($json.items && Array.isArray($json.items) && $json.items.length)\n  ? $json.items\n  : Array.from({length: 50}, (_,i) => ({ item_id: 'item-'+i, output: 'delivered work sample '+i }));\n// one n8n item per batch item, each carrying the state to judge + the single verdict question\nreturn items.map((it) => ({ json: {\n  jobId, threshold, minConfidence,\n  item_id: it.item_id,\n  state: typeof it.output === 'string' ? it.output : JSON.stringify(it.output),\n  questions: [{ id: 'verdict', kind: 'choice', text: 'Was the work delivered as specified?',\n    options: 'delivered_as_specified, delivered_with_defects, not_delivered, cannot_determine' }]\n}}));"
+      },
+      "id": "build",
+      "name": "Build the batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "operation": "ask",
+        "connection": "direct",
+        "state": "={{ $json.state }}",
+        "questions": "={{ { question: $json.questions } }}"
+      },
+      "id": "ask",
+      "name": "Ask Jev (direct key)",
+      "type": "n8n-nodes-typesafe.taifoonTypeSafe",
+      "typeVersion": 1,
+      "position": [640, 300],
+      "credentials": { "taifoonTypeSafeApi": { "id": "TYPESAFE_KEY", "name": "TypeSafe API" } },
+      "notes": "connection=direct uses OUR own key for volume; the free trial is 3 calls only. Per item it returns the FULL calibrated distribution (probabilities + confidence) — the batch grader keeps all of it."
+    },
+    {
+      "parameters": {
+        "jsInput": "all-items",
+        "jsCode": "// Grade + aggregate: keep each item's FULL distribution (the recovered Jev power), decide the\n// batch against the threshold, and shape the outcome for the coordination layer to record. This\n// mirrors the verdict crate's batch::grade_item + aggregate — do the same offline-recomputable math.\nconst rows = $input.all().map(i => i.json);\nconst threshold = rows[0]?.threshold ?? 0.01;\nconst jobId = rows[0]?.jobId ?? 'batch';\nconst minConf = rows[0]?.minConfidence ?? 0.6;\nlet conformant=0, nonconformant=0, nograde=0; const items=[];\nfor (const r of rows) {\n  // the typesafe node returns answers on the item; find the verdict answer + its distribution\n  const a = (r.answers || []).find(x => x.id === 'verdict') || r;\n  const dist = a.probabilities || {};\n  const conf = a.confidence ?? 0;\n  let choice = (a.value || 'cannot_determine');\n  if (conf < minConf) choice = 'cannot_determine';\n  let verdict;\n  if (choice === 'delivered_as_specified') { verdict='Conformant'; conformant++; }\n  else if (choice === 'delivered_with_defects' || choice === 'not_delivered') { verdict='NonConformant'; nonconformant++; }\n  else { verdict='NoGrade'; nograde++; }\n  items.push({ item_id: r.item_id, choice, verdict, confidence: conf, distribution: dist });\n}\nconst graded = conformant + nonconformant;\nconst failFraction = graded === 0 ? 1 : nonconformant/graded;\nconst batchVerdict = graded === 0 ? 'NoGrade' : (failFraction <= threshold ? 'Conformant' : 'NonConformant');\nreturn [{ json: { jobId, mode: 'Calibrated', total: items.length, conformant, nonconformant, nograde,\n  failFraction, threshold, verdict: batchVerdict, items } }];"
+      },
+      "id": "aggregate",
+      "name": "Grade + aggregate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.taifoon.io/v1/judge/batch",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "taifoonRelayerApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "record",
+      "name": "Record the batch to the coordination layer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300],
+      "credentials": { "taifoonRelayerApi": { "id": "tfnrelayerkey001", "name": "Taifoon Relayer Key (hire workflow)" } },
+      "notes": "Records the batch outcome (verdict + counts + every item's distribution = the vote vector) so the layer settles the ERC-8183 batch job and it enters the seller's record. Writing needs the relayer key: the Taifoon Relayer API credential sends X-API-Key, and the layer answers 401 without it."
+    }
+  ],
+  "connections": {
+    "Grade a batch": { "main": [[{ "node": "Build the batch", "type": "main", "index": 0 }]] },
+    "Build the batch": { "main": [[{ "node": "Ask Jev (direct key)", "type": "main", "index": 0 }]] },
+    "Ask Jev (direct key)": { "main": [[{ "node": "Grade + aggregate", "type": "main", "index": 0 }]] },
+    "Grade + aggregate": { "main": [[{ "node": "Record the batch to the coordination layer", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateId": "taifoon-batch-judge" }
+}

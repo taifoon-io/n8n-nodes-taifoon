@@ -1,0 +1,269 @@
+{
+  "name": "Taifoon \u2014 an on-chain client hires this n8n agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "taifoon-hire",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "on-chain-hire",
+      "name": "On-chain hire",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -700,
+        300
+      ],
+      "webhookId": "taifoon-hire",
+      "notes": "Receives the hire payload: jobId, chain, client, provider, task, last_tx, nonce.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "agent",
+        "operation": "getReputation",
+        "address": "={{ $json.body.client }}"
+      },
+      "id": "check-the-client",
+      "name": "Check the client",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        300
+      ],
+      "notes": "Counts from the public job log. Not a score.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.known }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "client-known?",
+      "name": "Client known?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -300,
+        300
+      ],
+      "notes": "The reputation gate. Counts from the public job log, not a score. Tighten this before taking real money: require completed jobs, spend, or third-party checks.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "result",
+              "value": "=Task received: {{ $('On-chain hire').item.json.body.task }} \u2014 replace this node with your AI agent or any workflow that produces the result.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "do-the-job",
+      "name": "Do the job",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -100,
+        200
+      ],
+      "notes": "REPLACE with your agent. Whatever it outputs as `result` is what gets sealed.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "proof",
+        "operation": "getTxProof",
+        "chainId": "={{ Number($('On-chain hire').item.json.body.chain) }}",
+        "txHash": "={{ $('On-chain hire').item.json.body.last_tx }}"
+      },
+      "id": "prove-the-job",
+      "name": "Prove the job",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        100,
+        200
+      ],
+      "notes": "Checks the job's own transaction is inside the root and that the proof binds ITS block hash. The relayer re-verifies this; doing it here fails fast.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "operation": "submit",
+        "jobId": "={{ $('On-chain hire').item.json.body.jobId }}",
+        "nonce": "={{ $('On-chain hire').item.json.body.nonce }}",
+        "chain": "={{ $('On-chain hire').item.json.body.chain }}",
+        "provider": "={{ $('On-chain hire').item.json.body.provider }}",
+        "result": "={{ $('Do the job').item.json.result }}",
+        "result_uri": "",
+        "proofTx": "={{ $('On-chain hire').item.json.body.last_tx }}"
+      },
+      "id": "hand-in-the-work",
+      "name": "Hand in the work",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        300,
+        200
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "taifoon-relayer",
+          "name": "Taifoon Relayer API"
+        }
+      },
+      "notes": "Idempotent on jobId + nonce. `write` in the response says which of three things happened \u2014 a hosted vault will sign, you must sign, or there was nothing to write.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: \"accepted\", phase: $json.phase, write: $json.write, settlement_tx: $json.settlement_tx, poll: $json.poll ?? null }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "accepted",
+      "name": "Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        500,
+        200
+      ],
+      "notes": "Responds 200 with the relayer's phase, the write outcome (signed / unsigned / recorded) and any poll URL. accepted never means a transaction exists on its own.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: \"rejected\", reason: \"client is unknown to the public job log\" }) }}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "rejected",
+      "name": "Rejected",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -100,
+        420
+      ],
+      "notes": "Responds 403 when the reputation gate declines an unknown client. The indexer should not retry a 403 \u2014 it is an answer, not a failure.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "On-chain hire": {
+      "main": [
+        [
+          {
+            "node": "Check the client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check the client": {
+      "main": [
+        [
+          {
+            "node": "Client known?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client known?": {
+      "main": [
+        [
+          {
+            "node": "Do the job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Do the job": {
+      "main": [
+        [
+          {
+            "node": "Prove the job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prove the job": {
+      "main": [
+        [
+          {
+            "node": "Hand in the work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hand in the work": {
+      "main": [
+        [
+          {
+            "node": "Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Webhook \u2192 reputation gate \u2192 your agent \u2192 prove \u2192 hand in to the relayer. Replace \"Do the job\" with your agent."
+  }
+}

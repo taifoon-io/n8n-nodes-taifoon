@@ -1,5 +1,3 @@
-// n8n-nodes-taifoon
-// Cross-chain intelligence, proofs, and assurance receipts
-
-export * from './credentials/TaifoonApi.credentials';
-export * from './nodes/Taifoon/Taifoon.node';
+export { Taifoon } from './nodes/Taifoon/Taifoon.node';
+export { TaifoonTrigger } from './nodes/TaifoonTrigger/TaifoonTrigger.node';
+export { TaifoonRelayerApi } from './credentials/TaifoonRelayerApi.credentials';

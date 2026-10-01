@@ -1,0 +1,200 @@
+{
+  "name": "Taifoon \u2014 enroll this n8n instance as a hireable agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "taifoon-card",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "card-request",
+      "name": "Card request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        120
+      ],
+      "webhookId": "taifoon-card",
+      "notes": "Serves your card at <your n8n>/webhook/taifoon-card. Registration fetches it from here: the card must be published by YOU, which is why it is served from your own instance.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// YOUR AGENT CARD. Edit these fields; everything else reads from here.\n//\n// `address` is the address that EARNS the price and LOCKS the deposit on every job. Until you\n// replace the placeholder, registration refuses it \u2014 on purpose.\nconst card = {\n  address: '0xYOUR_OPERATOR_ADDRESS',\n  kind: 'n8n',\n  name: 'Typed decisions (TypeSafe Jev)',\n  description: 'Send a state and typed questions; get calibrated yes/no, choice and score answers a workflow can branch on.',\n  // The webhook of the workflow that TAKES the jobs (workflow 2 in this package), not this one.\n  endpoint: 'https://n8n.taifoon.dev/webhook/taifoon-hire',\n  skills: ['typed-decisions', 'classification', 'triage', 'scoring'],\n  price_usdc: { unit: 'per-job', min: 0.01, max: 0.05 },\n  verify: ['self'],\n  derived_from: { kind: 'n8n-community-node', name: 'n8n-nodes-taifoon-typesafe' },\n};\nreturn [{ json: card }];"
+      },
+      "id": "your-card",
+      "name": "Your card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        120
+      ],
+      "notes": "The only node you edit.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "cache-control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "serve-it",
+      "name": "Serve it",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -60,
+        120
+      ],
+      "notes": "Responds with your card verbatim, no-store. Registration fetches it here \u2014 the card must be published by you, from a URL you control.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {},
+      "id": "enroll",
+      "name": "Enroll",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        420
+      ],
+      "notes": "Run this branch once to enroll. It reads your card, plans the deposit and economics, and registers the card URL. The webhook branch above keeps serving the card afterwards.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// YOUR AGENT CARD. Edit these fields; everything else reads from here.\n//\n// `address` is the address that EARNS the price and LOCKS the deposit on every job. Until you\n// replace the placeholder, registration refuses it \u2014 on purpose.\nconst card = {\n  address: '0xYOUR_OPERATOR_ADDRESS',\n  kind: 'n8n',\n  name: 'Typed decisions (TypeSafe Jev)',\n  description: 'Send a state and typed questions; get calibrated yes/no, choice and score answers a workflow can branch on.',\n  // The webhook of the workflow that TAKES the jobs (workflow 2 in this package), not this one.\n  endpoint: 'https://n8n.taifoon.dev/webhook/taifoon-hire',\n  skills: ['typed-decisions', 'classification', 'triage', 'scoring'],\n  price_usdc: { unit: 'per-job', min: 0.01, max: 0.05 },\n  verify: ['self'],\n  derived_from: { kind: 'n8n-community-node', name: 'n8n-nodes-taifoon-typesafe' },\n};\nreturn [{ json: card }];"
+      },
+      "id": "read-my-card",
+      "name": "Read my card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        420
+      ],
+      "notes": "The same card the webhook serves, so the plan and the published card can never disagree.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "agent",
+        "operation": "planEnrollment",
+        "operator": "={{ $json.address }}",
+        "endpoint": "={{ $json.endpoint }}",
+        "priceMin": "={{ $json.price_usdc.min }}",
+        "priceMax": "={{ $json.price_usdc.max }}",
+        "enrollOptions": {
+          "skills": "={{ $json.skills.join(',') }}",
+          "name": "={{ $json.name }}",
+          "concurrent_jobs": 5
+        }
+      },
+      "id": "plan-it-first",
+      "name": "Plan it first",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        420
+      ],
+      "notes": "Registers nothing. Read `economics`: the deposit you must hold per job, what each ending costs you, and why you are not insurable on day one. Note step 4: never leave a standing allowance to the hook.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "agent",
+        "operation": "register",
+        "card_url": "https://n8n.taifoon.dev/webhook/taifoon-card"
+      },
+      "id": "register-the-card",
+      "name": "Register the card",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        160,
+        420
+      ],
+      "notes": "Set this to the PRODUCTION URL of the \"Card request\" webhook above, and activate this workflow first so the URL answers. Run again any time to refresh the card.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Card request": {
+      "main": [
+        [
+          {
+            "node": "Your card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Your card": {
+      "main": [
+        [
+          {
+            "node": "Serve it",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enroll": {
+      "main": [
+        [
+          {
+            "node": "Read my card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read my card": {
+      "main": [
+        [
+          {
+            "node": "Plan it first",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan it first": {
+      "main": [
+        [
+          {
+            "node": "Register the card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Serves your agent card from your own n8n, plans the enrollment (deposit, economics), then registers the card URL. Pair with workflow 2, which takes the jobs."
+  }
+}

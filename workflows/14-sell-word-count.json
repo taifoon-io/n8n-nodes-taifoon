@@ -1,0 +1,212 @@
+{
+  "id": "tfnsellwordcnt01",
+  "name": "Taifoon — sell chat.word_count (count the words of a text) from n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "tfn-word-count-card",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "card",
+      "name": "Card",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        60
+      ],
+      "webhookId": "tfn-word-count-card",
+      "notes": "in: — → out: agent.json · GET: a buyer or the layer asks who this seller is (Register Seller takes this URL)",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── set these two, then Register Seller → paste the challenge nonce here → Verify Seller ──\nconst TAIFOON_LISTING = ''; // the challenge nonce Account → Register Seller returned (empty until you claim)\nconst ADDRESS = '0x21399bEeec163BD3E44CC17CEaA49f3b469D2e99'; // your payout address (a label for the seller of record; nothing is signed with it)\n// The seller's card (GET), ERC-8004 registration-v1 shaped, kind n8n: the Hire webhook is the endpoint. Replace the host\n// with your own n8n instance's webhook URL.\nconst endpoint = 'https://n8n.taifoon.dev/webhook/tfn-word-count';\nreturn [{ json: { card: {\n  type: 'https://eips.ethereum.org/EIPS/eip-8004#registration-v1',\n  name: \"n8n word counter\",\n  description: \"An n8n workflow that counts the words of a text. Hire it with a task of class chat.word_count: Count the words in: \\\"…\\\" (reply with the number of words). It answers { words } and echoes the offer nonce.\",\n  kind: 'n8n', address: ADDRESS, endpoint,\n  services: [{ name: 'webhook', endpoint, version: 'taifoon-offer-v1' }],\n  skills: ['word-count', 'text', 'count', 'n8n'],\n  classes: ['chat.word_count'],\n  price_usdc: 0.05,\n  verify: ['self'],\n  taifoon_listing: TAIFOON_LISTING,\n  supportedTrust: ['reputation'],\n} } }];"
+      },
+      "id": "card-json",
+      "name": "Card JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        60
+      ],
+      "notes": "in: agent.json → out: agent.json · the card: kind n8n, class chat.word_count, price 0.05, the Hire webhook. Set TAIFOON_LISTING (the claim nonce) and ADDRESS (your payout address; the placeholder is Taifoon's own seller) at the top",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.card) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-card",
+      "name": "Respond with the card",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        60
+      ],
+      "notes": "in: agent.json → out: agent.json · answer with the card JSON; Verify Seller reads the nonce here",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tfn-word-count",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "hire",
+      "name": "Hire",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "tfn-word-count",
+      "notes": "in: — → out: hire.json · the §2 offer (POST), or the harvester's liveness probe",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ADDRESS must equal the card's address: the payout address you listed with (replace the placeholder in BOTH Code nodes).\nconst ADDRESS = '0x21399bEeec163BD3E44CC17CEaA49f3b469D2e99';\n// The §2 offer as the Hire webhook received it: { jobId, chain, client, provider, evaluator, verify, phase, state, budget_usdc,\n// task, required_skills, reply_to, nonce } (a class probe also carries class_probe: true).\nconst body = ($('Hire').first().json || {}).body || {};\nconst base = { nonce: body.nonce ?? null, provider: ADDRESS.toLowerCase() };\n// The reply is ALWAYS { nonce, provider, status: delivered | refused, result }, answered 200.\nconst reply = (status, result) => [{ json: { ...base, reply: { ...base, status, result } } }];\nconst refuse = (error) => reply('refused', { error });\n// The harvester's liveness probe ({ kind: \"taifoon.probe.v1\", probe: true, … }) does no work: READY. A class probe does the work.\nif (body.class_probe !== true && (body.probe === true || body.kind === 'taifoon.probe.v1')) return reply('delivered', 'READY');\nconst task = typeof body.task === 'string' ? body.task : '';\n// Task: chat.word_count: Count the words in: \"<text>\" (reply with the number of words)\nconst START = 'Count the words in: \"', END = '\" (reply';\nconst i = task.indexOf(START), k = task.lastIndexOf(END);\nif (i < 0 || k < i + START.length) return refuse('the task carries no text; expected: Count the words in: \"<text>\" (reply with the number of words)');\nconst text = task.slice(i + START.length, k);\n// Words are runs of non-whitespace; an empty or blank text has 0. The result carries this one number and nothing else.\nconst words = text.trim().split(/\\s+/).filter(Boolean).length;\nreturn reply('delivered', { words });"
+      },
+      "id": "count",
+      "name": "Count",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "in: hire.json → out: delivery.json · the text between the first 'Count the words in: \"' and the last '\" (reply', words = runs of non-whitespace: { words }",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.reply || { nonce: null, provider: null, status: 'refused', result: { error: 'the seller could not read the offer' } }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        300
+      ],
+      "notes": "in: delivery.json → out: delivery.json · always 200 JSON: the reply (delivered or refused)",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Card": {
+      "main": [
+        [
+          {
+            "node": "Card JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Card JSON": {
+      "main": [
+        [
+          {
+            "node": "Respond with the card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hire": {
+      "main": [
+        [
+          {
+            "node": "Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "A seller of class chat.word_count: the Card webhook serves the card, the Hire webhook answers with the number of words in the task's text. List it with Account → Register Seller, put the nonce in TAIFOON_LISTING, then Account → Verify Seller.",
+    "taifoon": {
+      "contract": "https://www.taifoon.io/schemas/coordination/v1/",
+      "class": "chat.word_count",
+      "webhooks": {
+        "card": {
+          "method": "GET",
+          "path": "tfn-word-count-card"
+        },
+        "hire": {
+          "method": "POST",
+          "path": "tfn-word-count"
+        }
+      },
+      "steps": {
+        "Card": {
+          "in": null,
+          "out": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "does": "GET: a buyer or the layer asks who this seller is (Register Seller takes this URL)"
+        },
+        "Card JSON": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "does": "the card: kind n8n, class chat.word_count, price 0.05, the Hire webhook. Set TAIFOON_LISTING (the claim nonce) and ADDRESS (your payout address; the placeholder is Taifoon's own seller) at the top"
+        },
+        "Respond with the card": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "does": "answer with the card JSON; Verify Seller reads the nonce here"
+        },
+        "Hire": {
+          "in": null,
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "the §2 offer (POST), or the harvester's liveness probe"
+        },
+        "Count": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/delivery.json",
+          "does": "the text between the first 'Count the words in: \"' and the last '\" (reply', words = runs of non-whitespace: { words }"
+        },
+        "Respond": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/delivery.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/delivery.json",
+          "does": "always 200 JSON: the reply (delivered or refused)"
+        }
+      }
+    }
+  }
+}

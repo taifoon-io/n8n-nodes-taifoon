@@ -1,0 +1,325 @@
+{
+  "id": "tfnselldigest001",
+  "name": "Taifoon — sell mcp.digest (sha256 of a UTF-8 text) from n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "tfn-digest-card",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "card",
+      "name": "Card",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        60
+      ],
+      "webhookId": "tfn-digest-card",
+      "notes": "in: — → out: agent.json · GET: a buyer or the layer asks who this seller is (Register Seller takes this URL)",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── set these two, then Register Seller → paste the challenge nonce here → Verify Seller ──\nconst TAIFOON_LISTING = ''; // the challenge nonce Account → Register Seller returned (empty until you claim)\nconst ADDRESS = '0x21399bEeec163BD3E44CC17CEaA49f3b469D2e99'; // your payout address (a label for the seller of record; nothing is signed with it)\n// The seller's card (GET), ERC-8004 registration-v1 shaped, kind n8n: the Hire webhook is the endpoint. Replace the host\n// with your own n8n instance's webhook URL.\nconst endpoint = 'https://n8n.taifoon.dev/webhook/tfn-digest';\nreturn [{ json: { card: {\n  type: 'https://eips.ethereum.org/EIPS/eip-8004#registration-v1',\n  name: \"n8n sha256 digest\",\n  description: \"An n8n workflow that returns the sha256 digest (hex) of a UTF-8 text, computed by n8n's Crypto node. Hire it with a task of class mcp.digest: return the sha256 digest (hex) of the UTF-8 text \\\"…\\\". It answers { algorithm, encoding, digest, text } and echoes the offer nonce. keccak256 is refused.\",\n  kind: 'n8n', address: ADDRESS, endpoint,\n  services: [{ name: 'webhook', endpoint, version: 'taifoon-offer-v1' }],\n  skills: ['sha256', 'digest', 'hash', 'n8n'],\n  classes: ['mcp.digest'],\n  price_usdc: 0.05,\n  verify: ['self'],\n  taifoon_listing: TAIFOON_LISTING,\n  supportedTrust: ['reputation'],\n  only: { algorithm: ['sha256'] },\n} } }];"
+      },
+      "id": "card-json",
+      "name": "Card JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        60
+      ],
+      "notes": "in: agent.json → out: agent.json · the card: kind n8n, class mcp.digest, price 0.05, the Hire webhook. Set TAIFOON_LISTING (the claim nonce) and ADDRESS (your payout address; the placeholder is Taifoon's own seller) at the top",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.card) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-card",
+      "name": "Respond with the card",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        60
+      ],
+      "notes": "in: agent.json → out: agent.json · answer with the card JSON; Verify Seller reads the nonce here",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tfn-digest",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "hire",
+      "name": "Hire",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "tfn-digest",
+      "notes": "in: — → out: hire.json · the §2 offer (POST), or the harvester's liveness probe",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ADDRESS must equal the card's address: the payout address you listed with (replace the placeholder in BOTH Code nodes).\nconst ADDRESS = '0x21399bEeec163BD3E44CC17CEaA49f3b469D2e99';\n// The §2 offer as the Hire webhook received it: { jobId, chain, client, provider, evaluator, verify, phase, state, budget_usdc,\n// task, required_skills, reply_to, nonce } (a class probe also carries class_probe: true).\nconst body = ($('Hire').first().json || {}).body || {};\nconst base = { nonce: body.nonce ?? null, provider: ADDRESS.toLowerCase() };\n// The reply is ALWAYS { nonce, provider, status: delivered | refused, result }, answered 200.\nconst reply = (status, result) => [{ json: { ...base, reply: { ...base, status, result } } }];\nconst refuse = (error) => reply('refused', { error });\n// The harvester's liveness probe ({ kind: \"taifoon.probe.v1\", probe: true, … }) does no work: READY. A class probe does the work.\nif (body.class_probe !== true && (body.probe === true || body.kind === 'taifoon.probe.v1')) return reply('delivered', 'READY');\nconst task = typeof body.task === 'string' ? body.task : '';\n// Task: mcp.digest: return the sha256 digest (hex) of the UTF-8 text \"<text>\". The text runs to the LAST quote.\nconst m = /\\b(sha-?256|keccak-?256)\\b[^\"]*?\\bof the UTF-8 text \"([\\s\\S]*)\"/i.exec(task);\nif (!m) return refuse('the task names no digest of a UTF-8 text; expected: return the sha256 digest (hex) of the UTF-8 text \"<text>\".');\nconst algorithm = m[1].toLowerCase().replace('-', '');\nif (algorithm !== 'sha256') return refuse('only sha256 is served here, not ' + algorithm);\n// The hash itself is the Crypto node's (SHA256, hex): Code-node builtins such as crypto are blocked on n8n instances.\nreturn [{ json: { ...base, hash: true, algorithm, text: m[2] } }];"
+      },
+      "id": "parse",
+      "name": "Parse offer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "in: hire.json → out: hire.json · read the task: algorithm and the text (to the last quote); only sha256 is served, else refused",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.hash === true }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "hash-it",
+      "name": "Hash it?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        440,
+        300
+      ],
+      "notes": "in: hire.json → out: hire.json · a parsed sha256 task goes to the Crypto node; a refusal or the liveness probe goes straight to the reply",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "value": "={{ $json.text }}",
+        "dataPropertyName": "digest",
+        "encoding": "hex"
+      },
+      "id": "sha256",
+      "name": "SHA256",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        660,
+        220
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "in: hire.json → out: hire.json · n8n's core Crypto node: SHA256 of the UTF-8 text, hex (not a Code node: builtins are blocked)",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// The reply. A refusal or READY came ready-made from Parse offer; otherwise the Crypto node's digest.\nconst p = $('Parse offer').first().json;\nif (p.reply) return [{ json: { reply: p.reply } }];\nconst base = { nonce: p.nonce ?? null, provider: p.provider };\nconst digest = typeof $json.digest === 'string' ? $json.digest.toLowerCase() : '';\nif (!/^[0-9a-f]{64}$/.test(digest)) return [{ json: { reply: { ...base, status: 'refused', result: { error: 'the digest could not be computed' } } } }];\nreturn [{ json: { reply: { ...base, status: 'delivered', result: { algorithm: 'sha256', encoding: 'hex', digest, text: p.text } } } }];"
+      },
+      "id": "reply",
+      "name": "Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "in: hire.json → out: delivery.json · { nonce, provider, status, result: { algorithm sha256, encoding hex, digest, text } }",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.reply || { nonce: null, provider: null, status: 'refused', result: { error: 'the seller could not read the offer' } }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        300
+      ],
+      "notes": "in: delivery.json → out: delivery.json · always 200 JSON: the reply (delivered or refused)",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Card": {
+      "main": [
+        [
+          {
+            "node": "Card JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Card JSON": {
+      "main": [
+        [
+          {
+            "node": "Respond with the card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hire": {
+      "main": [
+        [
+          {
+            "node": "Parse offer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse offer": {
+      "main": [
+        [
+          {
+            "node": "Hash it?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hash it?": {
+      "main": [
+        [
+          {
+            "node": "SHA256",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SHA256": {
+      "main": [
+        [
+          {
+            "node": "Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "A seller of class mcp.digest: the Card webhook serves the card, the Hire webhook answers the offer with the sha256 digest (hex) of the task's UTF-8 text. List it with Account → Register Seller (the card URL), put the nonce in TAIFOON_LISTING, then Account → Verify Seller.",
+    "taifoon": {
+      "contract": "https://www.taifoon.io/schemas/coordination/v1/",
+      "class": "mcp.digest",
+      "webhooks": {
+        "card": {
+          "method": "GET",
+          "path": "tfn-digest-card"
+        },
+        "hire": {
+          "method": "POST",
+          "path": "tfn-digest"
+        }
+      },
+      "steps": {
+        "Card": {
+          "in": null,
+          "out": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "does": "GET: a buyer or the layer asks who this seller is (Register Seller takes this URL)"
+        },
+        "Card JSON": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "does": "the card: kind n8n, class mcp.digest, price 0.05, the Hire webhook. Set TAIFOON_LISTING (the claim nonce) and ADDRESS (your payout address; the placeholder is Taifoon's own seller) at the top"
+        },
+        "Respond with the card": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "does": "answer with the card JSON; Verify Seller reads the nonce here"
+        },
+        "Hire": {
+          "in": null,
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "the §2 offer (POST), or the harvester's liveness probe"
+        },
+        "Parse offer": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "read the task: algorithm and the text (to the last quote); only sha256 is served, else refused"
+        },
+        "Hash it?": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "a parsed sha256 task goes to the Crypto node; a refusal or the liveness probe goes straight to the reply"
+        },
+        "SHA256": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "n8n's core Crypto node: SHA256 of the UTF-8 text, hex (not a Code node: builtins are blocked)"
+        },
+        "Reply": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/delivery.json",
+          "does": "{ nonce, provider, status, result: { algorithm sha256, encoding hex, digest, text } }"
+        },
+        "Respond": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/delivery.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/delivery.json",
+          "does": "always 200 JSON: the reply (delivered or refused)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "id": "tfnfirstrun00001",
+  "name": "Taifoon — first run (get a free key, post a sample demand)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "notes": "in: — → out: — · first run, no credential yet",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "w0",
+              "name": "wallet_address",
+              "value": "0x0000000000000000000000000000000000000000",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wallet",
+      "name": "Wallet",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "in: — → out: — · REPLACE the placeholder with your wallet address: a label for your tenant, nothing is signed with it",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "operation": "register",
+        "walletAddress": "={{ $json.wallet_address }}",
+        "agentLabel": "n8n:first-run"
+      },
+      "id": "register",
+      "name": "Register Free Key",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        440,
+        300
+      ],
+      "notes": "in: — → out: — · Taifoon Account → Register Free Key: POST /v1/register (X-Taifoon-Channel: n8n) → api_key + keys { live, sandbox }, shown ONCE; 3 a day per IP",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://coord.taifoon.dev/v1/demands",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $json.keys.sandbox }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"need\": \"the sha256 digest of the text \\\"my first Taifoon demand\\\"\", \"buyer_label\": \"n8n:first-run\"}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "postsample",
+      "name": "Post sample demand",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ],
+      "notes": "in: hire.json → out: hire.json · POST /v1/demands on the new sandbox key (devnet): 201 { demand { id dm_…, state open } }",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// What to do next. It returns the demand and where to read it, and NEVER the keys: they are in Register Free Key's output\n// only (shown once). Copy api_key from there into a Taifoon Relayer API credential, then use template 10.\nconst r = $json || {};\nconst d = r.demand || {};\nconst id = d.id || null;\nreturn [{ json: {\n  demand: id, state: d.state || null, class: d.class || null,\n  read: id ? `https://coord.taifoon.dev/v1/demands/${id}` : null,\n  explorer: id ? `https://www.taifoon.io/scan/jobs/${id}` : null,\n  error: id ? null : (r.error || r.message || 'the sample demand was not accepted'),\n  next_steps: [\n    'Open the Register Free Key node output and copy api_key (it is shown once and is not repeated here).',\n    'In n8n: Credentials → New → Taifoon Relayer API → paste it as API Key → Save.',\n    'Import 10-buy-through-taifoon.json, attach that credential to the two Demand nodes, press Execute.',\n    'Delete this execution (or keep \"save successful executions\" off) so the keys do not stay in execution data.',\n  ],\n} }];"
+      },
+      "id": "nextsteps",
+      "name": "Next steps",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ],
+      "notes": "in: hire.json → out: — · the demand ID, where to read it, and what to do next; the keys are NOT repeated here",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Wallet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wallet": {
+      "main": [
+        [
+          {
+            "node": "Register Free Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Free Key": {
+      "main": [
+        [
+          {
+            "node": "Post sample demand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post sample demand": {
+      "main": [
+        [
+          {
+            "node": "Next steps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false
+  },
+  "meta": {
+    "description": "First run with no credential: set your wallet address (a label), mint a free key, post a sample demand on its sandbox key, and read what to do next. The key is shown once in Register Free Key's output: save it as a Taifoon Relayer API credential, then use 10-buy-through-taifoon.json. Successful executions are not saved, so the key does not stay in execution data.",
+    "taifoon": {
+      "contract": "https://www.taifoon.io/schemas/coordination/v1/",
+      "steps": {
+        "Start": {
+          "in": null,
+          "out": null,
+          "does": "first run, no credential yet"
+        },
+        "Wallet": {
+          "in": null,
+          "out": null,
+          "does": "REPLACE the placeholder with your wallet address: a label for your tenant, nothing is signed with it"
+        },
+        "Register Free Key": {
+          "in": null,
+          "out": null,
+          "does": "Taifoon Account → Register Free Key: POST /v1/register (X-Taifoon-Channel: n8n) → api_key + keys { live, sandbox }, shown ONCE; 3 a day per IP"
+        },
+        "Post sample demand": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "POST /v1/demands on the new sandbox key (devnet): 201 { demand { id dm_…, state open } }"
+        },
+        "Next steps": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": null,
+          "does": "the demand ID, where to read it, and what to do next; the keys are NOT repeated here"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "name": "Taifoon \u2014 watch the chain for completed jobs",
+  "nodes": [
+    {
+      "parameters": {
+        "event": "done",
+        "watch": "all",
+        "options": {}
+      },
+      "id": "when-a-job-completes",
+      "name": "When a job completes",
+      "type": "n8n-nodes-taifoon.taifoonTrigger",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        300
+      ],
+      "notes": "Polls /v1/jobs with a resumable cursor. Emits once per (job, status), so a completion is never swallowed by an earlier \"open\".",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "proof",
+        "operation": "attestHire",
+        "claim": {
+          "agentAddress": "={{ $json.seller.agentId }}",
+          "chainId": "={{ $json.chainId }}"
+        }
+      },
+      "id": "check-it-against-the-chain",
+      "name": "Check it against the chain",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        300
+      ],
+      "notes": "Never forward a completion on the strength of a status field. Returns REAL, FABRICATED or UNVERIFIED.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "jobId",
+              "value": "={{ $('When a job completes').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "r2",
+              "name": "seller",
+              "value": "={{ $('When a job completes').item.json.seller.agentId }}",
+              "type": "string"
+            },
+            {
+              "id": "r3",
+              "name": "ending",
+              "value": "={{ $('When a job completes').item.json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "r4",
+              "name": "verdict",
+              "value": "={{ $json.verdict }}",
+              "type": "string"
+            },
+            {
+              "id": "r5",
+              "name": "safeToAct",
+              "value": "={{ $json.verdict === 'REAL' }}",
+              "type": "boolean"
+            },
+            {
+              "id": "r6",
+              "name": "summary",
+              "value": "={{ $json.summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "report",
+      "name": "Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -100,
+        300
+      ],
+      "notes": "What to forward: the job, its ending, and safeToAct \u2014 true only when the chain corroborated the completion. Never forward a completion on the strength of a status field alone.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "When a job completes": {
+      "main": [
+        [
+          {
+            "node": "Check it against the chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check it against the chain": {
+      "main": [
+        [
+          {
+            "node": "Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Trigger on completed jobs, verify each against the chain, and report only what the chain corroborates."
+  }
+}

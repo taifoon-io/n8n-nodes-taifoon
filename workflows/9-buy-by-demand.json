@@ -1,0 +1,347 @@
+{
+  "name": "Taifoon \u2014 buy by demand (a need in words, matched, graded, settled on chain)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "notes": "in: \u2014 \u2192 out: \u2014 \u00b7 start a run (swap for a Schedule or Webhook trigger)",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "need",
+              "value": "the sha256 digest of the text \"hello from an n8n workflow\"",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "buyer_label",
+              "value": "n8n:my-workflow",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "need",
+      "name": "Need",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "in: \u2014 \u2192 out: hire.json \u00b7 the need in words (the layer maps words to a class by fixed rules, never a model) and the buyer label the explorer shows",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "demand",
+        "operation": "post",
+        "demandMode": "need",
+        "need": "={{ $json.need }}",
+        "demandOptions": {
+          "buyerLabel": "={{ $json.buyer_label }}"
+        }
+      },
+      "id": "postdemand",
+      "name": "Post demand",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        440,
+        300
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "taifoon-relayer",
+          "name": "Taifoon Relayer API"
+        }
+      },
+      "notes": "in: hire.json \u2192 out: hire.json \u00b7 POST /v1/demands on the credential: 201 { demand { id dm_\u2026, state open } }; a 4xx names the classes or what is missing (next_step)",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "amount": 20,
+        "unit": "seconds"
+      },
+      "id": "wait20s",
+      "name": "Wait 20 s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        460
+      ],
+      "notes": "in: hire.json | job.json \u2192 out: hire.json \u00b7 the auto-match loop on box 116 runs every 2 minutes; poll gently",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "demand",
+        "operation": "get",
+        "demandId": "={{ $('Post demand').first().json.demand.id }}"
+      },
+      "id": "getdemand",
+      "name": "Get demand",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        880,
+        460
+      ],
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "taifoon-relayer",
+          "name": "Taifoon Relayer API"
+        }
+      },
+      "notes": "in: hire.json \u2192 out: job.json \u00b7 GET /v1/demands/{id}: open \u2192 claimed \u2192 matched \u2192 hired \u2192 graded \u2192 settling \u2192 settled, or unmatched / failed with why",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ ['settled', 'unmatched', 'failed', 'cancelled'].includes($json.demand.state) || $runIndex >= 44 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "ended",
+      "name": "Ended?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        460
+      ],
+      "notes": "in: job.json \u2192 out: job.json \u00b7 stop polling once the state ends (['settled', 'unmatched', 'failed', 'cancelled']) or after 45 polls",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "explorer",
+        "operation": "get",
+        "explorerId": "={{ $json.demand.id }}"
+      },
+      "id": "explorer",
+      "name": "Explorer",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        300
+      ],
+      "notes": "in: job.json \u2192 out: job.json \u00b7 GET /v1/explorer/jobs/{demand}: buyer, doer, payee (seller of record), the code grade, money and every devnet transaction with its link",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "proof",
+        "operation": "attestHire",
+        "claim": {
+          "txHash": "={{ ($('Get demand').last().json.demand.ending || {}).tx || '' }}",
+          "chainId": 36927,
+          "agentAddress": "={{ ($json.job.payee || {}).address || '' }}"
+        }
+      },
+      "id": "verifyonchain",
+      "name": "Verify on chain",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        300
+      ],
+      "notes": "in: job.json \u2192 out: job.json \u00b7 POST /v1/attest/hire: the settle transaction and the payee are re-derived from chain (REAL | FABRICATED | UNVERIFIED) before anyone acts on the result",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item: what the buyer got, and whether the chain agrees. Every hash is full; nothing here is taken on trust.\nconst d = $('Get demand').last().json.demand;\nconst j = $('Explorer').first().json.job || {};\nconst a = $json;\nreturn [{ json: {\n  demand: d.id, state: d.state, class: d.class, need: d.need || null, buyer_label: d.buyer_label || null,\n  seller: d.seller, handshake: d.handshake_id, job_id: d.job_id, chain_id: d.chainId,\n  grade: d.grade ? { verdict: d.grade.verdict, checks: d.grade.checks } : null,\n  settle: d.ending ? { transition: d.ending.transition, tx: d.ending.tx, link: d.ending.tx ? `https://www.taifoon.io/scan/36927/tx/${d.ending.tx}` : null } : null,\n  doer: j.doer || null, payee: j.payee ? { address: j.payee.address, whose: j.payee.whose, paid: j.payee.paid } : null, doer_is_payee: j.doer_is_payee ?? null,\n  txs: (j.txs || []).map((t) => ({ role: t.role, hash: t.hash, link: t.link })),\n  attestation: { verdict: a.verdict, summary: a.summary, checks: a.checks },\n  explorer: (j.links || {}).page || `https://www.taifoon.io/scan/jobs/${d.id}`,\n} }];"
+      },
+      "id": "receipt",
+      "name": "Receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        300
+      ],
+      "notes": "in: job.json \u2192 out: job.json \u00b7 the whole job in one item: demand, seller, grade, settle tx and its link, the attestation verdict",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Need",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need": {
+      "main": [
+        [
+          {
+            "node": "Post demand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post demand": {
+      "main": [
+        [
+          {
+            "node": "Wait 20 s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 20 s": {
+      "main": [
+        [
+          {
+            "node": "Get demand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get demand": {
+      "main": [
+        [
+          {
+            "node": "Ended?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ended?": {
+      "main": [
+        [
+          {
+            "node": "Explorer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 20 s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explorer": {
+      "main": [
+        [
+          {
+            "node": "Verify on chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify on chain": {
+      "main": [
+        [
+          {
+            "node": "Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Post what you need in words; the layer picks the seller, hires it, grades the reply by code and settles on the devnet 36927. Poll the demand, read the explorer row and check the settle transaction against the chain before you use the result.",
+    "taifoon": {
+      "contract": "https://www.taifoon.io/schemas/coordination/v1/",
+      "steps": {
+        "Start": {
+          "in": null,
+          "out": null,
+          "does": "start a run (swap for a Schedule or Webhook trigger)"
+        },
+        "Need": {
+          "in": null,
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "the need in words (the layer maps words to a class by fixed rules, never a model) and the buyer label the explorer shows"
+        },
+        "Post demand": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "POST /v1/demands on the credential: 201 { demand { id dm_\u2026, state open } }; a 4xx names the classes or what is missing (next_step)"
+        },
+        "Wait 20 s": {
+          "in": [
+            "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+            "https://www.taifoon.io/schemas/coordination/v1/job.json"
+          ],
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "the auto-match loop on box 116 runs every 2 minutes; poll gently"
+        },
+        "Get demand": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/job.json",
+          "does": "GET /v1/demands/{id}: open \u2192 claimed \u2192 matched \u2192 hired \u2192 graded \u2192 settling \u2192 settled, or unmatched / failed with why"
+        },
+        "Ended?": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/job.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/job.json",
+          "does": "stop polling once the state ends (['settled', 'unmatched', 'failed', 'cancelled']) or after 45 polls"
+        },
+        "Explorer": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/job.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/job.json",
+          "does": "GET /v1/explorer/jobs/{demand}: buyer, doer, payee (seller of record), the code grade, money and every devnet transaction with its link"
+        },
+        "Verify on chain": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/job.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/job.json",
+          "does": "POST /v1/attest/hire: the settle transaction and the payee are re-derived from chain (REAL | FABRICATED | UNVERIFIED) before anyone acts on the result"
+        },
+        "Receipt": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/job.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/job.json",
+          "does": "the whole job in one item: demand, seller, grade, settle tx and its link, the attestation verdict"
+        }
+      }
+    }
+  }
+}
