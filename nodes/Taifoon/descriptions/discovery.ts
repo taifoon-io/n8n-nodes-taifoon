@@ -9,13 +9,6 @@ export const discoveryOperations: INodeProperties[] = [
 		displayOptions: { show: { resource: ['discovery'] } },
 		options: [
 			{
-				name: 'Get Candidates',
-				value: 'getCandidates',
-				action: 'Get candidate contracts',
-				description: 'Contracts seen emitting a standard\'s events that are not in the curated map yet. Evidence to check, never a verified deployment.',
-				routing: { request: { method: 'GET', url: '/harvest', qs: { view: 'candidates' } } },
-			},
-			{
 				name: 'Get Capabilities',
 				value: 'getCapabilities',
 				action: 'Get n8n capabilities',
@@ -30,20 +23,6 @@ export const discoveryOperations: INodeProperties[] = [
 				routing: { request: { method: 'GET', url: '/capabilities/skills' } },
 			},
 			{
-				name: 'Get Coverage',
-				value: 'getCoverage',
-				action: 'Get scan coverage',
-				description: 'Which chains were scanned and which were not, each with its reason',
-				routing: { request: { method: 'GET', url: '/harvest', qs: { view: 'coverage' } } },
-			},
-			{
-				name: 'Get Scan',
-				value: 'getScan',
-				action: 'Get the scan summary',
-				description: 'Protocols, agents and jobs harvested from chain. Agents whose card could not be read are counted with the reason, not dropped.',
-				routing: { request: { method: 'GET', url: '/harvest' } },
-			},
-			{
 				name: 'Get Standards',
 				value: 'getStandards',
 				action: 'Get verified standards deployments',
@@ -54,11 +33,11 @@ export const discoveryOperations: INodeProperties[] = [
 				name: 'Search Capabilities',
 				value: 'searchCapabilities',
 				action: 'Search n8n capabilities',
-				description: 'Search every harvested n8n template and community node by text, kind and skill. None can be hired as they are; each result carries the request that plans enrolling it.',
+				description: 'Search every indexed n8n template and community node by text, kind and skill. None can be hired as they are; each result carries the request that plans enrolling it.',
 				routing: { request: { method: 'GET', url: '/capabilities/search' } },
 			},
 		],
-		default: 'getScan',
+		default: 'getStandards',
 	},
 	{
 		displayName: 'Search Text',

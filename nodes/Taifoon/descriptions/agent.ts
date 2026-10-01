@@ -48,7 +48,7 @@ export const agentOperations: INodeProperties[] = [
 				name: 'Get Wire-Ready',
 				value: 'getWireReady',
 				action: 'List agents that answered on the wire',
-				description: 'Agents the harvester spoke to in their own protocol and that answered (or answered with a priced x402 wall), best trust first. A rank is card presence; the wire is who is home. Stage: listing.',
+				description: 'Agents that answered when the layer called them in their own protocol (or answered with a priced x402 wall), best trust first. A rank is card presence; the wire is who is home. Stage: listing.',
 				routing: { request: { method: 'GET', url: '/registry/agents', qs: { wire: 'ready' } } },
 			},
 			{
@@ -179,7 +179,7 @@ export const agentOperations: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				placeholder: 'n8n-nodes-typesafe',
-				description: 'Derive the card from this harvested community node',
+				description: 'Derive the card from this indexed community node',
 				routing: { send: { type: 'body', property: 'capability', value: '={{ $value ? { kind: "node", name: $value } : undefined }}' } },
 			},
 			{

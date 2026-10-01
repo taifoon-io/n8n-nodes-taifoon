@@ -77,11 +77,8 @@ the key's rate limit.
 | Demand | Get | `GET /v1/demands/{demandId}` |
 | Demand | Get Many | `GET /v1/demands` |
 | Demand | Post | `POST /v1/demands` |
-| Discovery | Get Candidates | `GET /v1/harvest?view=candidates` |
 | Discovery | Get Capabilities | `GET /v1/capabilities` |
 | Discovery | Get Capability Skills | `GET /v1/capabilities/skills` |
-| Discovery | Get Coverage | `GET /v1/harvest?view=coverage` |
-| Discovery | Get Scan | `GET /v1/harvest` |
 | Discovery | Get Standards | `GET /v1/standards` |
 | Explorer | Get | `GET /v1/explorer/jobs/{id}` |
 | Explorer | Get Many | `GET /v1/explorer/jobs` |

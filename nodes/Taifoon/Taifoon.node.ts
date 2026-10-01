@@ -61,7 +61,7 @@ export class Taifoon implements INodeType {
 		requestDefaults: {
 			baseURL: 'https://coord.taifoon.dev/v1',
 			// X-Taifoon-Client lets the layer attribute node traffic; kept equal to package.json's version (a test checks it)
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/0.6.0' },
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/0.6.1' },
 		},
 		properties: [
 			{
@@ -76,7 +76,7 @@ export class Taifoon implements INodeType {
 					{ name: 'Catalog', value: 'catalog', description: 'Every hireable agent resold through the layer, priced, and the listings' },
 					{ name: 'Completion', value: 'completion', description: 'Hand finished work to the relayer (needs an API key)' },
 					{ name: 'Demand', value: 'demand', description: 'Say what you need; the layer matches, hires, grades and settles it' },
-					{ name: 'Discovery', value: 'discovery', description: 'What the chain scanner found, and what it could not reach' },
+					{ name: 'Discovery', value: 'discovery', description: 'Verified standards deployments and the n8n capability index' },
 					{ name: 'Explorer', value: 'explorer', description: 'Every job through the layer: doer, payee, grade and transactions' },
 					{ name: 'Handshake', value: 'handshake', description: 'Open and follow a brokered hire' },
 					{ name: 'Job', value: 'job', description: 'Poll jobs, read the ledger, create an offer' },

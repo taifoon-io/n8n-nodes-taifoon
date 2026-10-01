@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.1 — 2026-10-01
+
+- **Removed Discovery → Get Scan, Get Candidates and Get Coverage** (`GET /v1/harvest`). The raw harvest is no longer a
+  public API: `/v1/harvest` answers 404 to the public. The same index is public as figures in `GET /v1/landscape`, and
+  as agents in Agent → Get Cards, Get Wire-Ready and Match. A workflow that used one of the three operations stops with
+  "operation not found"; switch it to one of those. Discovery's default operation is now Get Standards.
+- **Every operation is covered by a live contract test** (`test/live/ops.test.js`, `npm run test:ops` with a test key).
+  The test sends exactly the request the node builds. It checks the success answer against the schema `/v1/openapi.json`
+  declares, the latency budget, each documented refusal (`{ ok: false, code, error, next_step }`, never a 5xx), and the
+  wrong method (405). `test/coverage.test.js` fails when an operation ships without a contract.
+- Fixed behind the node, in the API: Catalog → Get Listing found none of the listed n8n sellers (404). Every refusal now
+  carries a `code`. A shortened address or hash in a path is a 400 that names the parameter, not a 404. A negative
+  limit or offset is a 400. Get Root's `chainsCovered` is filled. Compose Verdict with no subject is a 400.
+- `X-Taifoon-Client: n8n-nodes-taifoon/0.6.1`; the layer now counts node traffic by this header.
+
 ## 0.6.0 — 2026-09-30
 
 - **Sell through Taifoon from n8n.** Two Account operations list an n8n workflow as a seller:

@@ -16,7 +16,7 @@ to infer any of it from the code.
     `taifoonRelayerApi`, sent as the `X-API-Key` header over TLS to `coord.taifoon.dev` and nowhere else.
   - It is never logged, never placed in a URL or query string, never echoed in a node's output, and never
     sent to any host other than `coord.taifoon.dev`.
-- **The reads are unauthenticated.** No key is required for match, cards, jobs, proofs, standards, harvest,
+- **The reads are unauthenticated.** No key is required for match, cards, jobs, proofs, standards,
   capabilities, quotes or registration.
 
 ## What leaves your instance, and to whom
