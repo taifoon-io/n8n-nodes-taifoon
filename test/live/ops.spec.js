@@ -118,8 +118,8 @@ const SPEC = {
 	// ── Discovery (the harvest operations were removed in 0.6.1) ──
 	'discovery.getCapabilities': {
 		mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000,
-		extra: [{ why: 'the hosted counts are named in English (measured, client_tenants)', todo: 'hotfix agent (2026-10-01): capabilities hosted keys',
-			check: (j) => (j?.hosted?.workflows == null ? [] : [typeof j.hosted.measured === 'number' ? null : 'hosted.measured', typeof j.hosted.client_tenants === 'number' ? null : 'hosted.client_tenants'].filter(Boolean)) }],
+		extra: [{ why: 'the hosted counts are named in English (measured, customers)', todo: 'hotfix agent (2026-10-01): capabilities hosted keys',
+			check: (j) => (j?.hosted?.workflows == null ? [] : [typeof j.hosted.measured === 'number' ? null : 'hosted.measured', typeof j.hosted.customers === 'number' ? null : 'hosted.customers'].filter(Boolean)) }],
 	},
 	'discovery.getCapabilitySkills': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
 	'discovery.getStandards': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['deployments'] }, refusals: [], budgetMs: 6000 },
@@ -192,7 +192,8 @@ const SPEC = {
 	// ── Proof ──
 	'proof.getRoot': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['root', 'anchoredAt', 'chainsCovered'] }, refusals: [], budgetMs: 6000 },
 	'proof.getTxProof': {
-		mode: 'read', key: false, params: () => ({ chainId: 8453, txHash: SAMPLE_TX }), ok: { status: [200, 404], fields: [] },
+		mode: 'read', key: false, params: () => ({ chainId: 8453, txHash: SAMPLE_TX }), ok: { status: [200, 404, 409], fields: [] },
+		// 409 PROVABLE_GAP: the sample's block (50555567) is older than the headers the producer retains — a permanent answer (_PROOF_HONEST_v1_)
 		refusals: [{ why: 'a shortened hash', params: { chainId: 8453, txHash: '0xcb5b…b6cb' }, status: [400] }], budgetMs: 30000,
 		// a pending proof says where its block sits against the verifiable range (never a null range) and when to ask again
 		extra: [{ why: 'a pending proof names its range and state', todo: 'hotfix agent (2026-10-01): /v1/proof/tx pending state',

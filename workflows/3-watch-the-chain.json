@@ -23,7 +23,7 @@
         "resource": "proof",
         "operation": "attestHire",
         "claim": {
-          "agentAddress": "={{ $json.seller.agentId }}",
+          "agentAddress": "={{ $json.seller.address || $json.seller.agentId }}",
           "chainId": "={{ $json.chainId }}"
         }
       },
@@ -51,7 +51,7 @@
             {
               "id": "r2",
               "name": "seller",
-              "value": "={{ $('When a job completes').item.json.seller.agentId }}",
+              "value": "={{ $('When a job completes').item.json.seller.address || $('When a job completes').item.json.seller.agentId }}",
               "type": "string"
             },
             {
