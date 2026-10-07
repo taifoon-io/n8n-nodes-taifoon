@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.2 (2026-10-07)
+
+- Wording: the judge calls run on the caller's 3 free grades (per account, API key or address), then on bought grades,
+  as `GET /v1/judge/credits` answers. The credential, Compose Verdict's "One Call" mode and the "Your TypeSafe Key"
+  field said "free calls".
+- `X-Taifoon-Client: n8n-nodes-taifoon/0.6.2`.
+
 ## 0.6.1 — 2026-10-01
 
 - **Removed Discovery → Get Scan, Get Candidates and Get Coverage** (`GET /v1/harvest`). The raw harvest is no longer a

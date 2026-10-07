@@ -156,7 +156,7 @@ export const judgeOperations: INodeProperties[] = [
 		default: 'single',
 		options: [
 			{ name: 'Answers (From Your TypeSafe Node)', value: 'answers', description: 'Step 2: send the answers your own TypeSafe node gave to the prepared questions; the layer checks the digest and every answer, composes and records the decision and the answers (caller-credential; see decision.answers_digest); Record On puts both on chain' },
-			{ name: 'One Call (Layer Asks Jev)', value: 'single', description: 'The layer asks Jev itself, on your free calls or the key below' },
+			{ name: 'One Call (Layer Asks Jev)', value: 'single', description: 'The layer asks Jev itself: your 3 free grades per caller, then bought grades, or the key below' },
 			{ name: 'Prepare (Your Own TypeSafe Credential)', value: 'prepare', description: 'Step 1: the facts (a hard fail is final here), the exact text Jev must read (the evidence plus the facts code established), the four questions every path asks, in the TypeSafe node schema, and a prepare digest. No judge call.' },
 		],
 		description: 'Two-step keeps the judge on your own TypeSafe credential: Prepare → TypeSafe node (connection Direct) → Answers',
@@ -392,7 +392,7 @@ export const judgeOperations: INodeProperties[] = [
 		type: 'string',
 		typeOptions: { password: true },
 		default: '',
-		description: 'Optional. Your own TypeSafe key: the call is billed to it and nobody else is in the path. Empty = the free calls on your API key’s quota.',
+		description: 'Optional. Your own TypeSafe key: the call is billed to it and nobody else is in the path. Empty = your 3 free grades per caller (account, API key or address), then bought grades.',
 		// the two-step compose never sends a key: the answers come from your own TypeSafe node
 		displayOptions: { ...show('judge', ['grade', 'judgeRef', 'compose']), hide: { composeMode: ['prepare', 'answers'] } },
 		routing: { send: { type: 'body', property: 'key', value: '={{ $value || undefined }}' } },

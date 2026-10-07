@@ -3,7 +3,7 @@ import type { IAuthenticateGeneric, ICredentialTestRequest, ICredentialType, Ico
 /**
  * The relayer key. Required by: Completion (submit, poll), Handshake → Attach Job, Job → Create Offer with a
  * handshake id, Judge → Submit Review. Used when present by: Handshake → Open (else a visitor budget) and the judge
- * calls (else the free calls). The reads work with no credential at all. GET /v1/relayer/whoami lists the ops.
+ * calls (else the caller's 3 free grades, then bought grades). The reads work with no credential at all. GET /v1/relayer/whoami lists the ops.
  */
 export class TaifoonRelayerApi implements ICredentialType {
 	// NOT 'taifoonApi': n8n-nodes-taifoon-typesafe already declares a credential type by that name with
