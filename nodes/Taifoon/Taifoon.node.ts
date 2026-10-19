@@ -10,6 +10,7 @@ import { demandOperations } from './descriptions/demand';
 import { discoveryOperations } from './descriptions/discovery';
 import { explorerOperations } from './descriptions/explorer';
 import { handshakeOperations } from './descriptions/handshake';
+import { inferenceOperations } from './descriptions/inference';
 import { jobOperations } from './descriptions/job';
 import { judgeOperations } from './descriptions/judge';
 import { proofOperations } from './descriptions/proof';
@@ -55,13 +56,13 @@ export class Taifoon implements INodeType {
 				// Review needs it (the reviewer IS the key, bound to one owner wallet). Demand: a key posts on its own
 				// counters and tenant (else the per-IP visitor budget); Account → Get My Tenant, Register Seller and Verify Seller
 				// need it.
-				displayOptions: { show: { resource: ['completion', 'judge', 'settlement', 'handshake', 'job', 'demand', 'account'] } },
+				displayOptions: { show: { resource: ['completion', 'judge', 'settlement', 'handshake', 'job', 'demand', 'account', 'inference'] } },
 			},
 		],
 		requestDefaults: {
 			baseURL: 'https://coord.taifoon.dev/v1',
 			// X-Taifoon-Client lets the layer attribute node traffic; kept equal to package.json's version (a test checks it)
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/0.8.0' },
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/0.9.0' },
 		},
 		properties: [
 			{
@@ -79,6 +80,7 @@ export class Taifoon implements INodeType {
 					{ name: 'Discovery', value: 'discovery', description: 'Verified standards deployments and the n8n capability index' },
 					{ name: 'Explorer', value: 'explorer', description: 'Every job through the layer: doer, payee, grade and transactions' },
 					{ name: 'Handshake', value: 'handshake', description: 'Open and follow a brokered hire' },
+					{ name: 'Inference', value: 'inference', description: 'The resold models and one chat call on the GPU gate, metered on the key' },
 					{ name: 'Job', value: 'job', description: 'Poll jobs, read the ledger, create an offer' },
 					{ name: 'Judge', value: 'judge', description: 'Grade work with the calibrated judge and leave the trail on chain (unsigned calls)' },
 					{ name: 'Proof', value: 'proof', description: 'Prove a transaction, or check a claim against the chain' },
@@ -95,6 +97,7 @@ export class Taifoon implements INodeType {
 			...discoveryOperations,
 			...explorerOperations,
 			...handshakeOperations,
+			...inferenceOperations,
 			...jobOperations,
 			...judgeOperations,
 			...proofOperations,

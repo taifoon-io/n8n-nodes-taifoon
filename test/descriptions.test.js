@@ -46,7 +46,7 @@ test('optional settle fields are omitted when empty, never sent as ""', () => {
 test('the relayer credential is offered on Completion, Judge, Settlement, Handshake, Job, Demand and Account, and stays optional', () => {
 	assert.strictEqual(d.credentials.length, 1);
 	assert.strictEqual(d.credentials[0].required, false, 'a required credential breaks every public read (found by running the node)');
-	assert.deepStrictEqual(d.credentials[0].displayOptions.show.resource, ['completion', 'judge', 'settlement', 'handshake', 'job', 'demand', 'account']);
+	assert.deepStrictEqual(d.credentials[0].displayOptions.show.resource, ['completion', 'judge', 'settlement', 'handshake', 'job', 'demand', 'account', 'inference']);
 });
 
 test('Judge → Submit Review: the owner is optional once bound, and the binding signature rides as owner_signature', () => {
@@ -141,7 +141,7 @@ const onOp = (resource, op) =>
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '0.8.0');
+	assert.strictEqual(pkg.version, '0.9.0');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
@@ -231,4 +231,15 @@ test('a claim sends exactly what POST /v1/access/plan and /topup read; a child k
 test('no Account operation reads a key back: every GET of the key path answers a standing, never api_key', () => {
 	for (const op of ['keyStanding', 'resellerView', 'me']) assert.strictEqual(route('account', op).method, 'GET');
 	for (const o of ops('account')) assert.doesNotMatch(o.description, /returns the key|reads the key back/i);
+});
+
+// ── 0.9.0: inference ──
+test('Inference → Chat posts the GPU gate (its own host) with the model in the path, the messages and the hold in the body, the lane as a query; List Models reads /v1/models', () => {
+	const chat = route('inference', 'chat');
+	assert.deepStrictEqual(chat, { method: 'POST', baseURL: 'https://api.taifoon.dev', url: '=/gpu/{{$parameter.model}}/chat' });
+	assert.deepStrictEqual(route('inference', 'listModels'), { method: 'GET', url: '/models' });
+	const sent = Object.fromEntries(d.properties.filter((p) => p.displayOptions && p.displayOptions.show && p.displayOptions.show.resource && p.displayOptions.show.resource[0] === 'inference' && (p.displayOptions.show.operation || []).includes('chat') && p.routing && p.routing.send && p.routing.send.property).map((p) => [p.routing.send.property, p]));
+	assert.deepStrictEqual(Object.keys(sent).sort(), ['max_tokens', 'messages', 'tier']);
+	assert.strictEqual(sent.tier.routing.send.type, 'query');
+	assert.ok(prop('model').required);
 });

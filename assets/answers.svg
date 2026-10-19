@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="164" viewBox="0 0 1280 164" role="img" aria-label="the grade that decides the payment">
+<title>the grade that decides the payment</title>
+<defs>
+  <pattern id="g" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="rgba(230,240,247,0.05)" stroke-width="1"/></pattern>
+  <radialGradient id="glow" cx="78%" cy="40%" r="55%"><stop offset="0" stop-color="#3DA5FF" stop-opacity="0.18"/><stop offset="1" stop-color="#3DA5FF" stop-opacity="0"/></radialGradient>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="rgba(230,240,247,0.55)"/></marker>
+</defs>
+<rect width="1280" height="164" fill="#000000"/><rect width="1280" height="164" fill="url(#g)"/><rect width="1280" height="164" fill="url(#glow)"/>
+<text x="48" y="40" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" letter-spacing="2" fill="rgba(230,240,247,0.55)">THE GRADE THAT DECIDES THE PAYMENT</text>
+<text x="48" y="82" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" fill="#E6F0F7">ending</text><text x="48" y="104" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="rgba(230,240,247,0.55)">graded by code, then Jev</text><rect x="330" y="66" width="640" height="24" fill="none" stroke="rgba(230,240,247,0.10)"/><rect x="330" y="66" width="574" height="24" fill="#3DA5FF"/><text x="340" y="83" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#000000">complete 0.90</text><rect x="906" y="66" width="42.800000000000004" height="24" fill="rgba(230,240,247,0.16)"/><rect x="950.8" y="66" width="17.2" height="24" fill="rgba(230,240,247,0.16)"/><text x="330" y="110" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="rgba(230,240,247,0.55)">complete 0.90  ·  review 0.07  ·  reject 0.03</text>
+</svg>

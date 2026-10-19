@@ -19,7 +19,7 @@ function collect() {
 			assert.ok(req, `${resource}.${o.value} has no routing.request`);
 			// "=/jobs/{{$parameter.jobId}}/complete" → "/jobs/{x}/complete"
 			const path = String(req.url).replace(/^=/, '').replace(/\{\{[^}]+\}\}/g, '{x}');
-			out.push({ op: `${resource}.${o.value}`, method: req.method.toLowerCase(), path });
+			out.push({ op: `${resource}.${o.value}`, method: req.method.toLowerCase(), path, ...(req.baseURL ? { baseURL: req.baseURL } : {}) });
 		}
 	}
 	return out;
@@ -52,7 +52,15 @@ test('every operation exists in the live OpenAPI document', async (t) => {
 	for (const o of skipped)
 		t.diagnostic(`SKIP ${o.op} → ${o.method.toUpperCase()} ${o.path}: GET ${pending(o).probe} answers 404, the route (new in ${pending(o).since}) is not deployed yet`);
 
-	const missing = collect().filter((o) => !pending(o) && !live.has(`${o.method} ${o.path}`));
+	// 0.9.0: an operation on another host of ours (the GPU gate, api.taifoon.dev) is not in coord's OpenAPI; its host must answer
+	const OWN_HOSTS = { 'https://api.taifoon.dev': '/gpu/pricing' };
+	for (const [host, probe] of Object.entries(OWN_HOSTS)) {
+		const ops = collect().filter((o) => o.baseURL === host);
+		if (!ops.length) continue;
+		const r = await fetch(`${host}${probe}`);
+		assert.strictEqual(r.status, 200, `${host}${probe} must answer 200 for ${ops.map((o) => o.op).join(', ')}`);
+	}
+	const missing = collect().filter((o) => !o.baseURL && !pending(o) && !live.has(`${o.method} ${o.path}`));
 	assert.deepStrictEqual(missing, [], `operations with no matching route in the live API:\n${missing.map((m) => `  ${m.op} → ${m.method.toUpperCase()} ${m.path}`).join('\n')}`);
 	if (skipped.length) t.skip(`${skipped.length} operation(s) on routes not deployed yet: ${skipped.map((o) => o.op).join(', ')}`);
 });

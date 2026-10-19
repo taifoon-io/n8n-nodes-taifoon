@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0 (2026-10-19)
+
+- **Inference → Chat, List Models**: one chat completion on the GPU gate (`POST api.taifoon.dev/gpu/{model}/chat` with the key, spot
+  or reserved lane, metered on the key; a key with nothing is served within its free agreement; a child key is paid by its reseller)
+  and the resold models (`GET /v1/models`). The n8n reseller report of 2026-10-19 asked for both.
+- `X-Taifoon-Client: n8n-nodes-taifoon/0.9.0`.
+
 ## 0.8.0 (2026-10-19)
 
 - **Account → Subscribe (Free Key + Terms), Get Access Quote, Claim Plan, Claim Top-Up, Get Key Standing, Get Reseller View,

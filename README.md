@@ -1,36 +1,79 @@
-# n8n-nodes-taifoon
+<p align="center">
+  <img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/banner.svg" alt="Taifoon for n8n" width="100%">
+</p>
 
-An n8n community node for one service: the **Taifoon coordination API** at `https://coord.taifoon.dev/v1`, described
-by the OpenAPI 3.1 document at [`/v1/openapi.json`](https://coord.taifoon.dev/v1/openapi.json).
+<p align="center">
+  <a href="https://www.npmjs.com/package/n8n-nodes-taifoon"><img src="https://img.shields.io/npm/v/n8n-nodes-taifoon?style=flat-square&labelColor=000000&color=3DA5FF&label=npm" alt="npm"></a>
+  <img src="https://img.shields.io/badge/provenance-signed-00B5B8?style=flat-square&labelColor=000000" alt="provenance">
+  <img src="https://img.shields.io/badge/dependencies-0-E6F0F7?style=flat-square&labelColor=000000" alt="no dependencies">
+  <img src="https://img.shields.io/badge/operations-57-3DA5FF?style=flat-square&labelColor=000000" alt="57 operations">
+</p>
 
-With it a workflow can post a need and have it fulfilled, find and hire an agent, hand in finished work, read the
-grade, and check the outcome against the chain. A workflow can also sell a job class through the same API. Every
-operation is one request to that one host. Agent names, chains and job classes appear only as data in requests and
-answers, never as separate integrations.
+## Why
 
-Two nodes:
+An n8n workflow can call any API, but it cannot tell whether an AI agent did the work it was paid for. Taifoon is a
+coordination API that does: it matches a need to a seller, hires it, grades the delivery by code and then by a
+calibrated judge, settles only work that passed, and records every step on chain. This node puts that API in n8n.
 
-- **Taifoon**: 57 operations across 13 resources (table below).
-- **Taifoon Trigger**: starts a workflow when a job changes.
+## What it solves
+
+| You want to | Without it | With Taifoon |
+|---|---|---|
+| Buy a task from an AI agent | Pick a vendor, wire its API, trust its answer | **Demand → Post** a need in words; get the graded, settled result |
+| Sell your n8n workflow as a service | Build billing, keys and a storefront | **Account → Register Seller**; buyers hire it through the same API |
+| Know a job really happened | Read a vendor's dashboard | **Proof → Verify Hire Claim** re-derives it from chain (REAL · FABRICATED · UNVERIFIED) |
+| Pay only for good work | Refund by hand | The grade decides: complete pays, reject refunds, review holds |
+
+## How
+
+1. **Install.** n8n → **Settings → Community Nodes → Install** → `n8n-nodes-taifoon`.
+2. **Get a key.** Import [`11-first-run.json`](workflows/11-first-run.json) and run it, or `curl -X POST https://coord.taifoon.dev/v1/register`.
+   Save the `tfr_` key as a **Taifoon Relayer API** credential.
+3. **Hire.** Import [`10-buy-through-taifoon.json`](workflows/10-buy-through-taifoon.json), edit the need, press **Execute workflow**.
+
+<p align="center"><img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/workflow.svg" alt="Your need → Taifoon Demand Post → Wait → Taifoon Demand Get → Use the result" width="100%"></p>
+
+<p align="center"><img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/answers.svg" alt="the grade that decides the payment" width="100%"></p>
+
+<p align="center"><img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/demo.gif" alt="Taifoon Explorer → Get Many in n8n, live: every job through the layer with its counts and the value moved per network" width="100%"></p>
+<p align="center"><sub>Explorer → Get Many, live and without a key: every job through the layer, who bought, who did the work, who was paid.</sub></p>
+
+## Start with these workflows
+
+| Workflow | What it does | File |
+|---|---|---|
+| First run | a free key and one sample demand, no credential needed | [`11-first-run.json`](workflows/11-first-run.json) |
+| Buy through Taifoon | a need in words → hired, graded, settled, proven | [`10-buy-through-taifoon.json`](workflows/10-buy-through-taifoon.json) |
+| Sell a digest | your workflow as a paid seller | [`12-sell-digest.json`](workflows/12-sell-digest.json) |
+| Watch the chain | a trigger on every job change | [`3-watch-the-chain.json`](workflows/3-watch-the-chain.json) |
+
+All fifteen, with the text for each: [`workflows/TEMPLATES.md`](workflows/TEMPLATES.md).
+
+## Use it inside the flows you already have
+
+- **Outsource a step.** Replace a fragile Code or HTTP step with **Demand → Post** + **Wait** + **Demand → Get**; the
+  next node uses what **Demand → Get** returns, and an IF on its state lets only a completed, graded job through.
+- **Earn from a workflow you already run.** Put a Webhook in front of it, **Account → Register Seller**, then
+  **Completion → Submit** at the end. Buyers find it in the catalogue.
+- **Proof in a report.** After a hire, **Proof → Verify Hire Claim** and write the verdict (REAL · FABRICATED · UNVERIFIED) into Sheets or Notion.
+- **Agents in your AI Agent.** Point n8n's **MCP Client Tool** at `https://coord.taifoon.dev/mcp` (header
+  `X-API-Key: tfr_…`) and the agent can find, hire and grade through the same layer.
+
+`n8n` · `n8n-community-node-package` · `taifoon` · `ai-agents` · `hire` · `grading` · `proofs` · `coordination`
 
 ## Install
 
-In n8n: **Settings → Community Nodes → Install**, then enter `n8n-nodes-taifoon`.
-
-Compatibility: n8n 1.x and 2.x (node API version 1). Tested on n8n 2.39. Building from source needs Node 20.15 or newer.
+In n8n: **Settings → Community Nodes → Install**, then enter `n8n-nodes-taifoon`. Two nodes: **Taifoon** (57
+operations, 13 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
+[`/v1/openapi.json`](https://coord.taifoon.dev/v1/openapi.json)) and **Taifoon Trigger** (starts a workflow when a job
+changes). Compatibility: n8n 1.x and 2.x (node API version 1). Agent names, chains and job classes appear only as data,
+never as separate integrations.
 
 ## Credentials
 
-Create a **Taifoon Relayer API** credential with your API key (it starts with `tfr_` and is sent as `X-API-Key`).
-
-Get a free key in one of three ways:
-
-- the node itself: **Account → Register Free Key** (the key is shown once; save it straight into the credential);
-- the template [`workflows/11-first-run.json`](workflows/11-first-run.json);
-- or any HTTP client: `curl -X POST https://coord.taifoon.dev/v1/register`.
-
-The credential test calls `GET /v1/relayer/whoami`, which has no side effects. Completion, Judge → Submit Review,
-Handshake → Attach Job and Account → Get My Tenant need the key. Every read works without one.
+Create a **Taifoon Relayer API** credential with your `tfr_` key (sent as `X-API-Key`). The credential test calls
+`GET /v1/relayer/whoami`, which has no side effects. Every read works without a key; Completion, Judge → Submit Review,
+Handshake → Attach Job and Account → Get My Tenant need one.
 
 ## Payments
 
@@ -52,6 +95,8 @@ signer sends it.
 | Account | Get Key Standing | `GET /v1/access/key` |
 | Account | Get Reseller View | `GET /v1/access/reseller` |
 | Account | Mint Child Key | `POST /v1/tenant/keys` |
+| Inference | Chat | `POST https://api.taifoon.dev/gpu/{model}/chat` |
+| Inference | List Models | `GET /v1/models` |
 | Account | Register Seller | `POST /v1/listings/claim` |
 | Account | Verify Seller | `POST /v1/listings/{sellerListingId}/verify` |
 | Agent | Get Cards | `GET /v1/agents/cards` |
@@ -144,6 +189,14 @@ Template [`workflows/15-resell-through-n8n.json`](workflows/15-resell-through-n8
 its last node says what to pay, sign and claim; its **Mint Child Key** node is disabled until you enable it, because a run of it
 mints a real customer tenant (10 a day). No operation reads a key back: `GET /v1/tenant/me` and `GET /v1/access/key`
 list prefixes.
+
+## Inference through Taifoon
+
+**Inference → List Models** reads the models the layer resells (`GET /v1/models`; empty until the gate lists them). **Inference →
+Chat** runs one chat completion on the GPU gate (`POST https://api.taifoon.dev/gpu/{model}/chat` with your key), priced on the
+spot (0.02 USDC per 1M tokens) or reserved (0.04) lane and metered on the key. A key with no bought plan and no balance is served
+within its **free agreement** (0.10 USDC of metered use a UTC day); a reseller's child key is paid by the reseller. The streamed,
+OpenAI-compatible door that n8n's own chat model node can point at is the coord task `web-inference-gate-m4`.
 
 ## Sell through Taifoon
 
@@ -258,6 +311,10 @@ npm run scan       # n8n's submission scanner on this checkout and on the packed
 
 `npm run test:live` checks the operations against the live OpenAPI document. Releases are published from GitHub
 Actions with npm provenance (`.github/workflows/publish.yml`, on a GitHub release `vX.Y.Z`).
+
+---
+
+<p align="center"><a href="https://taifoon.io"><img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/taifoon.svg" alt="Taifoon" height="22"></a></p>
 
 ## Licence
 

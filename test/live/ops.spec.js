@@ -88,6 +88,15 @@ const SPEC = {
 		budgetMs: 6000,
 		gap: 'mints a child tenant (10 a day per reseller) whose keys are shown once; only the refusals are called',
 	},
+	// ── Inference (0.9.0): the resold models and one chat on the GPU gate ──
+	'inference.listModels': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['data'] }, refusals: [], budgetMs: 6000, gap: 'empty until the gate lists the resold models (coord task web-inference-gate-m4)' },
+	'inference.chat': {
+		mode: 'refusal-only', key: true, params: () => ({ model: 'llama-3.1-8b', messages: '[{"role":"user","content":"hi"}]', maxTokens: 8, tier: 'spot' }),
+		ok: { status: 200, fields: [] },
+		refusals: [NO_KEY],
+		budgetMs: 20000,
+		gap: 'a chat is metered on the key (the probe key holds nothing beyond its free agreement, and a served answer costs real GPU time); only the keyless refusal is called',
+	},
 	'account.registerSeller': {
 		mode: 'refusal-only', key: true, params: () => ({ cardUrl: 'https://n8n.taifoon.dev/webhook/tfn-digest-card' }),
 		ok: { status: 201, fields: ['listing', 'nonce'] },
