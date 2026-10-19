@@ -9,7 +9,7 @@ const { join } = require('node:path');
 const { Taifoon } = require('../dist/nodes/Taifoon/Taifoon.node.js');
 
 const W = (f) => JSON.parse(readFileSync(join(__dirname, '..', 'workflows', f), 'utf8'));
-const NEW = ['10-buy-through-taifoon.json', '11-first-run.json', '12-sell-digest.json', '13-sell-json-normalize.json', '14-sell-word-count.json'];
+const NEW = ['10-buy-through-taifoon.json', '11-first-run.json', '12-sell-digest.json', '13-sell-json-normalize.json', '14-sell-word-count.json', '15-resell-through-n8n.json'];
 const SELLERS = { '12-sell-digest.json': ['tfn-digest', 'mcp.digest'], '13-sell-json-normalize.json': ['tfn-json-normalize', 'a2a.json_normalize'], '14-sell-word-count.json': ['tfn-word-count', 'chat.word_count'] };
 const ADDRESS = '0x21399bEeec163BD3E44CC17CEaA49f3b469D2e99';
 const NONCE = 'b58d930e-5327-49a3-9d7e-000000000001';

@@ -45,6 +45,13 @@ signer sends it.
 |---|---|---|
 | Account | Get My Tenant | `GET /v1/tenant/me` |
 | Account | Register Free Key | `POST /v1/register` |
+| Account | Subscribe (Free Key + Terms) | `POST /v1/access/subscribe` |
+| Account | Get Access Quote | `GET /v1/access/quote` |
+| Account | Claim Plan | `POST /v1/access/plan` |
+| Account | Claim Top-Up | `POST /v1/access/topup` |
+| Account | Get Key Standing | `GET /v1/access/key` |
+| Account | Get Reseller View | `GET /v1/access/reseller` |
+| Account | Mint Child Key | `POST /v1/tenant/keys` |
 | Account | Register Seller | `POST /v1/listings/claim` |
 | Account | Verify Seller | `POST /v1/listings/{sellerListingId}/verify` |
 | Agent | Get Cards | `GET /v1/agents/cards` |
@@ -115,6 +122,28 @@ No key yet? Run [`workflows/11-first-run.json`](workflows/11-first-run.json) fir
 (a label; nothing is signed). The workflow mints a free key with **Account → Register Free Key** and posts a sample demand
 on the key's sandbox side. Its last node tells you what to do next: copy `api_key` from the Register Free Key output
 into a Taifoon Relayer API credential, then use template 10.
+
+## Resell through Taifoon (the key is the product)
+
+Every tenant is a reseller by default. The path is one key, then children, and n8n never signs or sends a payment:
+
+1. **Account → Register Free Key** (template 11) mints your tenant's keys, shown once; save the live key as the credential.
+   (**Account → Subscribe** does the same in one call and also answers the payment terms of a balance top-up.)
+2. **Account → Get Access Quote** with the credential: a plan (`builder-99`, `team-199`, `protocol-299`) or a balance of
+   1–500 USDC on a pay chain (Base, Arbitrum One, Arc, Monad; USDG on Robinhood Chain). The answer carries `pay` (the exact
+   transfer to the vault) and `sign` (the exact message, naming your key). Without the credential there is nothing to sign.
+3. **You** send the transfer from one wallet (an EOA) and `personal_sign` the message with it, the transaction hash filled in.
+4. **Account → Claim Plan** or **Claim Top-Up** with the transaction hash and the signature credits your key. A 404 means
+   the transfer is not deep enough yet: run it again in a few seconds. **Get Key Standing** shows what the key holds.
+5. **Account → Mint Child Key** mints a customer of yours: its own tenant and keys, shown once, with your markup in basis
+   points per product (`{ "*": 1000 }` is 10 % on everything). The child pays from your balance at the wholesale price and
+   owes you list + markup; **Get Reseller View** shows the children, their usage, what they owe and the margin (ledger
+   rows only: nothing is invoiced or paid out by the layer).
+
+Template [`workflows/15-resell-through-n8n.json`](workflows/15-resell-through-n8n.json) runs step 2 and the view, and
+its last node says what to pay, sign and claim; its **Mint Child Key** node is disabled until you enable it, because a run of it
+mints a real customer tenant (10 a day). No operation reads a key back: `GET /v1/tenant/me` and `GET /v1/access/key`
+list prefixes.
 
 ## Sell through Taifoon
 
@@ -200,6 +229,7 @@ In [`workflows/`](workflows). Import them from the n8n editor, or run `n8n impor
 | File | What it does |
 |---|---|
 | [`11-first-run.json`](workflows/11-first-run.json) | No credential yet: mint a free key, post a sample demand, and read the next steps. |
+| [`15-resell-through-n8n.json`](workflows/15-resell-through-n8n.json) | **The reseller path**: quote a plan for your key (pay and sign with your wallet, then claim), read the margin; enable its Mint Child Key node to mint a customer. |
 | [`10-buy-through-taifoon.json`](workflows/10-buy-through-taifoon.json) | Buy in one click: post a need, poll the demand until it ends, read the explorer row, and verify the settle transaction against the chain. |
 | [`12-sell-digest.json`](workflows/12-sell-digest.json), [`13-sell-json-normalize.json`](workflows/13-sell-json-normalize.json), [`14-sell-word-count.json`](workflows/14-sell-word-count.json) | Sell a job class: a card webhook and a hire webhook (see *Sell through Taifoon*). |
 | [`9-buy-by-demand.json`](workflows/9-buy-by-demand.json) | A need in words → Demand → Post → poll → Explorer → Proof → Verify Hire Claim → one receipt. |

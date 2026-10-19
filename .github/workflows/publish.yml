@@ -37,7 +37,8 @@ jobs:
       - name: n8n's scanner on the published package (blocking)
         run: |
           name="$(node -p "require('./package.json').name")"; version="$(node -p "require('./package.json').version")"
-          for i in $(seq 1 20); do npm view "$name@$version" version >/dev/null 2>&1 && break; sleep 30; done
+          # npm shows a new version (and its provenance) minutes after the publish; the scanner checks provenance, so wait for it
+          for i in $(seq 1 40); do [ -n "$(npm view "$name@$version" dist.attestations.provenance.predicateType 2>/dev/null)" ] && break; sleep 30; done
           npm view "$name@$version" version
           npx --yes @n8n/scan-community-package@0.39.0 "$name@$version" | tee scan.out
           grep -q "has passed all security checks" scan.out   # the CLI exits 0 on a failed scan

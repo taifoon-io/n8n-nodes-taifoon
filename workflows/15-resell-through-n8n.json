@@ -1,0 +1,190 @@
+{
+  "name": "Taifoon — resell through n8n (quote a plan, mint a customer key, read the margin)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "notes": "in: — → out: — · you hold a Taifoon Relayer API credential (template 11 minted it); every tenant is a reseller by default",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "operation": "accessQuote",
+        "quoteProduct": "builder-99",
+        "quoteChainId": 8453
+      },
+      "id": "quote",
+      "name": "Get Access Quote",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "notes": "in: — → out: https://www.taifoon.io/schemas/coordination/v1/ · Taifoon Account → Get Access Quote: GET /v1/access/quote?plan=builder-99&chainId=8453 with X-API-Key → pay { the exact transfer } + sign { the exact message naming YOUR key }; nothing is signed or sent",
+      "notesInFlow": true,
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "taifoon-relayer",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "operation": "mintChildKey",
+        "childLabel": "customer-1",
+        "childMarkupBps": "{ \"*\": 1000 }"
+      },
+      "id": "child",
+      "name": "Mint Child Key",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ],
+      "notes": "in: — → out: — · DISABLED until you enable it (a run mints a real customer tenant, 10 a day): Taifoon Account → Mint Child Key: POST /v1/tenant/keys { action: child, label, markup_bps } → the customer's keys, shown ONCE; its calls are debited from your balance at the list price and it owes you list + markup",
+      "notesInFlow": true,
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "taifoon-relayer",
+          "name": "Taifoon Relayer API"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "operation": "resellerView"
+      },
+      "id": "view",
+      "name": "Get Reseller View",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        720,
+        300
+      ],
+      "notes": "in: — → out: — · Taifoon Account → Get Reseller View: GET /v1/access/reseller → children, their usage, what they owe, the margin",
+      "notesInFlow": true,
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "taifoon-relayer",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// What to do next: the quote, the child, the margin — and NEVER a key. The child's keys are in Mint Child Key's output only\n// (shown once): hand them to your customer over a channel you trust, then delete this execution.\nconst quote = $('Get Access Quote').first().json || {};\nlet child = {};\ntry { child = $('Mint Child Key').first().json || {}; } catch (e) { child = {}; } // the node is disabled until you enable it\nconst view = $json || {};\nreturn [{ json: {\n  plan: quote.plan ? quote.plan.id : null,\n  pay: quote.pay ? { chain: quote.pay.network, amount: quote.pay.amount, symbol: quote.pay.symbol, payee: quote.pay.payee } : null,\n  sign: quote.sign ? (quote.sign.message ? 'the message to sign is in Get Access Quote → sign.message' : quote.sign.how) : null,\n  child: child.child ? { tenant: child.child.tenant, label: child.child.label, markup_bps: child.child.markup_bps } : null,\n  margin_usdc: view.totals && view.totals.margin_usdc !== undefined ? view.totals.margin_usdc : null,\n  children: Array.isArray(view.children) ? view.children.length : null,\n  next_steps: [\n    'Pay: send pay.call from one wallet of yours (an EOA) on the quoted chain, exactly the quoted amount, to the payee.',\n    'Sign: personal_sign the message in Get Access Quote → sign.message with that wallet, the transaction hash filled in.',\n    'Claim: run Account → Claim Plan (or Claim Top-Up) with the transaction hash and the signature; 404 means wait a few seconds.',\n    'Your customer: enable Mint Child Key, run again, give the child its keys from that node’s output (shown once), then delete the execution.',\n    'Read the margin any time with Account → Get Reseller View; the child’s usage is debited from your balance at wholesale.',\n  ],\n} }];"
+      },
+      "id": "next",
+      "name": "Next steps",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        300
+      ],
+      "notes": "in: — → out: — · the quote, the child and the margin, and what to do next: pay and sign with YOUR wallet, then claim; the keys are NOT repeated here",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Get Access Quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Access Quote": {
+      "main": [
+        [
+          {
+            "node": "Mint Child Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mint Child Key": {
+      "main": [
+        [
+          {
+            "node": "Get Reseller View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Reseller View": {
+      "main": [
+        [
+          {
+            "node": "Next steps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "saveDataErrorExecution": "none"
+  },
+  "meta": {
+    "description": "The reseller path on one key: quote a Builder plan for your own key (the transfer and the message your wallet signs: nothing is paid by n8n), mint a child key for a customer of yours once you enable that node (shown once: hand it over, then delete the execution), and read what the children owe you. Needs the credential template 11 minted. Successful executions are not saved, so no key stays in execution data. Error executions are not saved either.",
+    "taifoon": {
+      "contract": "https://www.taifoon.io/schemas/coordination/v1/",
+      "steps": {
+        "Start": {
+          "in": null,
+          "out": null,
+          "does": "you hold a Taifoon Relayer API credential (template 11); every tenant is a reseller by default"
+        },
+        "Get Access Quote": {
+          "in": null,
+          "out": "https://www.taifoon.io/schemas/coordination/v1/",
+          "does": "GET /v1/access/quote?plan=builder-99&chainId=8453 with X-API-Key: pay (the exact USDC transfer to the vault) and sign (the message naming your key); pay and sign with YOUR wallet, then Claim Plan"
+        },
+        "Mint Child Key": {
+          "in": null,
+          "out": null,
+          "does": "DISABLED by default (enable it to mint a real customer): POST /v1/tenant/keys { action: child, label, markup_bps }: a customer tenant with live + sandbox keys, shown ONCE; 10 a day"
+        },
+        "Get Reseller View": {
+          "in": null,
+          "out": null,
+          "does": "GET /v1/access/reseller: children, usage, owed (list + markup), margin; ledger rows only"
+        },
+        "Next steps": {
+          "in": null,
+          "out": null,
+          "does": "what to pay, sign and claim, and where the child's keys are (not here)"
+        }
+      }
+    }
+  }
+}

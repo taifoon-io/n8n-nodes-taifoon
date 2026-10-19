@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 (2026-10-19)
+
+- **Account → Subscribe (Free Key + Terms), Get Access Quote, Claim Plan, Claim Top-Up, Get Key Standing, Get Reseller View,
+  Mint Child Key**: the key path (quote → the payment is sent and signed by YOUR wallet → claim) and the reseller path (every
+  tenant resells by default; a child key is a customer of yours, debited at wholesale from your balance, owing list + markup).
+  Nothing in the node signs or sends a payment, and no operation reads a key back.
+- Template `15-resell-through-n8n.json` (its Mint Child Key node is disabled until you enable it; error executions are not saved); README "Resell through Taifoon".
+- `X-Taifoon-Client: n8n-nodes-taifoon/0.8.0`; the mint calls (Register Free Key, Subscribe, Mint Child Key) carry `X-Taifoon-Channel: n8n`.
+
 ## 0.7.0 (2026-10-19)
 
 Rebuilt for n8n's verified community nodes. No operation, parameter, node type or credential type changed, so saved

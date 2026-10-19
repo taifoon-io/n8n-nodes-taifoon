@@ -141,7 +141,7 @@ const onOp = (resource, op) =>
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '0.7.0');
+	assert.strictEqual(pkg.version, '0.8.0');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
@@ -167,12 +167,12 @@ test('Register Seller and Verify Seller carry the credential (Account is in its 
 	assert.ok(d.credentials[0].displayOptions.show.resource.includes('account'));
 });
 
-test('Account → Register Free Key sends X-Taifoon-Channel: n8n (the tenant is recorded via n8n), and only on that operation', async () => {
+test('Account → Register Free Key sends X-Taifoon-Channel: n8n (the tenant is recorded via n8n), and only the mint operations do', async () => {
 	const withPreSend = d.properties.filter((p) => p.routing?.send?.preSend);
 	assert.deepStrictEqual(withPreSend.map((p) => p.name), ['registerChannel']);
 	const ch = withPreSend[0];
 	assert.strictEqual(ch.type, 'hidden');
-	assert.deepStrictEqual(ch.displayOptions.show, { resource: ['account'], operation: ['register'] });
+	assert.deepStrictEqual(ch.displayOptions.show, { resource: ['account'], operation: ['register', 'subscribe', 'mintChildKey'] }); // 0.8.0: every mint call says it came via n8n
 	const out = await ch.routing.send.preSend[0].call({}, { url: '/register', method: 'POST', headers: { Accept: 'application/json' } });
 	assert.deepStrictEqual(out.headers, { Accept: 'application/json', 'X-Taifoon-Channel': 'n8n' }, 'adds the header, keeps the others');
 	const bare = await ch.routing.send.preSend[0].call({}, { url: '/register', method: 'POST' });
@@ -199,4 +199,36 @@ test('Catalog → Get Listing / Get Many Listings read /listings, the filters ar
 	assert.deepStrictEqual(names, [...names].sort((a, b) => a.localeCompare(b)), 'operations stay alphabetical');
 	const acc = ops('account').map((o) => o.name);
 	assert.deepStrictEqual(acc, [...acc].sort((a, b) => a.localeCompare(b)), 'operations stay alphabetical');
+});
+
+// ── 0.8.0: the key path (the reseller path through n8n) ──
+test('Account carries the key path: subscribe, quote, the two claims, the standing, the reseller view and a child key, on the routes the layer serves', () => {
+	assert.deepStrictEqual(route('account', 'subscribe'), { method: 'POST', url: '/access/subscribe' });
+	assert.deepStrictEqual(route('account', 'accessQuote'), { method: 'GET', url: '/access/quote' });
+	assert.deepStrictEqual(route('account', 'claimPlan'), { method: 'POST', url: '/access/plan' });
+	assert.deepStrictEqual(route('account', 'claimTopUp'), { method: 'POST', url: '/access/topup' });
+	assert.deepStrictEqual(route('account', 'keyStanding'), { method: 'GET', url: '/access/key' });
+	assert.deepStrictEqual(route('account', 'resellerView'), { method: 'GET', url: '/access/reseller' });
+	assert.deepStrictEqual(route('account', 'mintChildKey'), { method: 'POST', url: '/tenant/keys' });
+});
+
+test('a claim sends exactly what POST /v1/access/plan and /topup read; a child key is action "child" with label and markup_bps; the mint calls carry the n8n channel', () => {
+	const sent = (op) => Object.fromEntries(d.properties.filter((p) => p.displayOptions && p.displayOptions.show && p.displayOptions.show.resource && p.displayOptions.show.resource[0] === 'account' && (p.displayOptions.show.operation || []).includes(op) && p.routing && p.routing.send && p.routing.send.property).map((p) => [p.routing.send.property, p]));
+	assert.deepStrictEqual(Object.keys(sent('claimPlan')).sort(), ['chainId', 'plan', 'signature', 'tx']);
+	assert.deepStrictEqual(Object.keys(sent('claimTopUp')).sort(), ['chainId', 'signature', 'tx']);
+	for (const k of ['tx', 'signature']) assert.ok(sent('claimPlan')[k].required, `${k} is required`);
+	const child = sent('mintChildKey');
+	assert.deepStrictEqual(Object.keys(child).sort(), ['action', 'label', 'markup_bps']);
+	assert.strictEqual(child.action.type, 'hidden'); assert.strictEqual(child.action.default, 'child');
+	assert.deepStrictEqual(prop('registerChannel').displayOptions.show.operation, ['register', 'subscribe', 'mintChildKey']);
+	assert.strictEqual(prop('subscribeCreateKey').default, true);
+	const q = sent('accessQuote');
+	assert.deepStrictEqual(Object.keys(q).sort(), ['chainId', 'plan', 'usdc']);
+	assert.strictEqual(q.plan.routing.send.type, 'query');
+	assert.deepStrictEqual(prop('quoteProduct').options.map((o) => o.value), ['balance', 'builder-99', 'team-199', 'protocol-299']);
+});
+
+test('no Account operation reads a key back: every GET of the key path answers a standing, never api_key', () => {
+	for (const op of ['keyStanding', 'resellerView', 'me']) assert.strictEqual(route('account', op).method, 'GET');
+	for (const o of ops('account')) assert.doesNotMatch(o.description, /returns the key|reads the key back/i);
 });
