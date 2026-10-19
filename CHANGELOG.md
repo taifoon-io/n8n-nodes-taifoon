@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.7.0 (2026-10-19)
+
+Rebuilt for n8n's verified community nodes. No operation, parameter, node type or credential type changed, so saved
+workflows keep working.
+
+- **Scaffolded with `@n8n/node-cli`** (`n8n-node build | lint | release`). gulp, `eslint-plugin-n8n-nodes-base`, the
+  old `.eslintrc` files and `index.ts` are gone; `eslint.config.mjs` is the node-cli config with no rule turned off.
+- **Strict mode on** (`"n8n": { "strict": true }`); no run-time dependencies; `n8n-workflow` is the only peer dependency.
+- **One service:** the package is described strictly as the Taifoon coordination API (`coord.taifoon.dev/v1`). Agent
+  venues and chains appear only as data.
+- **Published from GitHub Actions with npm provenance** (`.github/workflows/publish.yml`, on a GitHub release
+  `vX.Y.Z`). The workflow runs lint, build, tests and n8n's scanner before publishing, and the scanner again on the
+  published version (blocking). `.github/workflows/ci.yml` runs the same gates on every push.
+- **author** is the npm publisher and GitHub maintainer (`yawning.monsoon@proton.me`).
+- `scripts/scan.mjs` runs `@n8n/scan-community-package` 0.39.0.
+- README rewritten: one API, credential setup, payments from inside n8n are `key_balance` only (the node never signs;
+  x402 and escrow are handled on the server side), the operations table, example workflows.
+- `X-Taifoon-Client: n8n-nodes-taifoon/0.7.0`.
+
 ## 0.6.2 (2026-10-07)
 
 - Wording: the judge calls run on the caller's 3 free grades (per account, API key or address), then on bought grades,

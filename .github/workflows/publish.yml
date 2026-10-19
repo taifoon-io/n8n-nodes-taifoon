@@ -1,0 +1,43 @@
+# Publishes to npm WITH a provenance statement, from GitHub Actions, as n8n requires for nodes submitted for
+# verification (from 2026-05-01). Triggered by publishing a GitHub release vX.Y.Z whose tag matches package.json.
+# Works with an npm Trusted Publisher (OIDC, no token) or with the NPM_TOKEN secret; provenance comes from OIDC either way.
+name: publish
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+  id-token: write          # lets npm sign the provenance statement (and authenticate a Trusted Publisher) through GitHub's OIDC
+jobs:
+  publish:
+    if: startsWith(github.event.release.tag_name, 'v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: npm 11.5.1 or newer (trusted publishing)
+        run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+      - name: The tag must match package.json
+        run: test "v$(node -p "require('./package.json').version")" = "${{ github.event.release.tag_name }}"
+      - name: No run-time dependencies, strict mode on
+        run: node -e "const p=require('./package.json'); if(Object.keys(p.dependencies||{}).length||p.n8n.strict!==true){console.error('dependencies or strict'); process.exit(1)}"
+      - name: n8n's submission scanner before publishing (source and packed tarball)
+        run: npm run scan
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          RELEASE_MODE: "true"   # n8n's prepublishOnly guard refuses a publish without it
+      - name: n8n's scanner on the published package (blocking)
+        run: |
+          name="$(node -p "require('./package.json').name")"; version="$(node -p "require('./package.json').version")"
+          for i in $(seq 1 20); do npm view "$name@$version" version >/dev/null 2>&1 && break; sleep 30; done
+          npm view "$name@$version" version
+          npx --yes @n8n/scan-community-package@0.39.0 "$name@$version" | tee scan.out
+          grep -q "has passed all security checks" scan.out   # the CLI exits 0 on a failed scan

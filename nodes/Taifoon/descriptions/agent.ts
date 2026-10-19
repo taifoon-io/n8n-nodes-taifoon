@@ -41,7 +41,7 @@ export const agentOperations: INodeProperties[] = [
 				name: 'Get Reputation',
 				value: 'getReputation',
 				action: 'Get the reputation of an address',
-				description: 'What an address has sold, bought and judged. Counts from the public job log, not a score.',
+				description: 'What an address has sold, bought and evaluated. Counts from the public job log, not a score.',
 				routing: { request: { method: 'GET', url: '=/agents/who/{{$parameter.address}}' } },
 			},
 			{
@@ -69,7 +69,7 @@ export const agentOperations: INodeProperties[] = [
 				name: 'Publish As Seller',
 				value: 'publishAsSeller',
 				action: 'Publish this workflow as a hireable ERC-8183 seller',
-				description: 'Turn this workflow’s webhook into a seller of record: price bounds, concurrency, skills. Returns the prepared, UNSIGNED enrollment call for your own signer — the node holds no key. Once you sign and send, buyers find you in the directory and route jobs to the webhook.',
+				description: 'Turn this workflow’s webhook into a listed seller: price bounds, concurrency, skills. Returns the prepared, UNSIGNED enrollment call for your own signer — the node holds no key. Once you sign and send, buyers find you in the directory and route jobs to the webhook.',
 				routing: { request: { method: 'POST', url: '/enroll/plan' } },
 			},
 			{

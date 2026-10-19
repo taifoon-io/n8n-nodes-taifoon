@@ -37,7 +37,7 @@ export const judgeOperations: INodeProperties[] = [
 				name: 'Get Reviewable Jobs',
 				value: 'getReviewable',
 				action: 'List paid deliveries worth reviewing',
-				description: 'Paid, non-self-dealing ERC-8183 jobs (the Virtuals ACP contract on Base, paid in USDC) with createdAt — where your own chain read starts — and the GRID a review earns. The work behind the reviewers’ 20%. Stage: record.',
+				description: 'Paid, non-self-dealing ERC-8183 jobs (an ERC-8183 contract on Base, paid in USDC) with createdAt — where your own chain read starts — and the GRID a review earns. The work behind the reviewers’ 20%. Stage: record.',
 				routing: { request: { method: 'GET', url: '/grid/review' } },
 			},
 			{
