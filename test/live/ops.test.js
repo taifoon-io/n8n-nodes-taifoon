@@ -127,7 +127,11 @@ for (const op of operations()) {
 			});
 		}
 
-		for (const rf of s.refusals) {
+		// a write only an operator-minted key may make (s.operatorKey): with a free probe key the scope check comes first, so a keyed
+		// refusal is 403 free_scope naming the writes a free key may make (never 401: the key is valid)
+		const FREE_PROBE = PROBE_KEY.startsWith('tfr_free_');
+		for (const rf0 of s.refusals) {
+			const rf = s.operatorKey && FREE_PROBE && !rf0.noKey && !rf0.badKey ? { ...rf0, why: `${rf0.why} (free probe key: out of scope)`, status: [403], code: 'free_scope' } : rf0;
 			await t.test(`refusal: ${rf.why} → ${rf.status.join('|')}`, async () => {
 				const params = rf.params ?? s.params(await ids());
 				const r = await callOp(op.resource, op.operation, params, { key: s.key, as: rf.noKey ? 'noKey' : rf.badKey ? 'badKey' : 'ok' });

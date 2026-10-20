@@ -154,7 +154,7 @@ const SPEC = {
 
 	// ── Completion ──
 	'completion.getStatus': { mode: 'read', key: true, params: (ids) => ({ jobId: ids.completionJob, statusNonce: 'n8n-contract-test' }), ok: { status: [200, 404], fields: [] }, refusals: [NO_KEY, { why: 'not a job id', params: { jobId: 'not-a-job', statusNonce: 'x' }, status: [400] }], budgetMs: 6000 },
-	'completion.submit': {
+	'completion.submit': { operatorKey: true,
 		mode: 'refusal-only', key: true, params: () => ({ jobId: '1', nonce: TEST_TAG, provider: ADDR, proofTx: SAMPLE_TX, result: 'x' }),
 		ok: { status: 200, fields: [] },
 		refusals: [NO_KEY, BAD_KEY, { why: 'a shortened proof hash', params: { jobId: '1', nonce: TEST_TAG, provider: ADDR, proofTx: '0xd59d…8b47', result: 'x' }, status: [400, 422] }],
@@ -185,7 +185,7 @@ const SPEC = {
 	'explorer.getAll': { mode: 'read', key: false, params: () => ({ explorerFilters: { limit: 5 } }), ok: { status: 200, fields: ['rows'], lists: ['rows'], nonEmpty: ['rows'] }, refusals: [{ why: 'an unknown buyer class', params: { explorerFilters: { buyer: 'nope' } }, status: [400] }], budgetMs: 10000 },
 
 	// ── Handshake ──
-	'handshake.attachJob': { mode: 'refusal-only', key: true, params: () => ({ handshakeId: 'hs_000000000000000000000000', jobId: '1' }), ok: { status: 200, fields: [] }, refusals: [NO_KEY, { why: 'unknown handshake', params: { handshakeId: 'hs_000000000000000000000000', jobId: '1' }, status: [404] }], gap: 'attaching advances a real handshake; only the refusals are called', budgetMs: 8000 },
+	'handshake.attachJob': { operatorKey: true, mode: 'refusal-only', key: true, params: () => ({ handshakeId: 'hs_000000000000000000000000', jobId: '1' }), ok: { status: 200, fields: [] }, refusals: [NO_KEY, { why: 'unknown handshake', params: { handshakeId: 'hs_000000000000000000000000', jobId: '1' }, status: [404] }], gap: 'attaching advances a real handshake; only the refusals are called', budgetMs: 8000 },
 	'handshake.get': { mode: 'read', key: false, params: (ids) => ({ handshakeId: ids.handshake }), ok: { status: 200, fields: [] }, refusals: [{ why: 'unknown id', params: { handshakeId: 'hs_000000000000000000000000' }, status: [404] }], budgetMs: 8000 },
 	'handshake.open': {
 		mode: 'refusal-only', key: true, params: () => ({ candidateAddress: ADDR, candidateKind: 'onchain', task: TEST_TAG }),
@@ -233,7 +233,7 @@ const SPEC = {
 		gap: 'a Jev call; only the refusal is called', budgetMs: 30000,
 	},
 	'judge.postVerdict': { mode: 'plan', key: false, params: () => ({ chainId: 36927, jobId: ZERO32, digest: '0x' + '22'.repeat(32) }), ok: { status: 200, fields: [] }, refusals: [{ why: 'a digest that is not bytes32', params: { chainId: 36927, jobId: ZERO32, digest: '0x22' }, status: [400] }], budgetMs: 8000 },
-	'judge.recordAnswers': {
+	'judge.recordAnswers': { operatorKey: true,
 		mode: 'refusal-only', key: true, params: () => ({ recordSubject: TEST_TAG, recordReply: '{"answers":[]}' }), ok: { status: 201, fields: ['digest'] },
 		refusals: [NO_KEY, { why: 'a record with no answers', params: { recordSubject: TEST_TAG, recordReply: '{"answers":[]}' }, status: [400] }],
 		gap: 'a record is stored and served publicly; only the refusals are called', budgetMs: 10000,

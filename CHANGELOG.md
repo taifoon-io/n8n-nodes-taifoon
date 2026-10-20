@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3 (2026-10-20)
+
+- **README:** the Taifoon OpenAI Chat Model drives a Basic LLM Chain; an AI Agent that calls tools needs a tool-calling model
+  of its own (the gate does not pass tool calls through yet).
+- The live suite checks operator-only writes by their `free_scope` refusal when it runs with a free key.
+
 ## 1.0.2 (2026-10-20)
 
 Every shipped workflow was run in a real n8n 2.43.8 against the production API with a free key (README → *Verified live*).

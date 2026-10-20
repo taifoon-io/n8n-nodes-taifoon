@@ -90,9 +90,10 @@ its error classes (coord `lang/cue/gate-errors.cue`, vendored as [`gate-errors.j
 | `insufficient_balance` | 402 | no | `upstream_failed` | 502 | backoff |
 | `agreement_required` | 403 | no | `model_unavailable` | 503 | backoff |
 
-For an AI Agent use n8n's own nodes: **OpenAI Chat Model** (base URL `https://coord.taifoon.dev/v1`, API key your `tfr_`
-key, **Use Responses API off**) and **MCP Client Tool** (`https://coord.taifoon.dev/mcp`, a Header Auth credential
-`X-API-Key`). Both are tested end to end in a real n8n before every release.
+With n8n's own nodes: **OpenAI Chat Model** (base URL `https://coord.taifoon.dev/v1`, API key your `tfr_` key, **Use
+Responses API off**) drives a Basic LLM Chain; the gate does not pass tool calls through yet, so an **AI Agent** that calls tools
+needs a tool-calling model of its own. **MCP Client Tool** (`https://coord.taifoon.dev/mcp`, a Header Auth credential
+`X-API-Key`) gives that agent the layer's tools. Both are tested end to end in a real n8n before every release.
 
 ## Start with these workflows
 
@@ -251,8 +252,9 @@ list prefixes.
 **Inference → List Models** reads the models the gate serves (`GET /v1/models`, OpenAI-shaped). **Inference → Chat** runs one
 chat completion through the OpenAI-compatible gate (`POST /v1/chat/completions` with your key), metered on the key at the list
 price. A free key is served within its **free agreement**; a reseller's child key is paid by the reseller. Every refusal is the
-OpenAI API error object. For an AI Agent or a Basic LLM Chain, use n8n's own **OpenAI Chat Model** node: base URL
-`https://coord.taifoon.dev/v1`, API key your `tfr_` key, **Use Responses API** off.
+OpenAI API error object. For a Basic LLM Chain, use n8n's own **OpenAI Chat Model** node: base URL
+`https://coord.taifoon.dev/v1`, API key your `tfr_` key, **Use Responses API** off. The gate does not pass tool calls through yet
+(`tools` is named back in `taifoon.not_applied`), so an AI Agent that calls tools needs a tool-calling model.
 
 ## Sell through Taifoon
 

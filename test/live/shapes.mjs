@@ -29,10 +29,13 @@ const NULL_AS = {
 // Operations that answer in more than one form, whose sample may show only one: their declared shape is the union, required
 // only what every form carries. GET proof/tx answers the proof, or the pending answer while the producer builds it.
 const MULTI_FORM = {
+	// the OpenAI chat.completion object (_OPENAI_GATE_v1_): declared by the standard, so the table never depends on a sample (a probe key
+	// that spent its free answers for the day gets 402, and the run would drop it); taifoon carries the sale and the serving listing
+	'POST chat/completions': { status: [200], props: { choices: 'array', created: 'integer', id: 'string', model: 'string', object: 'string', taifoon: 'object', usage: 'object' }, required: ['choices', 'created', 'id', 'model', 'object'] },
 	// GET judge/trace answers the job and its seller's record from the observatory, or null for both when the observatory keeps
 	// no row for the job (an assurance-hook job on a chain it does not index, an unknown id): the trail and det still answer
 	'GET judge/trace/:chain/:jobId': { status: [200], props: { chain: 'integer', contract: 'string', det: 'object', devnet_feedback: 'object?', events: 'array', explorer_contract: 'string', get_key: 'object', how: 'string', jev: 'object', job: 'object?', job_id: 'string', ok: 'boolean', read_at: 'string', registry_stamps: 'object', seller_record: 'object?', window: 'object' }, required: ['chain', 'contract', 'det', 'events', 'explorer_contract', 'how', 'jev', 'job_id', 'ok', 'read_at', 'registry_stamps', 'window'] },
-	'GET proof/tx/:chain/:tx': { status: [200], props: { batch_id: 'integer?', blob: 'object', block_hash: 'string', block_number: 'integer', chain_id: 'integer', checks: 'object', finality_block: 'integer?', finalized_block_hash: 'string?', is_finalized: 'boolean', last_anchor: 'object?', ok: 'boolean', pending_proof: 'boolean', proof_state: 'string', retry: 'string', retry_after_seconds: 'integer', source: 'string', super_root_hash: 'string?', tx: 'string', verifiable_block: 'integer?' }, required: ['block_hash', 'block_number', 'chain_id', 'checks', 'is_finalized', 'ok', 'source', 'tx'] },
+	'GET proof/tx/:chain/:tx': { status: [200], props: { batch_id: 'integer?', proof: 'object?', blob: 'object', block_hash: 'string', block_number: 'integer', chain_id: 'integer', checks: 'object', finality_block: 'integer?', finalized_block_hash: 'string?', is_finalized: 'boolean', last_anchor: 'object?', ok: 'boolean', pending_proof: 'boolean', proof_state: 'string', retry: 'string', retry_after_seconds: 'integer', source: 'string', super_root_hash: 'string?', tx: 'string', verifiable_block: 'integer?' }, required: ['block_hash', 'block_number', 'chain_id', 'checks', 'is_finalized', 'ok', 'source', 'tx'] },
 };
 const typeOf = (v) => (v === null ? 'null' : Array.isArray(v) ? 'array' : Number.isInteger(v) ? 'integer' : typeof v);
 const ids = await sampleIds();
@@ -82,6 +85,8 @@ if (keepAt > 0) {
 		else if (was.endsWith('?') && !t.endsWith('?')) v.props[f] = `${t}?`;
 		if (v.props[f].endsWith('?')) v.required = v.required.filter((x) => x !== f);
 	}
+	// a field the table did not declare is new: a few samples of one kind of record cannot prove every record carries it
+	for (const [k, v] of Object.entries(out)) if (prev[k]) v.required = v.required.filter((f) => prev[k][f] !== undefined);
 }
 Object.assign(out, MULTI_FORM);
 const lines = Object.entries(out).map(([k, v]) => `  ${JSON.stringify(k)}: { status: ${JSON.stringify(v.status)}, props: ${JSON.stringify(v.props)}, required: ${JSON.stringify(v.required)} },`);
