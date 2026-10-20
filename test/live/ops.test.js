@@ -139,7 +139,9 @@ for (const op of operations()) {
 				assert.match(r.type, /application\/json/, 'Content-Type is JSON');
 				assert.equal(r.json?.ok, false, 'ok:false');
 				assert.equal(typeof r.json?.code, 'string', 'a code');
-				assert.ok(typeof r.json?.error === 'string' && r.json.error.length > 0, 'an error message');
+				// an OpenAI-compatible op (s.openai) refuses with the OpenAI API error object, the layer's ok, code and next_step beside it
+				if (s.openai) for (const f of ['message', 'type', 'code']) assert.ok(typeof r.json?.error?.[f] === 'string' && r.json.error[f].length > 0, `the OpenAI error object carries ${f}`);
+				else assert.ok(typeof r.json?.error === 'string' && r.json.error.length > 0, 'an error message');
 				assert.ok(r.json?.next_step && typeof r.json.next_step === 'object', 'a next_step');
 				if (rf.code) assert.equal(r.json.code, rf.code);
 				noSecrets(r.text, `${id} refusal`);

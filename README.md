@@ -130,7 +130,7 @@ signer sends it.
 | Account | Get Key Standing | `GET /v1/access/key` |
 | Account | Get Reseller View | `GET /v1/access/reseller` |
 | Account | Mint Child Key | `POST /v1/tenant/keys` |
-| Inference | Chat | `POST https://api.taifoon.dev/gpu/{model}/chat` |
+| Inference | Chat | `POST /v1/chat/completions` |
 | Inference | List Models | `GET /v1/models` |
 | Account | Register Seller | `POST /v1/listings/claim` |
 | Account | Verify Seller | `POST /v1/listings/{sellerListingId}/verify` |
@@ -227,11 +227,11 @@ list prefixes.
 
 ## Inference through Taifoon
 
-**Inference → List Models** reads the models the layer resells (`GET /v1/models`; empty until the gate lists them). **Inference →
-Chat** runs one chat completion on the GPU gate (`POST https://api.taifoon.dev/gpu/{model}/chat` with your key), priced on the
-spot (0.02 USDC per 1M tokens) or reserved (0.04) lane and metered on the key. A key with no bought plan and no balance is served
-within its **free agreement** (0.10 USDC of metered use a UTC day); a reseller's child key is paid by the reseller. The streamed,
-OpenAI-compatible door that n8n's own chat model node can point at is the coord task `web-inference-gate-m4`.
+**Inference → List Models** reads the models the gate serves (`GET /v1/models`, OpenAI-shaped). **Inference → Chat** runs one
+chat completion through the OpenAI-compatible gate (`POST /v1/chat/completions` with your key), metered on the key at the list
+price. A free key is served within its **free agreement**; a reseller's child key is paid by the reseller. Every refusal is the
+OpenAI API error object. For an AI Agent or a Basic LLM Chain, use n8n's own **OpenAI Chat Model** node: base URL
+`https://coord.taifoon.dev/v1`, API key your `tfr_` key, **Use Responses API** off.
 
 ## Sell through Taifoon
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 (2026-10-20)
+
+- **Inference → Chat** now goes through the OpenAI-compatible gate on coord (`POST /v1/chat/completions`), the same door n8n's
+  OpenAI Chat Model node uses. 1.0.0 called `api.taifoon.dev/gpu/{model}/chat`, which refused a free key (403) although the
+  description promised the free agreement. Model is now an optional body field (default: our own GPU); `llama-3.1-8b` from a saved
+  1.0.0 workflow still routes. The lane option is gone: the gate prices by model.
+- The live suite calls Chat for real (one short answer) and checks every refusal is the OpenAI error object.
+
 ## 1.0.0 (2026-10-20)
 
 - **Agentic commerce workflows** (`workflows/agentic-commerce/`): one main flow and four sub-workflows (`tf.handshake`,

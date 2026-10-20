@@ -141,7 +141,7 @@ const onOp = (resource, op) =>
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '1.0.0');
+	assert.strictEqual(pkg.version, '1.0.1');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
@@ -233,13 +233,14 @@ test('no Account operation reads a key back: every GET of the key path answers a
 	for (const o of ops('account')) assert.doesNotMatch(o.description, /returns the key|reads the key back/i);
 });
 
-// ── 0.9.0: inference ──
-test('Inference → Chat posts the GPU gate (its own host) with the model in the path, the messages and the hold in the body, the lane as a query; List Models reads /v1/models', () => {
-	const chat = route('inference', 'chat');
-	assert.deepStrictEqual(chat, { method: 'POST', baseURL: 'https://api.taifoon.dev', url: '=/gpu/{{$parameter.model}}/chat' });
+// ── 1.0.1: inference ──
+test('Inference → Chat posts the OpenAI-compatible gate on coord (POST /v1/chat/completions, the one host and the one error contract): model, messages and the hold in the body; List Models reads /v1/models', () => {
+	assert.deepStrictEqual(route('inference', 'chat'), { method: 'POST', url: '/chat/completions' });
 	assert.deepStrictEqual(route('inference', 'listModels'), { method: 'GET', url: '/models' });
 	const sent = Object.fromEntries(d.properties.filter((p) => p.displayOptions && p.displayOptions.show && p.displayOptions.show.resource && p.displayOptions.show.resource[0] === 'inference' && (p.displayOptions.show.operation || []).includes('chat') && p.routing && p.routing.send && p.routing.send.property).map((p) => [p.routing.send.property, p]));
-	assert.deepStrictEqual(Object.keys(sent).sort(), ['max_tokens', 'messages', 'tier']);
-	assert.strictEqual(sent.tier.routing.send.type, 'query');
-	assert.ok(prop('model').required);
+	assert.deepStrictEqual(Object.keys(sent).sort(), ['max_tokens', 'messages', 'model']);
+	for (const p of Object.values(sent)) assert.strictEqual(p.routing.send.type, 'body');
+	// a model GET /v1/models lists; the 1.0.0 default (llama-3.1-8b) still routes, so saved workflows keep working
+	assert.strictEqual(prop('model').default, 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16');
+	assert.doesNotMatch(JSON.stringify(d), /api\.taifoon\.dev/);
 });

@@ -88,14 +88,15 @@ const SPEC = {
 		budgetMs: 6000,
 		gap: 'mints a child tenant (10 a day per reseller) whose keys are shown once; only the refusals are called',
 	},
-	// ── Inference (0.9.0): the resold models and one chat on the GPU gate ──
-	'inference.listModels': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['data'] }, refusals: [], budgetMs: 6000, gap: 'empty until the gate lists the resold models (coord task web-inference-gate-m4)' },
+	// ── Inference (1.0.1): the resold models and one chat through the OpenAI-compatible gate on coord ──
+	'inference.listModels': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['data'], lists: ['data'], nonEmpty: ['data'] }, refusals: [], budgetMs: 6000 },
 	'inference.chat': {
-		mode: 'refusal-only', key: true, params: () => ({ model: 'llama-3.1-8b', messages: '[{"role":"user","content":"hi"}]', maxTokens: 8, tier: 'spot' }),
-		ok: { status: 200, fields: [] },
-		refusals: [NO_KEY],
+		// one short answer on our own GPU, metered on the probe key's free agreement (a few hundred-thousandths of a dollar)
+		openai: true,
+		mode: 'read', key: true, params: () => ({ model: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16', messages: '[{"role":"user","content":"Say hello in five words."}]', maxTokens: 16 }),
+		ok: { status: 200, fields: ['id', 'choices', 'usage'], lists: ['choices'], nonEmpty: ['choices'] },
+		refusals: [NO_KEY, BAD_KEY, { why: 'no messages', params: { model: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16', messages: '[]', maxTokens: 16 }, status: [400] }],
 		budgetMs: 20000,
-		gap: 'a chat is metered on the key (the probe key holds nothing beyond its free agreement, and a served answer costs real GPU time); only the keyless refusal is called',
 	},
 	'account.registerSeller': {
 		mode: 'refusal-only', key: true, params: () => ({ cardUrl: 'https://n8n.taifoon.dev/webhook/tfn-digest-card' }),

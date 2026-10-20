@@ -2,10 +2,10 @@ import type { INodeProperties } from 'n8n-workflow';
 import { show } from './shared';
 
 /**
- * Inference (0.9.0): the models the layer resells and one chat call on the GPU gate, metered on the key. The gate is
- * api.taifoon.dev (a baseURL of its own): POST /gpu/{model}/chat with X-API-Key; a key with no bought plan and no balance
- * is served within its free agreement (0.10 USDC of metered use a UTC day); a reseller's child key is paid by the reseller.
- * No streaming here: the OpenAI-compatible streamed door is the coord task web-inference-gate-m4 (then n8n's own chat model node).
+ * Inference (1.0.1): the models the layer resells and one chat completion through the OpenAI-compatible gate on coord
+ * (POST /v1/chat/completions, the same door n8n's OpenAI Chat Model node uses with base URL https://coord.taifoon.dev/v1).
+ * Metered on the key; a free key is served within its free agreement; a reseller's child key is paid by the reseller. Every
+ * refusal is the OpenAI API error object ({ error: { message, type, code } }) at the status the openai SDK maps.
  */
 export const inferenceOperations: INodeProperties[] = [
 	{
@@ -20,14 +20,14 @@ export const inferenceOperations: INodeProperties[] = [
 				value: 'chat',
 				action: 'Run a chat completion',
 				description:
-					'One chat completion on the GPU gate (api.taifoon.dev/gpu/{model}/chat) with the credential: metered on the key at the catalogue price (0.02 USDC per 1M tokens spot, 0.04 reserved); a key with nothing holds the free agreement; a child key is paid by its reseller',
-				routing: { request: { method: 'POST', baseURL: 'https://api.taifoon.dev', url: '=/gpu/{{$parameter.model}}/chat' } },
+					'One chat completion through the gate (POST /v1/chat/completions, OpenAI-compatible) with the credential, metered on the key at the list price; a free key is served within its free agreement; a child key is paid by its reseller',
+				routing: { request: { method: 'POST', url: '/chat/completions' } },
 			},
 			{
 				name: 'List Models',
 				value: 'listModels',
 				action: 'List the resold models',
-				description: 'The models the layer resells at the list price (GET /v1/models; the GPU gate’s lanes at GET api.taifoon.dev/gpu/pricing). Empty until the gate lists them (coord task web-inference-gate-m4).',
+				description: 'The models the gate serves, at the list price (GET /v1/models, OpenAI-shaped: data[])',
 				routing: { request: { method: 'GET', url: '/models' } },
 			},
 		],
@@ -37,10 +37,10 @@ export const inferenceOperations: INodeProperties[] = [
 		displayName: 'Model',
 		name: 'model',
 		type: 'string',
-		default: 'llama-3.1-8b',
-		required: true,
-		description: 'The model class the gate serves (llama-3.1-8b is the 8B class: nvidia Nemotron-3-Nano-4B on the reserved and spot lanes)',
+		default: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16',
+		description: 'A model ID from List Models (the default is our own GPU)',
 		displayOptions: show('inference', ['chat']),
+		routing: { send: { type: 'body', property: 'model' } },
 	},
 	{
 		displayName: 'Messages',
@@ -61,18 +61,5 @@ export const inferenceOperations: INodeProperties[] = [
 		description: 'The most output tokens the gate holds for (the hold is released to what was used)',
 		displayOptions: show('inference', ['chat']),
 		routing: { send: { type: 'body', property: 'max_tokens' } },
-	},
-	{
-		displayName: 'Lane',
-		name: 'tier',
-		type: 'options',
-		options: [
-			{ name: 'Spot (0.02 USDC / 1M Tokens)', value: 'spot' },
-			{ name: 'Reserved (0.04 USDC / 1M Tokens)', value: 'reserved' },
-		],
-		default: 'spot',
-		description: 'The lane the call is priced on',
-		displayOptions: show('inference', ['chat']),
-		routing: { send: { type: 'query', property: 'tier' } },
 	},
 ];
