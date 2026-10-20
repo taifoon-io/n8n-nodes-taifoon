@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.2 (2026-10-20)
+
+Every shipped workflow was run in a real n8n 2.43.8 against the production API with a free key (README → *Verified live*).
+
+- **Templates:** only the ones a self-serve user can run ship (1, 3, 10, 11, 12–14, 15). Template 1 defaults to a skill live sellers
+  publish, on the devnet. Template 10 polls up to ~10 minutes (a live demand settled in about 6). The sellers 12–14 ship a payout
+  address placeholder and name their own webhook host (they shipped ours).
+- **Agentic commerce:** the error table follows coord (`card_unreadable` carries its next step).
+- **README:** who it is for, what was verified live, the real counts (66 operations, 14 resources).
+- No operation renamed; saved workflows keep working.
+
 ## 1.0.1 (2026-10-20)
 
 - **Inference → Chat** now goes through the OpenAI-compatible gate on coord (`POST /v1/chat/completions`), the same door n8n's

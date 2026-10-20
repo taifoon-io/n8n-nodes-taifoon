@@ -6,8 +6,14 @@
   <a href="https://www.npmjs.com/package/n8n-nodes-taifoon"><img src="https://img.shields.io/npm/v/n8n-nodes-taifoon?style=flat-square&labelColor=000000&color=3DA5FF&label=npm" alt="npm"></a>
   <img src="https://img.shields.io/badge/provenance-signed-00B5B8?style=flat-square&labelColor=000000" alt="provenance">
   <img src="https://img.shields.io/badge/dependencies-0-E6F0F7?style=flat-square&labelColor=000000" alt="no dependencies">
-  <img src="https://img.shields.io/badge/operations-57-3DA5FF?style=flat-square&labelColor=000000" alt="57 operations">
+  <img src="https://img.shields.io/badge/operations-66-3DA5FF?style=flat-square&labelColor=000000" alt="66 operations">
 </p>
+
+## Who it is for
+
+- **n8n builders who need work done by an AI agent** and want it checked before they pay for it.
+- **n8n builders who want to earn** from a workflow they already run: list it, and buyers hire it through the same API.
+- **Resellers** who sell Taifoon access to their own customers, on keys they mint and cap.
 
 ## Why
 
@@ -37,6 +43,21 @@ calibrated judge, settles only work that passed, and records every step on chain
 
 <p align="center"><img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/demo.gif" alt="Taifoon Explorer → Get Many in n8n, live: every job through the layer with its counts and the value moved per network" width="100%"></p>
 <p align="center"><sub>Explorer → Get Many, live and without a key: every job through the layer, who bought, who did the work, who was paid.</sub></p>
+
+## Verified live
+
+Every path below was run on 2026-10-20 in a real n8n 2.43.8 against the production API (`coord.taifoon.dev`), with a free key
+as a new user has one.
+
+| Path | Result |
+|---|---|
+| Inference → List Models, Chat | 21 models; a chat answered (17 × 24 = "408") with its usage |
+| Buy: template 10, `tf.buy` | posted, hired, graded by code (4/4 checks), settled on the devnet in about 6 minutes; the chain says REAL |
+| Sell: templates 12–14 | the card and hire webhooks answer: the exact sha256, keys sorted at every depth, the word count |
+| Hire on chain: template 1 | match → quote → offer → handshake → the calls your wallet signs (devnet) |
+| Resell: template 15 | a plan quote with the exact transfer, and the reseller view with each child's margin |
+| Agentic commerce: main flow + 4 sub-workflows | the handshake, chat, buy and sell, and every refusal in the one error contract |
+| Every operation (`test/live/ops.test.js`) | success, refusals, schema, latency and no secret in any answer; the writes that need an operator-minted key are checked by their refusal |
 
 ## Agentic commerce: one main flow, four sub-workflows
 
@@ -82,14 +103,14 @@ key, **Use Responses API off**) and **MCP Client Tool** (`https://coord.taifoon.
 | Sell a digest | your workflow as a paid seller | [`12-sell-digest.json`](workflows/12-sell-digest.json) |
 | Watch the chain | a trigger on every job change | [`3-watch-the-chain.json`](workflows/3-watch-the-chain.json) |
 
-All fifteen, with the text for each: [`workflows/TEMPLATES.md`](workflows/TEMPLATES.md).
+All eight, with the text for each: [`workflows/TEMPLATES.md`](workflows/TEMPLATES.md).
 
 ## Use it inside the flows you already have
 
 - **Outsource a step.** Replace a fragile Code or HTTP step with **Demand → Post** + **Wait** + **Demand → Get**; the
   next node uses what **Demand → Get** returns, and an IF on its state lets only a completed, graded job through.
-- **Earn from a workflow you already run.** Put a Webhook in front of it, **Account → Register Seller**, then
-  **Completion → Submit** at the end. Buyers find it in the catalogue.
+- **Earn from a workflow you already run.** Put a card Webhook and a hire Webhook in front of it (templates 12–14 show
+  how), then **Account → Register Seller** and **Verify Seller**. Its webhook's reply is the delivery; buyers find it in the catalogue.
 - **Proof in a report.** After a hire, **Proof → Verify Hire Claim** and write the verdict (REAL · FABRICATED · UNVERIFIED) into Sheets or Notion.
 - **Agents in your AI Agent.** Point n8n's **MCP Client Tool** at `https://coord.taifoon.dev/mcp` (header
   `X-API-Key: tfr_…`) and the agent can find, hire and grade through the same layer.
@@ -98,8 +119,8 @@ All fifteen, with the text for each: [`workflows/TEMPLATES.md`](workflows/TEMPLA
 
 ## Install
 
-In n8n: **Settings → Community Nodes → Install**, then enter `n8n-nodes-taifoon`. Two nodes: **Taifoon** (57
-operations, 13 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
+In n8n: **Settings → Community Nodes → Install**, then enter `n8n-nodes-taifoon`. Two nodes: **Taifoon** (66
+operations, 14 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
 [`/v1/openapi.json`](https://coord.taifoon.dev/v1/openapi.json)) and **Taifoon Trigger** (starts a workflow when a job
 changes). Compatibility: n8n 1.x and 2.x (node API version 1). Agent names, chains and job classes appear only as data,
 never as separate integrations.
@@ -107,7 +128,7 @@ never as separate integrations.
 ## Credentials
 
 Create a **Taifoon Relayer API** credential with your `tfr_` key (sent as `X-API-Key`). The credential test calls
-`GET /v1/relayer/whoami`, which has no side effects. Every read works without a key; Completion, Judge → Submit Review,
+`GET /v1/relayer/whoami`, which has no side effects. Most reads work without a key; Inference → Chat, Completion, Judge → Submit Review,
 Handshake → Attach Job and Account → Get My Tenant need one.
 
 ## Payments
@@ -195,7 +216,7 @@ This table is generated from the built node. `npm run test:live` checks every ro
 Import [`workflows/10-buy-through-taifoon.json`](workflows/10-buy-through-taifoon.json), attach your Taifoon Relayer API
 credential to the two Demand nodes, and press Execute. It posts a need in words ("the sha256 digest of the text …").
 The layer picks a seller, hires it, grades the reply by code and settles on the Taifoon devnet 36927. The workflow polls
-the demand until it ends (20 polls at most), reads the explorer row, and checks the settle transaction against the chain
+the demand until it ends (30 polls at most, ~10 min), reads the explorer row, and checks the settle transaction against the chain
 with **Proof → Verify Hire Claim** before it hands you one receipt item.
 
 No key yet? Run [`workflows/11-first-run.json`](workflows/11-first-run.json) first. Set your wallet address in **Wallet**
@@ -320,9 +341,7 @@ In [`workflows/`](workflows). Import them from the n8n editor, or run `n8n impor
 | [`15-resell-through-n8n.json`](workflows/15-resell-through-n8n.json) | **The reseller path**: quote a plan for your key (pay and sign with your wallet, then claim), read the margin; enable its Mint Child Key node to mint a customer. |
 | [`10-buy-through-taifoon.json`](workflows/10-buy-through-taifoon.json) | Buy in one click: post a need, poll the demand until it ends, read the explorer row, and verify the settle transaction against the chain. |
 | [`12-sell-digest.json`](workflows/12-sell-digest.json), [`13-sell-json-normalize.json`](workflows/13-sell-json-normalize.json), [`14-sell-word-count.json`](workflows/14-sell-word-count.json) | Sell a job class: a card webhook and a hire webhook (see *Sell through Taifoon*). |
-| [`9-buy-by-demand.json`](workflows/9-buy-by-demand.json) | A need in words → Demand → Post → poll → Explorer → Proof → Verify Hire Claim → one receipt. |
 | [`1-n8n-hires-on-chain.json`](workflows/1-n8n-hires-on-chain.json) | Match by skill → quote → create an offer → open a handshake → the exact calls to sign. |
-| [`2-on-chain-hires-n8n.json`](workflows/2-on-chain-hires-n8n.json) | Webhook → reputation gate → your agent → prove → hand in. |
 | [`3-watch-the-chain.json`](workflows/3-watch-the-chain.json) | Trigger on completed jobs → verify against the chain → report only what is corroborated. |
 
 [`workflows/TEMPLATES.md`](workflows/TEMPLATES.md) describes the rest. Templates 10–14 are checked offline by

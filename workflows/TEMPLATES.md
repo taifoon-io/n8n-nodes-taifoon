@@ -55,7 +55,8 @@ A **Card** webhook (GET) serves the seller's card. A **Hire** webhook (POST) ans
 nonce and is always a JSON 200.
 
 **List it (path B, no on-chain identity needed):**
-1. Activate the workflow. Put your payout address in both Code nodes' `ADDRESS` and your webhook URL in the card.
+1. Activate the workflow. Put your payout address in both Code nodes' `ADDRESS` (it ships as a placeholder the claim refuses). The
+   card names your own webhook URL by itself.
 2. Run **Taifoon → Account → Register Seller** with the card URL. It answers a nonce.
 3. Put the nonce in the Card's `TAIFOON_LISTING` and save.
 4. Run **Account → Verify Seller** with the listing id. Taifoon reads the nonce from your card and sends one small job of the
@@ -68,3 +69,35 @@ It is delisted after 7 days paused, or when the nonce leaves its card.
 
 **Who is paid, today:** on the devnet the job pays Taifoon's seller of record, not your address. Paying the seller directly is not
 switched on yet. The listing, each hire and each grade are recorded, and your record in the catalogue builds from them.
+
+---
+
+## 1 · Hire an on-chain agent by skill
+
+**Nodes:** Manual Trigger, Set ×2, Code, Taifoon (Agent → Match, Assurance → Get Quote, Job → Create Offer, Handshake → Open)
+
+Name a skill and a task. Taifoon matches the agents whose cards publish that skill, quotes the guarantee on the seller's own
+record, creates the job offer on the devnet and opens the handshake. It ends with the exact calls your wallet signs to fund the
+job; nothing is signed or sent from n8n.
+
+**Set up:** a Taifoon Relayer API credential on the four Taifoon nodes, then edit **What you need** (skill, price, task).
+
+---
+
+## 3 · Watch the chain for completed jobs
+
+**Nodes:** Taifoon Trigger, Taifoon (Proof → Verify Hire Claim), Set
+
+Starts whenever a job changes, asks the chain to confirm each completed job's settlement and its payee, and reports the verdict
+(REAL · FABRICATED · UNVERIFIED) beside the job. No key is needed to watch; activate the workflow.
+
+---
+
+## 15 · Resell Taifoon through n8n
+
+**Nodes:** Manual Trigger, Taifoon (Account → Get Access Quote, Mint Child Key, Get Reseller View), Code
+
+Quotes a plan for your key (the exact transfer and the message your wallet signs; you pay and claim it yourself), and reads the
+margin each customer key earns you. Enable **Mint Child Key** to mint a capped key for a customer: it is shown once, and its
+calls are paid from your balance at your markup.
+

@@ -141,7 +141,7 @@ const onOp = (resource, op) =>
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '1.0.1');
+	assert.strictEqual(pkg.version, '1.0.2');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
@@ -243,4 +243,15 @@ test('Inference → Chat posts the OpenAI-compatible gate on coord (POST /v1/cha
 	// a model GET /v1/models lists; the 1.0.0 default (llama-3.1-8b) still routes, so saved workflows keep working
 	assert.strictEqual(prop('model').default, 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16');
 	assert.doesNotMatch(JSON.stringify(d), /api\.taifoon\.dev/);
+});
+
+// ── the README states what the node ships (the 57-operation badge outlived three releases) ──
+test('README: the operation and resource counts are the built node’s', () => {
+	const readme = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'README.md'), 'utf8');
+	const opsProps = d.properties.filter((p) => p.name === 'operation');
+	const ops = opsProps.reduce((n, p) => n + p.options.length, 0);
+	const resources = new Set(opsProps.map((p) => p.displayOptions.show.resource[0])).size;
+	assert.match(readme, new RegExp(`badge/operations-${ops}-`), `the badge says ${ops} operations`);
+	assert.match(readme, new RegExp(`\\*\\*Taifoon\\*\\* \\(${ops}\\s+operations, ${resources} resources`), `Install says ${ops} operations, ${resources} resources`);
+	assert.doesNotMatch(readme, /Every read works without a key/, 'Chat and the key reads need the credential');
 });

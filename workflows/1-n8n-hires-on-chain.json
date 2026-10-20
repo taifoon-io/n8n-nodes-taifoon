@@ -1,5 +1,5 @@
 {
-  "name": "Taifoon \u2014 n8n hires an on-chain agent",
+  "name": "Taifoon — n8n hires an on-chain agent",
   "nodes": [
     {
       "parameters": {},
@@ -21,7 +21,7 @@
             {
               "id": "a1",
               "name": "skills",
-              "value": "nft-market-reading",
+              "value": "market-data",
               "type": "string"
             },
             {
@@ -33,13 +33,13 @@
             {
               "id": "a3",
               "name": "chainId",
-              "value": 8453,
+              "value": 36927,
               "type": "number"
             },
             {
               "id": "a4",
               "name": "task",
-              "value": "Summarise the latest superroot health and flag any chain older than 10 minutes.",
+              "value": "Return the latest 1-hour ETH candles (open, high, low, close, volume).",
               "type": "string"
             }
           ]
@@ -54,7 +54,7 @@
         -500,
         300
       ],
-      "notes": "The only node you edit. `skills` must be tags agents actually publish \u2014 GET /v1/agents/cards lists them under skills_seen. priceUnits is in the token's smallest unit: 10000 = 0.01 USDC.",
+      "notes": "The only node you edit. `skills` must be tags agents actually publish — GET /v1/agents/cards lists them under skills_seen. priceUnits is in the token's smallest unit: 10000 = 0.01 USDC.",
       "notesInFlow": true
     },
     {
@@ -77,7 +77,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Take the best ELIGIBLE candidate. An agent covering only some of the skills is not a cheaper\n// option, it is a different job \u2014 so stop rather than quietly downgrade what was asked for.\nconst need = $('What you need').first().json;\nconst res = $json;\nconst ok = (res.candidates ?? []).filter((c) => c.eligible === true);\nif (!ok.length) {\n  const near = (res.candidates ?? [])[0];\n  const s = res.searched ?? {};\n  throw new Error(near\n    ? `No agent covers every skill. Closest: ${near.card?.name ?? near.card?.id}, ${near.why}.`\n    : `No agent publishes these skills. ${s.cards ?? 0} cards were readable; ${s.unreadable ?? 0} more agents published a card that could not be fetched.`);\n}\nconst card = ok[0].card;\n// card.id names the agent in its registry (chain:agentId). It cannot be paid. The OWNER can.\nif (!card.owner) throw new Error(`${card.name ?? card.id} matched, but its owner address is unknown, so it cannot be named as a seller.`);\nreturn [{ json: { ...need, seller: card.owner, sellerName: card.name, agent: card.id, kind: card.kind, endpoint: card.endpoint } }];"
+        "jsCode": "// Take the best ELIGIBLE candidate. An agent covering only some of the skills is not a cheaper\n// option, it is a different job — so stop rather than quietly downgrade what was asked for.\nconst need = $('What you need').first().json;\nconst res = $json;\nconst ok = (res.candidates ?? []).filter((c) => c.eligible === true);\nif (!ok.length) {\n  const near = (res.candidates ?? [])[0];\n  const s = res.searched ?? {};\n  throw new Error(near\n    ? `No agent covers every skill. Closest: ${near.card?.name ?? near.card?.id}, ${near.why}.`\n    : `No agent publishes these skills. ${s.cards ?? 0} cards were readable; ${s.unreadable ?? 0} more agents published a card that could not be fetched.`);\n}\nconst card = ok[0].card;\n// card.id names the agent in its registry (chain:agentId). It cannot be paid. The OWNER can.\nif (!card.owner) throw new Error(`${card.name ?? card.id} matched, but its owner address is unknown, so it cannot be named as a seller.`);\nreturn [{ json: { ...need, seller: card.owner, sellerName: card.name, agent: card.id, kind: card.kind, endpoint: card.endpoint } }];"
       },
       "id": "pick-one-or-stop",
       "name": "Pick one, or stop",
@@ -107,7 +107,7 @@
         100,
         300
       ],
-      "notes": "Priced from THIS seller's settled record, as an interval. A seller with no settled jobs comes back `insurable: false` \u2014 the hire can still go ahead, uninsured, and the offer then charges no premium.",
+      "notes": "Priced from THIS seller's settled record, as an interval. A seller with no settled jobs comes back `insurable: false` — the hire can still go ahead, uninsured, and the offer then charges no premium.",
       "notesInFlow": true
     },
     {
@@ -210,7 +210,7 @@
         700,
         300
       ],
-      "notes": "The result: a handshake id, a job id, the premium, the unsigned calls to sign, and what the seller must approve first (exactly one job's deposit \u2014 never a standing allowance).",
+      "notes": "The result: a handshake id, a job id, the premium, the unsigned calls to sign, and what the seller must approve first (exactly one job's deposit — never a standing allowance).",
       "notesInFlow": true
     }
   ],

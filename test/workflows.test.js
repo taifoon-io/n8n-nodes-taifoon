@@ -11,7 +11,8 @@ const { Taifoon } = require('../dist/nodes/Taifoon/Taifoon.node.js');
 const W = (f) => JSON.parse(readFileSync(join(__dirname, '..', 'workflows', f), 'utf8'));
 const NEW = ['10-buy-through-taifoon.json', '11-first-run.json', '12-sell-digest.json', '13-sell-json-normalize.json', '14-sell-word-count.json', '15-resell-through-n8n.json'];
 const SELLERS = { '12-sell-digest.json': ['tfn-digest', 'mcp.digest'], '13-sell-json-normalize.json': ['tfn-json-normalize', 'a2a.json_normalize'], '14-sell-word-count.json': ['tfn-word-count', 'chat.word_count'] };
-const ADDRESS = '0x21399bEeec163BD3E44CC17CEaA49f3b469D2e99';
+// the sellers ship a placeholder, never a real address: a claim refuses it until the user sets their own payout address
+const ADDRESS = '0xYOUR_PAYOUT_ADDRESS';
 const NONCE = 'b58d930e-5327-49a3-9d7e-000000000001';
 
 /** Run a Code node's JS the way n8n does (the body of an async function), with $ / $json stubbed. */
@@ -73,17 +74,16 @@ for (const f of NEW) {
 	});
 }
 
-test('10: the buyer posts a need, polls ≤ 20 times until the demand ends, reads the explorer and attests the settle tx', () => {
+test('10: the buyer posts a need, polls ≤ 30 times (a live demand settled in ~6 min) until the demand ends, reads the explorer and attests the settle tx', () => {
 	const wf = W('10-buy-through-taifoon.json');
 	const by = (n) => wf.nodes.find((x) => x.name === n);
 	const need = Object.fromEntries(by('Need').parameters.assignments.assignments.map((a) => [a.name, a.value]));
 	assert.deepStrictEqual(need, { need: 'the sha256 digest of the text "hello from n8n"', buyer_label: 'n8n:buy-through-taifoon' });
 	assert.strictEqual(by('Post demand').parameters.demandMode, 'need');
 	for (const s of ['settled', 'failed', 'unmatched', 'expired']) assert.ok(by('Ended?').parameters.conditions.boolean[0].value1.includes(`'${s}'`), s);
-	assert.match(by('Ended?').parameters.conditions.boolean[0].value1, /\$runIndex >= 19/);
+	assert.match(by('Ended?').parameters.conditions.boolean[0].value1, /\$runIndex >= 29/);
 	assert.strictEqual(by('Wait 20 s').parameters.amount, 20);
-	const nine = JSON.parse(readFileSync(join(__dirname, '..', 'workflows', '9-buy-by-demand.json'), 'utf8')).nodes.find((n) => n.name === 'Verify on chain');
-	assert.deepStrictEqual(by('Verify on chain').parameters.claim.txHash, nine.parameters.claim.txHash, 'the settle tx is read as template 9 reads it');
+	assert.match(String(by('Verify on chain').parameters.claim.txHash), /ending/, 'the settle tx is read from the demand\'s ending');
 	assert.strictEqual(by('Verify on chain').parameters.claim.chainId, 36927);
 	// the receipt on a settled demand, and on one that ended unmatched (no explorer row, no tx)
 	const d = { id: 'dm_1', state: 'settled', class: 'mcp.digest', ending: { transition: 'complete', tx: '0x' + 'a'.repeat(64) } };
@@ -125,8 +125,12 @@ for (const [f, [slug, klass]] of Object.entries(SELLERS)) {
 		assert.deepStrictEqual([by('Hire').parameters.httpMethod, by('Hire').parameters.path, by('Hire').parameters.responseMode], ['POST', slug, 'responseNode']);
 		assert.strictEqual(by('Respond').parameters.options.responseCode, 200);
 		assert.match(by('Respond').parameters.responseBody, /\$json\.reply \|\|/, 'a failed step still answers JSON');
-		const card = run(wf, 'Card JSON').card;
-		const endpoint = `https://n8n.taifoon.dev/webhook/${slug}`;
+		// the endpoint is the host the card was read on (no host of ours shipped in a template)
+		const card = run(wf, 'Card JSON', { nodes: { Card: { headers: { host: 'n8n.example.com', 'x-forwarded-proto': 'https' } } } }).card;
+		const endpoint = `https://n8n.example.com/webhook/${slug}`;
+		assert.doesNotMatch(card.address, /^0x[0-9a-fA-F]{40}$/, 'a placeholder, not an address');
+		assert.doesNotMatch(JSON.stringify(wf), /n8n\.taifoon\.dev|0x21399bEeec163BD3E44CC17CEaA49f3b469D2e99/i, 'no host or address of ours in the template');
+		assert.strictEqual(run(wf, 'Card JSON', { nodes: { Card: { headers: { host: '127.0.0.1:5678' } } } }).card.endpoint, `https://127.0.0.1:5678/webhook/${slug}`);
 		assert.strictEqual(card.type, 'https://eips.ethereum.org/EIPS/eip-8004#registration-v1');
 		assert.strictEqual(card.kind, 'n8n');
 		assert.strictEqual(card.address, ADDRESS);

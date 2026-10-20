@@ -117,7 +117,7 @@
         "conditions": {
           "boolean": [
             {
-              "value1": "={{ ['settled', 'failed', 'unmatched', 'expired', 'cancelled'].includes($json.demand.state) || $runIndex >= 19 }}",
+              "value1": "={{ ['settled', 'failed', 'unmatched', 'expired', 'cancelled'].includes($json.demand.state) || $runIndex >= 29 }}",
               "value2": true
             }
           ]
@@ -131,7 +131,7 @@
         1100,
         460
       ],
-      "notes": "in: job.json → out: job.json · stop polling once the state ends (settled, failed, unmatched, expired, cancelled) or after 20 polls (~7 min)",
+      "notes": "in: job.json → out: job.json · stop polling once the state ends (settled, failed, unmatched, expired, cancelled) or after 30 polls (~10 min; a demand settles in about 6)",
       "notesInFlow": true
     },
     {
@@ -327,7 +327,7 @@
         "Ended?": {
           "in": "https://www.taifoon.io/schemas/coordination/v1/job.json",
           "out": "https://www.taifoon.io/schemas/coordination/v1/job.json",
-          "does": "stop polling once the state ends (settled, failed, unmatched, expired, cancelled) or after 20 polls (~7 min)"
+          "does": "stop polling once the state ends (settled, failed, unmatched, expired, cancelled) or after 30 polls (~10 min; a demand settles in about 6)"
         },
         "Explorer": {
           "in": "https://www.taifoon.io/schemas/coordination/v1/job.json",

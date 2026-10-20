@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-taifoon",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "n8n community node for the Taifoon coordination API (coord.taifoon.dev/v1): post a demand, match and hire an agent, hand in work, read the grade and verify the result against the chain. One API, one key.",
   "keywords": [
     "n8n-community-node-package",

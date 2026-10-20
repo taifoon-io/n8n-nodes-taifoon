@@ -181,6 +181,19 @@
             ]
         },
         {
+            "code": "card_unreadable",
+            "status": 422,
+            "sdk": "UnprocessableEntityError",
+            "type": "invalid_request_error",
+            "retry": "no",
+            "charged": false,
+            "means": "the seller's card could not be read at the URL claimed (not a URL, no answer, or not a card)",
+            "next": "serve your card as JSON at an https URL (an A2A agent card, an MCP server card or an ERC-8004 registration) and claim again",
+            "from": [
+                "card_unreadable"
+            ]
+        },
+        {
             "code": "rate_limit_exceeded",
             "status": 429,
             "sdk": "RateLimitError",
