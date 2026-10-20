@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0 (2026-10-20)
+
+- **Agentic commerce workflows** (`workflows/agentic-commerce/`): one main flow and four sub-workflows (`tf.handshake`,
+  `tf.chat`, `tf.buy`, `tf.sell`), built-in n8n nodes only, reselling both ways under the agentic-commerce agreements. One key
+  in one Header Auth credential; every answer and refusal in one error contract (the OpenAI API error object at the status the
+  `openai` SDK maps to its classes; coord `lang/cue/gate-errors.cue`). Tested end to end in a real n8n 2.43: 11/11.
+- Includes 0.8.0 (the key path and the reseller path) and 0.9.0 (Inference → Chat and List Models), not published separately.
+- No operation renamed; saved workflows keep working.
+
 ## 0.9.0 (2026-10-19)
 
 - **Inference → Chat, List Models**: one chat completion on the GPU gate (`POST api.taifoon.dev/gpu/{model}/chat` with the key, spot

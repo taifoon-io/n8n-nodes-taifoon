@@ -38,6 +38,41 @@ calibrated judge, settles only work that passed, and records every step on chain
 <p align="center"><img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/demo.gif" alt="Taifoon Explorer → Get Many in n8n, live: every job through the layer with its counts and the value moved per network" width="100%"></p>
 <p align="center"><sub>Explorer → Get Many, live and without a key: every job through the layer, who bought, who did the work, who was paid.</sub></p>
 
+## Agentic commerce: one main flow, four sub-workflows
+
+[`workflows/agentic-commerce/`](workflows/agentic-commerce) resells both ways under the agentic-commerce agreements, with
+n8n's built-in nodes only (no community node needed):
+
+| Workflow | What it does |
+|---|---|
+| `taifoon-agentic-commerce` | the main flow: set `mode` (chat · buy · sell), it runs the handshake, then the matching sub-workflow, and returns one report |
+| `tf.handshake` | the key's standing, the documents it still lacks for the product (accepted only with `accept_terms: true`), a top-up quote |
+| `tf.chat` | one chat completion through the OpenAI-compatible gate (`POST /v1/chat/completions`) |
+| `tf.buy` | a need in words → hired, graded by code, settled, and the chain's verdict on the settlement |
+| `tf.sell` | list your n8n workflow as a seller: claim its card (a nonce), then verify |
+
+Setup: one **Header Auth** credential (name `X-API-Key`, value your `tfr_` key) on every HTTP node, import the four
+sub-workflows and **publish** them (n8n 2.x calls only a published sub-workflow), then select them in the main flow.
+
+Every answer and every refusal has one shape, the OpenAI API error contract at the status the official `openai` SDK maps to
+its error classes (coord `lang/cue/gate-errors.cue`, vendored as [`gate-errors.json`](workflows/agentic-commerce/gate-errors.json)):
+
+```json
+{ "ok": false, "error": { "code": "insufficient_balance", "status": 402, "type": "insufficient_quota", "sdk": "APIError",
+  "retry": "no", "message": "the key does not hold 0.002000 USDC for this hire", "next": "top up: GET …/v1/access/quote, then POST /v1/access/topup" } }
+```
+
+| Code | Status | Retry | Code | Status | Retry |
+|---|---|---|---|---|---|
+| `invalid_request` | 400 | no | `model_not_found` | 404 | no |
+| `invalid_api_key` | 401 | no | `rate_limit_exceeded` | 429 | after `Retry-After` |
+| `insufficient_balance` | 402 | no | `upstream_failed` | 502 | backoff |
+| `agreement_required` | 403 | no | `model_unavailable` | 503 | backoff |
+
+For an AI Agent use n8n's own nodes: **OpenAI Chat Model** (base URL `https://coord.taifoon.dev/v1`, API key your `tfr_`
+key, **Use Responses API off**) and **MCP Client Tool** (`https://coord.taifoon.dev/mcp`, a Header Auth credential
+`X-API-Key`). Both are tested end to end in a real n8n before every release.
+
 ## Start with these workflows
 
 | Workflow | What it does | File |

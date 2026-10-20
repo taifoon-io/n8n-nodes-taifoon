@@ -1,0 +1,444 @@
+{
+  "id": "tfAgenticMain01",
+  "name": "Taifoon: agentic commerce in n8n (buy, sell, chat)",
+  "nodes": [
+    {
+      "id": "n33",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "n34",
+      "name": "What to do",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "mode",
+              "value": "chat",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "prompt",
+              "value": "What is 17 multiplied by 24?",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "model",
+              "value": "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "need",
+              "value": "the sha256 digest of the text \"hello\"",
+              "type": "string"
+            },
+            {
+              "id": "a6",
+              "name": "card_url",
+              "value": "https://YOUR-N8N/webhook/your-card",
+              "type": "string"
+            },
+            {
+              "id": "a7",
+              "name": "accept_terms",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "a8",
+              "name": "base",
+              "value": "https://coord.taifoon.dev",
+              "type": "string"
+            },
+            {
+              "id": "a9",
+              "name": "step",
+              "value": "claim",
+              "type": "string"
+            },
+            {
+              "id": "a10",
+              "name": "listing_id",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "a11",
+              "name": "poll_seconds",
+              "value": 20,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n35",
+      "name": "tf.handshake",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tfHandshakeSub1"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n36",
+      "name": "Ready?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const h = $json; const input = $('What to do').first().json;\nreturn [{ json: { ...input, handshake: h, ready: h.ok === true && (!h.agreements?.enforced || !h.agreements?.still_missing?.length) } }];"
+      }
+    },
+    {
+      "id": "n37",
+      "name": "Mode",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        960,
+        300
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "m-chat",
+                    "leftValue": "={{ $json.ready ? $json.mode : 'stop' }}",
+                    "rightValue": "chat",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "chat"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "m-buy",
+                    "leftValue": "={{ $json.ready ? $json.mode : 'stop' }}",
+                    "rightValue": "buy",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "buy"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "m-sell",
+                    "leftValue": "={{ $json.ready ? $json.mode : 'stop' }}",
+                    "rightValue": "sell",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sell"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "not ready"
+        }
+      }
+    },
+    {
+      "id": "n38",
+      "name": "tf.chat",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        120
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tfChatSub000001"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n39",
+      "name": "tf.buy",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tfBuySub0000001"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n40",
+      "name": "tf.sell",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        480
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tfSellSub000001"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n41",
+      "name": "Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// one line per run: what was done, its answer or its error in the standard shape (coord gate-errors.cue)\nconst input = $('Ready?').first().json; const r = $json;\nreturn [{ json: { mode: input.mode, ok: r.ok === true || (r.ok === undefined && !r.error), result: r, handshake: input.handshake } }];"
+      }
+    },
+    {
+      "id": "n42",
+      "name": "Not ready",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        660
+      ],
+      "parameters": {
+        "jsCode": "const i = $json; return [{ json: { mode: i.mode, ok: false, handshake: i.handshake, next: i.handshake?.next ?? i.handshake?.error?.next ?? 'run tf.handshake' } }];"
+      }
+    },
+    {
+      "id": "n43",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -60
+      ],
+      "parameters": {
+        "content": "## Taifoon agentic commerce in n8n\nBuy work from AI agents, sell your own workflows to them, and run chat completions, all on **one Taifoon key** under the agentic-commerce agreements.\n\n1. Get a key: `POST https://coord.taifoon.dev/v1/register` (or template 11).\n2. Create a **Header Auth** credential: name `X-API-Key`, value your `tfr_` key. Select it on every HTTP node of the four sub-workflows.\n3. Import the four sub-workflows (`tf.*`), **publish** each (n8n 2.x calls only a published sub-workflow), and select each in its Execute Workflow node here.\n4. Set **What to do** (`mode`: chat · buy · sell) and run. Read the terms before you set `accept_terms` to true.\n\nEvery answer and every refusal has one shape: `{ ok, … }` or `{ ok: false, error: { code, status, type, sdk, retry, message, next } }`, the OpenAI error contract.",
+        "width": 560,
+        "height": 320
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "What to do",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "What to do": {
+      "main": [
+        [
+          {
+            "node": "tf.handshake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tf.handshake": {
+      "main": [
+        [
+          {
+            "node": "Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready?": {
+      "main": [
+        [
+          {
+            "node": "Mode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mode": {
+      "main": [
+        [
+          {
+            "node": "tf.chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "tf.buy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "tf.sell",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tf.chat": {
+      "main": [
+        [
+          {
+            "node": "Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tf.buy": {
+      "main": [
+        [
+          {
+            "node": "Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tf.sell": {
+      "main": [
+        [
+          {
+            "node": "Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": [
+    {
+      "name": "Taifoon"
+    },
+    {
+      "name": "agentic commerce"
+    }
+  ]
+}

@@ -1,0 +1,267 @@
+{
+    "schema": "taifoon.gate.errors.v1",
+    "standard": "OpenAI API error object at the status the official openai SDK (openai-node, openai-python) maps to its error classes",
+    "shape": "{ error: { message, type, code, param: null }, taifoon?: { next_step, …the layer's fields } }; streaming: the same object before the first chunk, never mid-stream",
+    "headers": [
+        "Retry-After (seconds) on every 429 and on 503 model_at_capacity",
+        "x-request-id on every answer"
+    ],
+    "errors": [
+        {
+            "code": "invalid_request",
+            "status": 400,
+            "sdk": "BadRequestError",
+            "type": "invalid_request_error",
+            "retry": "no",
+            "charged": false,
+            "means": "the body is not an OpenAI chat request (messages missing, a role unknown)",
+            "next": "fix the request; the message names the field",
+            "from": [
+                "bad_request",
+                "bad_input",
+                "bad_json"
+            ],
+            "venue_aliases": [
+                "INVALID_REQUEST"
+            ]
+        },
+        {
+            "code": "context_length_exceeded",
+            "status": 400,
+            "sdk": "BadRequestError",
+            "type": "invalid_request_error",
+            "retry": "no",
+            "charged": false,
+            "means": "the prompt plus max_tokens is more than the model takes",
+            "next": "shorten the messages or lower max_tokens",
+            "from": [],
+            "venue_aliases": [
+                "TOO_MANY_TOKENS"
+            ]
+        },
+        {
+            "code": "invalid_api_key",
+            "status": 401,
+            "sdk": "AuthenticationError",
+            "type": "authentication_error",
+            "retry": "no",
+            "charged": false,
+            "means": "no tfr_ key was sent, or it is revoked, expired or unknown",
+            "next": "send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register",
+            "from": [
+                "unauthorized",
+                "expired"
+            ],
+            "venue_aliases": [
+                "AUTHENTICATION_FAILED"
+            ]
+        },
+        {
+            "code": "insufficient_balance",
+            "status": 402,
+            "sdk": "APIError",
+            "type": "insufficient_quota",
+            "retry": "no",
+            "charged": false,
+            "means": "the key's balance does not cover this request at the list price",
+            "next": "top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup",
+            "from": [
+                "budget",
+                "free_allowance_spent",
+                "free_budget_spent"
+            ],
+            "venue_aliases": [
+                "INSUFFICIENT_BALANCE"
+            ]
+        },
+        {
+            "code": "key_spend_limit_exceeded",
+            "status": 402,
+            "sdk": "APIError",
+            "type": "insufficient_quota",
+            "retry": "no",
+            "charged": false,
+            "means": "the key reached its own daily or monthly cap, though its tenant may hold balance",
+            "next": "the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}",
+            "from": [
+                "cap_reached"
+            ],
+            "venue_aliases": [
+                "API_KEY_USD_SPEND_LIMIT_EXCEEDED"
+            ]
+        },
+        {
+            "code": "agreement_required",
+            "status": 403,
+            "sdk": "PermissionDeniedError",
+            "type": "permission_error",
+            "retry": "no",
+            "charged": false,
+            "means": "the key has not accepted the documents this product needs (TSUL-1.1, TAT …)",
+            "next": "POST https://coord.taifoon.dev/v1/access/agreements {doc, product}; GET it lists the gaps",
+            "from": [
+                "agreement_required"
+            ]
+        },
+        {
+            "code": "scope_not_allowed",
+            "status": 403,
+            "sdk": "PermissionDeniedError",
+            "type": "permission_error",
+            "retry": "no",
+            "charged": false,
+            "means": "the key's scopes do not include this door (a free key writing, a child managing keys)",
+            "next": "use a key with the scope; GET /v1/access/key shows the key's scopes",
+            "from": [
+                "free_scope",
+                "child_managed_by_reseller",
+                "forbidden"
+            ],
+            "venue_aliases": [
+                "UNAUTHORIZED"
+            ]
+        },
+        {
+            "code": "model_not_found",
+            "status": 404,
+            "sdk": "NotFoundError",
+            "type": "not_found_error",
+            "retry": "no",
+            "charged": false,
+            "means": "no listing sells this model, or its venue's terms forbid resale",
+            "next": "pick a model from GET https://coord.taifoon.dev/v1/models data[]",
+            "from": [
+                "not_resold"
+            ],
+            "venue_aliases": [
+                "MODEL_NOT_FOUND",
+                "INVALID_MODEL"
+            ]
+        },
+        {
+            "code": "conflict",
+            "status": 409,
+            "sdk": "ConflictError",
+            "type": "invalid_request_error",
+            "retry": "no",
+            "charged": false,
+            "means": "the request repeats one already recorded (the same reference, the same acceptance)",
+            "next": "read the existing record instead of sending again",
+            "from": [
+                "already_registered",
+                "duplicate"
+            ]
+        },
+        {
+            "code": "payload_too_large",
+            "status": 413,
+            "sdk": "APIError",
+            "type": "invalid_request_error",
+            "retry": "no",
+            "charged": false,
+            "means": "the body is larger than the gate takes",
+            "next": "send fewer or shorter messages",
+            "from": [],
+            "venue_aliases": [
+                "PAYLOAD_TOO_LARGE"
+            ]
+        },
+        {
+            "code": "content_policy_violation",
+            "status": 422,
+            "sdk": "UnprocessableEntityError",
+            "type": "invalid_request_error",
+            "retry": "no",
+            "charged": false,
+            "means": "the provider refused the content under its policy",
+            "next": "change the request; nothing was charged",
+            "from": [],
+            "venue_aliases": [
+                "CONTENT_POLICY_VIOLATION"
+            ]
+        },
+        {
+            "code": "rate_limit_exceeded",
+            "status": 429,
+            "sdk": "RateLimitError",
+            "type": "rate_limit_error",
+            "retry": "after",
+            "charged": false,
+            "means": "the key sent more requests a minute than its budget",
+            "next": "wait Retry-After seconds and send the same request again",
+            "from": [
+                "rate_limited"
+            ],
+            "venue_aliases": [
+                "RATE_LIMIT_EXCEEDED"
+            ]
+        },
+        {
+            "code": "upstream_failed",
+            "status": 502,
+            "sdk": "InternalServerError",
+            "type": "api_error",
+            "retry": "backoff",
+            "charged": false,
+            "means": "the provider answered an error or no text; the key was refunded",
+            "next": "retry with backoff, or name another model of GET /v1/models",
+            "from": [
+                "provider_refused",
+                "gate_refused",
+                "no_answer"
+            ],
+            "venue_aliases": [
+                "INFERENCE_FAILED",
+                "UNKNOWN_ERROR"
+            ]
+        },
+        {
+            "code": "model_unavailable",
+            "status": 503,
+            "sdk": "InternalServerError",
+            "type": "api_error",
+            "retry": "backoff",
+            "charged": false,
+            "means": "the model is listed but this deployment cannot deliver it now (its provider account is not funded, or its node is offline)",
+            "next": "name a model whose taifoon.available is true in GET /v1/models, or retry later",
+            "from": [
+                "waits_on_funding",
+                "walls_not_open"
+            ],
+            "venue_aliases": [
+                "MODEL_OFFLINE"
+            ]
+        },
+        {
+            "code": "model_at_capacity",
+            "status": 503,
+            "sdk": "InternalServerError",
+            "type": "api_error",
+            "retry": "backoff",
+            "charged": false,
+            "means": "the model's provider is overloaded",
+            "next": "retry after Retry-After seconds, or name another model",
+            "from": [],
+            "venue_aliases": [
+                "MODEL_AT_CAPACITY",
+                "MODEL_OVERLOADED"
+            ]
+        },
+        {
+            "code": "request_timeout",
+            "status": 504,
+            "sdk": "InternalServerError",
+            "type": "api_error",
+            "retry": "backoff",
+            "charged": false,
+            "means": "the provider did not answer in time; the key was refunded",
+            "next": "retry with backoff, or lower max_tokens",
+            "from": [
+                "timeout"
+            ],
+            "venue_aliases": [
+                "REQUEST_TIMEOUT"
+            ]
+        }
+    ]
+}
