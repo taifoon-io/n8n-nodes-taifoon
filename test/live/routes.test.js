@@ -32,7 +32,10 @@ test('the node declares a sensible number of operations', () => {
 
 // Routes 0.6.0 calls that the layer may not have deployed yet. Each is checked like any other once its probe answers;
 // while the probe answers 404 the route is not live, and its operations are skipped with a message instead of failing.
-const NEW_ROUTES = [{ prefix: '/listings', probe: '/v1/listings?view=funnel', since: '0.6.0' }];
+const NEW_ROUTES = [
+	{ prefix: '/listings', probe: '/v1/listings?view=funnel', since: '0.6.0' },
+	{ prefix: '/sma', probe: '/v1/sma/graph?product=taifoon&scope=public', since: '1.1.0' },
+];
 
 test('every operation exists in the live OpenAPI document', async (t) => {
 	const res = await fetch(`${BASE}/v1/openapi.json`);

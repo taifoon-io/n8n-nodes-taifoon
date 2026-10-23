@@ -43,10 +43,10 @@ test('optional settle fields are omitted when empty, never sent as ""', () => {
 	for (const o of coll.options) assert.match(o.routing.send.value, /\$value \|\| undefined/, `${o.name} drops its empty value`);
 });
 
-test('the relayer credential is offered on Completion, Judge, Settlement, Handshake, Job, Demand and Account, and stays optional', () => {
+test('the relayer credential is offered on Completion, Judge, Settlement, Handshake, Job, Demand, Account, Inference and Helpdesk, and stays optional', () => {
 	assert.strictEqual(d.credentials.length, 1);
 	assert.strictEqual(d.credentials[0].required, false, 'a required credential breaks every public read (found by running the node)');
-	assert.deepStrictEqual(d.credentials[0].displayOptions.show.resource, ['completion', 'judge', 'settlement', 'handshake', 'job', 'demand', 'account', 'inference']);
+	assert.deepStrictEqual(d.credentials[0].displayOptions.show.resource, ['completion', 'judge', 'settlement', 'handshake', 'job', 'demand', 'account', 'inference', 'helpdesk']);
 });
 
 test('Judge → Submit Review: the owner is optional once bound, and the binding signature rides as owner_signature', () => {
@@ -141,7 +141,7 @@ const onOp = (resource, op) =>
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '1.0.3');
+	assert.strictEqual(pkg.version, '1.1.0');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
@@ -167,9 +167,9 @@ test('Register Seller and Verify Seller carry the credential (Account is in its 
 	assert.ok(d.credentials[0].displayOptions.show.resource.includes('account'));
 });
 
-test('Account → Register Free Key sends X-Taifoon-Channel: n8n (the tenant is recorded via n8n), and only the mint operations do', async () => {
+test('Account → Register Free Key sends X-Taifoon-Channel: n8n (the tenant is recorded via n8n), and only the mint operations and Helpdesk → Ask do', async () => {
 	const withPreSend = d.properties.filter((p) => p.routing?.send?.preSend);
-	assert.deepStrictEqual(withPreSend.map((p) => p.name), ['registerChannel']);
+	assert.deepStrictEqual(withPreSend.map((p) => p.name), ['registerChannel', 'smaChannel']); // 1.1.0: Helpdesk → Ask names its outlet the same way
 	const ch = withPreSend[0];
 	assert.strictEqual(ch.type, 'hidden');
 	assert.deepStrictEqual(ch.displayOptions.show, { resource: ['account'], operation: ['register', 'subscribe', 'mintChildKey'] }); // 0.8.0: every mint call says it came via n8n

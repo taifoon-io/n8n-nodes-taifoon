@@ -194,6 +194,30 @@ const SPEC = {
 		gap: 'opening records a handshake the explorer lists (a public record); only the refusals are called', budgetMs: 10000,
 	},
 
+	// ── Helpdesk (1.1.0): Show Me Around ++ (_SMA_HELPDESK_v1_) — the graph reads are live; every write is refusal-only (a case,
+	// an answer, a grade or a nomination is a row of a real tenant, and a case past the free allowance is metered) ──
+	'helpdesk.getGraph': { mode: 'read', key: false, params: () => ({ smaGraphProduct: 'taifoon', smaGraphScope: 'public' }), ok: { status: 200, fields: ['product', 'scope', 'nodes', 'edges', 'count'], lists: ['nodes', 'edges'] }, refusals: [{ why: 'no product', params: { smaGraphProduct: '' }, status: [400] }, { why: 'the tenant scope without a key', params: { smaGraphProduct: 'taifoon', smaGraphScope: 'tenant' }, status: [401, 403] }], budgetMs: 8000 },
+	'helpdesk.getWeakest': { mode: 'read', key: false, params: () => ({ smaGraphProduct: 'taifoon', smaGraphScope: 'public' }), ok: { status: 200, fields: ['product', 'scope', 'weakest', 'count'], lists: ['weakest'] }, refusals: [{ why: 'no product', params: { smaGraphProduct: '' }, status: [400] }], budgetMs: 8000 },
+	'helpdesk.ask': {
+		mode: 'refusal-only', key: true, params: () => ({ smaProduct: 'taifoon', smaQuestion: `${TEST_TAG}: where is the key my workflow sends?` }),
+		ok: { status: [200, 201], fields: ['case', 'next'] },
+		refusals: [NO_KEY, BAD_KEY, { why: 'a question too short', params: { smaProduct: 'taifoon', smaQuestion: 'x' }, status: [400, 422] }, { why: 'not a product id', params: { smaProduct: 'Not A Product', smaQuestion: 'where is the key my workflow sends?' }, status: [400, 404, 422] }],
+		gap: 'opens a real case on the key’s tenant and, past the free allowance of 20 a day, meters 0.10 USDC; only the refusals are called',
+		budgetMs: 15000,
+	},
+	'helpdesk.answer': { mode: 'refusal-only', key: true, params: () => ({ smaCase: 'case_0000000000000000', smaAnswerWords: TEST_TAG }), ok: { status: 200, fields: ['case'] }, refusals: [NO_KEY, { why: 'unknown case', params: { smaCase: 'case_0000000000000000', smaAnswerWords: TEST_TAG }, status: [403, 404] }, { why: 'not a case id', params: { smaCase: 'nope', smaAnswerWords: TEST_TAG }, status: [400, 422] }], gap: 'an answer is written on a real open case of the key’s tenant; only the refusals are called', budgetMs: 8000 },
+	'helpdesk.grade': { mode: 'refusal-only', key: true, params: () => ({ smaCase: 'case_0000000000000000', smaGradeScore: 1, smaGradeBy: 'buyer' }), ok: { status: 200, fields: ['case'] }, refusals: [NO_KEY, { why: 'unknown case', params: { smaCase: 'case_0000000000000000', smaGradeScore: 1, smaGradeBy: 'buyer' }, status: [403, 404] }, { why: 'a score above 1', params: { smaCase: 'case_0000000000000000', smaGradeScore: 2, smaGradeBy: 'buyer' }, status: [400, 422] }], gap: 'a grade settles a real case (the grade-gate loop); only the refusals are called', budgetMs: 8000 },
+	'helpdesk.tune': { mode: 'refusal-only', key: true, params: () => ({ smaCase: 'case_0000000000000000', smaTuneLoop: 'grade-gate', smaTuneValue: 0.5 }), ok: { status: 200, fields: ['tuning'] }, refusals: [NO_KEY, { why: 'a free key is no admin, and the case is unknown', params: { smaCase: 'case_0000000000000000', smaTuneLoop: 'grade-gate', smaTuneValue: 0.5 }, status: [403, 404] }], gap: 'tuning changes a loop of a real tenant (admin only); only the refusals are called', budgetMs: 8000 },
+	'helpdesk.nominate': {
+		mode: 'refusal-only', key: true, params: () => ({ smaProduct: 'taifoon', smaExpert: 'key:000000000000000000000000', smaPayee: ADDR, smaChains: 'eip155:36927', smaShareBps: 7000, smaCapMicroPerPeriod: 100000000, smaPeriod: 'month', smaClasses: 'sma.case' }),
+		ok: { status: [200, 201], fields: ['id', 'state'] },
+		refusals: [NO_KEY, { why: 'a share above 7000 bps', params: { smaProduct: 'taifoon', smaExpert: 'key:000000000000000000000000', smaPayee: ADDR, smaChains: 'eip155:36927', smaShareBps: 9000, smaCapMicroPerPeriod: 1, smaPeriod: 'month', smaClasses: 'sma.case' }, status: [400, 422] }, { why: 'a free key is no admin of the product', params: { smaProduct: 'taifoon', smaExpert: 'key:000000000000000000000000', smaPayee: ADDR, smaChains: 'eip155:36927', smaShareBps: 7000, smaCapMicroPerPeriod: 1, smaPeriod: 'month', smaClasses: 'sma.case' }, status: [403, 404] }],
+		gap: 'a nomination is a signed claim the payee resolver reads, written for a real product by its admin key; only the refusals are called',
+		budgetMs: 8000,
+	},
+	'helpdesk.acceptNomination': { mode: 'refusal-only', key: true, params: () => ({ smaNominationId: 'nom_0000000000000000' }), ok: { status: 200, fields: ['id', 'state'] }, refusals: [NO_KEY, { why: 'unknown nomination', params: { smaNominationId: 'nom_0000000000000000' }, status: [403, 404] }, { why: 'not a nomination id', params: { smaNominationId: 'nope' }, status: [400, 422] }], gap: 'only the nominated expert’s key may accept; only the refusals are called', budgetMs: 8000 },
+	'helpdesk.revokeNomination': { mode: 'refusal-only', key: true, params: () => ({ smaNominationId: 'nom_0000000000000000' }), ok: { status: 200, fields: ['id', 'state'] }, refusals: [NO_KEY, { why: 'unknown nomination', params: { smaNominationId: 'nom_0000000000000000' }, status: [403, 404] }], gap: 'only the admin key that proposed a nomination may revoke it; only the refusals are called', budgetMs: 8000 },
+
 	// ── Job ──
 	'job.createOffer': { mode: 'plan', key: false, params: () => ({ chainId: 8453, seller: ADDR, price: '100000' }), ok: { status: 200, fields: [] }, refusals: [{ why: 'not an integer price', params: { chainId: 8453, seller: ADDR, price: 'abc' }, status: [400, 422] }], budgetMs: 10000 },
 	'job.getChanged': {
