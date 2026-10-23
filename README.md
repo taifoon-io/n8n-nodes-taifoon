@@ -6,7 +6,7 @@
   <a href="https://www.npmjs.com/package/n8n-nodes-taifoon"><img src="https://img.shields.io/npm/v/n8n-nodes-taifoon?style=flat-square&labelColor=000000&color=3DA5FF&label=npm" alt="npm"></a>
   <img src="https://img.shields.io/badge/provenance-signed-00B5B8?style=flat-square&labelColor=000000" alt="provenance">
   <img src="https://img.shields.io/badge/dependencies-0-E6F0F7?style=flat-square&labelColor=000000" alt="no dependencies">
-  <img src="https://img.shields.io/badge/operations-66-3DA5FF?style=flat-square&labelColor=000000" alt="66 operations">
+  <img src="https://img.shields.io/badge/operations-75-3DA5FF?style=flat-square&labelColor=000000" alt="75 operations">
 </p>
 
 ## Who it is for
@@ -120,8 +120,8 @@ All eight, with the text for each: [`workflows/TEMPLATES.md`](workflows/TEMPLATE
 
 ## Install
 
-In n8n: **Settings → Community Nodes → Install**, then enter `n8n-nodes-taifoon`. Two nodes: **Taifoon** (66
-operations, 14 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
+In n8n: **Settings → Community Nodes → Install**, then enter `n8n-nodes-taifoon`. Two nodes: **Taifoon** (75
+operations, 15 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
 [`/v1/openapi.json`](https://coord.taifoon.dev/v1/openapi.json)) and **Taifoon Trigger** (starts a workflow when a job
 changes). Compatibility: n8n 1.x and 2.x (node API version 1). Agent names, chains and job classes appear only as data,
 never as separate integrations.
@@ -130,7 +130,7 @@ never as separate integrations.
 
 Create a **Taifoon Relayer API** credential with your `tfr_` key (sent as `X-API-Key`). The credential test calls
 `GET /v1/relayer/whoami`, which has no side effects. Most reads work without a key; Inference → Chat, Completion, Judge → Submit Review,
-Handshake → Attach Job and Account → Get My Tenant need one.
+Handshake → Attach Job, Account → Get My Tenant and every Helpdesk write (Ask, the Learn and Nominate operations) need one.
 
 ## Payments
 
@@ -189,6 +189,15 @@ signer sends it.
 | Handshake | Attach Job | `POST /v1/handshake/{handshakeId}` |
 | Handshake | Get | `GET /v1/handshake/{handshakeId}` |
 | Handshake | Open | `POST /v1/handshake` |
+| Helpdesk | Accept Nomination | `POST /v1/sma/nominate` |
+| Helpdesk | Answer Case | `POST /v1/sma/learn` |
+| Helpdesk | Ask | `POST /v1/sma/ask` |
+| Helpdesk | Get Graph | `GET /v1/sma/graph` |
+| Helpdesk | Get Weakest | `GET /v1/sma/graph?weakest=1` |
+| Helpdesk | Grade Case | `POST /v1/sma/learn` |
+| Helpdesk | Nominate Expert | `POST /v1/sma/nominate` |
+| Helpdesk | Revoke Nomination | `POST /v1/sma/nominate` |
+| Helpdesk | Tune Loop | `POST /v1/sma/learn` |
 | Job | Create Offer | `POST /v1/jobs` |
 | Job | Get Changed | `GET /v1/jobs` |
 | Job | Get Ledger | `GET /v1/agents/ledger` |
@@ -280,6 +289,26 @@ Any n8n instance can sell a job class through the layer. Buyers pay the seller's
 When a listed seller is bought, the demand settles on the devnet 36927. It is sold at your price + 49 bps and paid to
 the **seller of record** that the layer names in the explorer row (`payee`). Paying the doer, meaning your payout address
 directly, is not switched on. The explorer shows `doer_is_payee` on every job.
+
+## Helpdesk through Taifoon (Show Me Around ++)
+
+**Helpdesk → Ask** puts one question about one product to the layer's helpdesk (`POST /v1/sma/ask`, channel `n8n`) and
+answers a case: the product's knowledge graph answers first, free and measured; what the graph does not know is routed to a
+nominated expert, the tenant's agent or a person, and the case stays open on the product's weakest list until it is answered
+and graded. Every answer is graded before it is settled as one `sma.case` line (0.10 USDC above the free allowance of 20 a day
+per key; legs provider 70 · graders 20 · ecosystem 10). The words are sealed under your tenant's topic; only their digest
+travels on the case.
+
+| Step | Operation | What it does |
+|---|---|---|
+| Ask | **Helpdesk → Ask** | `{ product, question, channel: "n8n", hint?, route? }` → the case, and `words` when the graph or an agent answered now, `unknown` when it did not, `handoff` when a specialist's booking page is the answer |
+| Read | **Helpdesk → Get Graph**, **Get Weakest** | the product's nodes and edges (`scope` public · product · tenant; a key widens it), and the ranked unknowns an expert works down |
+| Learn | **Helpdesk → Answer Case**, **Grade Case**, **Tune Loop** | `POST /v1/sma/learn` with exactly one of `answer { words, fix? }`, `grade { score, by }`, `tuning { loop, value }` (admin only) |
+| Nominate | **Helpdesk → Nominate Expert**, **Accept Nomination**, **Revoke Nomination** | the admin key enlists an expert key with its payee, chains, share (≤ 7000 bps), cap per period and classes; the expert accepts; the admin revokes |
+
+A workflow that answers its own product's cases: **Taifoon Trigger** is not needed; poll **Get Weakest** on a schedule, let your
+expert (a person, or an AI Agent with the graph as context) write the answer, send it with **Answer Case**, and the buyer's
+**Grade Case** settles it to the expert's nominated payee.
 
 ## Taifoon Trigger
 

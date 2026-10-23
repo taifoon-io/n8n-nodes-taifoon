@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0 (2026-10-23)
+
+- **Helpdesk (Show Me Around ++, `_SMA_HELPDESK_v1_`):** a new resource on the four `/v1/sma` routes. **Ask** (`POST /v1/sma/ask`, channel
+  `n8n`, `X-Taifoon-Channel: n8n`) puts one question about one product and answers a case; **Get Graph** and **Get Weakest** read the
+  product's knowledge graph and its ranked unknowns (`GET /v1/sma/graph`); **Answer Case**, **Grade Case** and **Tune Loop** close the
+  loop (`POST /v1/sma/learn`); **Nominate Expert**, **Accept Nomination** and **Revoke Nomination** enlist the expert a case's provider leg
+  pays (`POST /v1/sma/nominate`). 75 operations, 15 resources. The request each one builds is pinned in `test/helpdesk.test.js`; the live
+  suite skips the `/sma` routes until the layer serves them.
+- No operation renamed; saved workflows keep working. No new dependency.
+
 ## 1.0.3 (2026-10-20)
 
 - **README:** the Taifoon OpenAI Chat Model drives a Basic LLM Chain; an AI Agent that calls tools needs a tool-calling model
