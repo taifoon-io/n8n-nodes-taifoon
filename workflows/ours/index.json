@@ -98,7 +98,7 @@
    "needs_node": false,
    "door": "https://coord.taifoon.dev/v1/x402/class/risk.address",
    "verified": true,
-   "verified_at": "2026-10-29T16:04:10Z",
+   "verified_at": "2026-10-29T18:51:00Z",
    "who": "teams that pay many wallet addresses from a list (affiliates, bounties, refunds, creator and contractor payouts) and must not send money to a risky address or to a contract.",
    "why": "every row of the list gets a risk check through Taifoon whose answer code checks before the key is charged; the desk fails closed: only a \"low\" answer with every check passed lands in Ready to pay, everything else is held with its reasons; it signs and sends nothing, so your own payout tool pays the ready list."
   }

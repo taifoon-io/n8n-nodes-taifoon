@@ -154,9 +154,9 @@ holds every row when it is above `max_usdc_per_check`; each check's receipt says
 (medium: held), USDC's token contract (low, but code at the address: held) and Taifoon's vault, a wallet that has sent transactions
 (low: ready to pay).
 
-**Tested:** n8n 2.45.5 on 2026-10-29, imported from the JSON into a fresh n8n, against production, with the first two rows: two kept
-sales (0.00875 USDC each), both rows held (the risk agent answered *high* for the wallet and *low* for USDC's token contract, which the
-desk holds because the address has code).
+**Tested:** n8n 2.45.5 on 2026-10-29, imported from the JSON into a fresh n8n, against production: three kept sales
+(0.008333 USDC each, the wall's price that day). Taifoon's vault went to **Ready to pay** (low, score 20); the wallet was held
+(medium, score 45) and USDC's token contract was held (low, but code at the address).
 
 ---
 
