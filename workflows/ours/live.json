@@ -1,35 +1,33 @@
 {
   "schema": "taifoon.n8n.templates.live.v1",
   "rule": "N8N_TEMPLATES_OURS_v1",
-  "how": "one run per template in a real n8n (CLI: n8n import:workflow + n8n execute) against production coord.taifoon.dev, the Header Auth credential's value an env expression (the key is never in a file); the Answer node's output recorded here",
+  "how": "one run per template in a real n8n (CLI: n8n import:workflow + n8n execute; docker n8nio/n8n, the community node installed from npm as n8n installs it) against production coord.taifoon.dev, every credential value an env expression (the key is never in a file); the answer node's output recorded here",
   "templates": {
     "chat-on-one-key": {
       "verified": true,
-      "at": "2026-10-21T08:27:16Z",
-      "n8n": "2.43.8 (CLI: import:workflow + execute, Header Auth value an env expression)",
-      "against": "https://coord.taifoon.dev (x-taifoon-build 971032af8245)",
+      "at": "2026-10-29T16:05:52Z",
+      "n8n": "2.45.5 (docker n8nio/n8n:2.45.5; CLI: import:workflow + execute, the Taifoon Relayer API key an env expression)",
+      "node_package": "n8n-nodes-taifoon@1.2.1",
+      "against": "https://coord.taifoon.dev (x-taifoon-build 852ae139d26c)",
       "key": "the sandbox key (keychain taifoon-n8n-reseller-sandbox)",
       "status": 200,
       "ok": true,
       "sale": {
-        "id": "gpu_mvhums5y_0e0a9551f3",
-        "channel": "n8n-template:chat-on-one-key",
+        "id": "gpu_mvtqjdwg_35dee6e266",
+        "channel": "n8n",
         "paid_by": "key_balance",
-        "micro": "6",
-        "usdc": "0.000006",
+        "micro": "11",
+        "usdc": "0.000011",
         "price_rule": "OWN_INFERENCE_PRICE_v1",
         "vault": "vault:taifoon:loop"
       },
-      "answer": "17 × 24 = 408 (nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16, 32 tokens in, 53 out)",
-      "meter": {
-        "step": "st_2de56d2755d5e7f7",
-        "list_micro": 6,
-        "channel": "n8n-template:chat-on-one-key",
-        "vault": "vault:taifoon:loop"
-      },
+      "answer": "17 × 24 = 408. (nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16, 32 tokens in, 53 out), charged 0.000011 USDC",
       "notes": [
-        "the keyed debit is 0.000006 USDC under price_rule OWN_INFERENCE_PRICE_v1 (our own card's per-token price, no markup), not a flat 0.001: 0.001 is the wall's list for up to 50,000 tokens",
-        "first run 2026-10-21T07:44:51Z on build 3119ab8af01f: 200, sale gpu_mvht46ua_549df1c0c6, 0.000006 USDC, no channel, no vault on the sale"
+        "the chat is the Taifoon node's Inference → Chat (POST /v1/chat/completions) on the Taifoon Relayer API credential; the agreements are Agreement → List / Accept",
+        "the debit is 0.000011 USDC under OWN_INFERENCE_PRICE_v1 (our own card's per-token price), so the template says \"up to 0.001 USDC per answer\", never a fixed price",
+        "the channel is the credential's Channel ID (n8n when empty): the node sends it on every call, so the sale names n8n, not n8n-template:chat-on-one-key",
+        "an invalid key in the same n8n: Chat continues on the failure and Answer returns { ok: false, error: { code, status 401, type, sdk AuthenticationError, … } }, nothing charged",
+        "superseded: the raw HTTP version ran 2026-10-21T08:27:16Z on n8n 2.43.8 (sale gpu_mvhums5y_0e0a9551f3, 0.000006 USDC)"
       ]
     },
     "text-digest": {
@@ -96,6 +94,46 @@
         "payout Held payout_network_unset",
         "first run 2026-10-21T07:45:29Z on build 3119ab8af01f: 402 payment_required",
         "after this run the Answer node reads the risk from the A2A data part (display only; checked against this run's body in test/fixtures)"
+      ]
+    },
+    "safe-payout-desk": {
+      "verified": true,
+      "at": "2026-10-29T16:04:10Z",
+      "n8n": "2.45.5 (docker n8nio/n8n:2.45.5; CLI: import:workflow + execute, the manual path, Header Auth value an env expression)",
+      "node_package": "none (built-in nodes only)",
+      "against": "https://coord.taifoon.dev (x-taifoon-build 852ae139d26c)",
+      "key": "the sandbox key (keychain taifoon-n8n-reseller-sandbox)",
+      "input": "the sample payout list: two public addresses on Base (a wallet with no code, USDC's token contract)",
+      "status": 200,
+      "ok": true,
+      "sales": [
+        {
+          "id": "rs_mvtqhbse_c9b51cf4ae",
+          "key": "usage:3692781:st_2a07940251e328ec",
+          "channel": "n8n-template:safe-payout-desk",
+          "paid_by": "key_balance",
+          "price_units": "8750",
+          "fee_units": "1459",
+          "seller_share_units": "7291",
+          "seller": "agentdiet-72343955726.us-central1.run.app"
+        },
+        {
+          "id": "rs_mvtqhc1g_9709df8825",
+          "key": "usage:3692781:st_4db82f189136defd",
+          "channel": "n8n-template:safe-payout-desk",
+          "paid_by": "key_balance",
+          "price_units": "8750",
+          "fee_units": "1459",
+          "seller_share_units": "7291",
+          "seller": "agentdiet-72343955726.us-central1.run.app"
+        }
+      ],
+      "answer": "ready 0, held 2: 0xAb58…eC9B risk level high (score 75); 0x8335…2913 the address has code on this chain (a contract, or a wallet delegated to one with EIP-7702): confirm it can receive this token before you pay it; price 0.008750 USDC per check (the wall's terms), spent 0.017500 USDC",
+      "notes": [
+        "the desk failed closed on both rows: the risk agent answered level high (score 75) for the wallet with no code and level low (score 15) for the token contract, which the desk holds because the address has code",
+        "today the risk.address sellers score by code at the address alone (no code → high, code → low), so a plain wallet is held: the desk is only as good as the seller; Ready to pay ran in the tests, not in this run",
+        "a first run with the public wallet vitalik.eth held it too: the address carries an EIP-7702 delegation on Base (eth_getCode 0xef0100…), which the agent reports as is_contract true",
+        "price read at run time: 8750 units = 0.008750 USDC (GET /v1/venues?view=pipeline, read_at 2026-10-29T15:38:13.101Z); each receipt charged the same"
       ]
     }
   }

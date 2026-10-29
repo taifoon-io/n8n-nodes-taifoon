@@ -1,0 +1,816 @@
+{
+  "name": "Safe Payout Desk: check every payout address before you pay",
+  "nodes": [
+    {
+      "id": "safe-payout-desk-1",
+      "name": "Run by hand",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "safe-payout-desk-2",
+      "name": "Payout webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        440
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "safe-payout-desk",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "safe-payout-desk",
+      "notes": "POST { \"payouts\": [{ \"address\", \"amount\", \"chain\" }] }; answers the Desk",
+      "notesInFlow": true
+    },
+    {
+      "id": "safe-payout-desk-3",
+      "name": "Payout list",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p0",
+              "name": "payouts",
+              "value": "={{ JSON.stringify($json.body?.payouts ?? [{\"address\":\"0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B\",\"amount\":\"25.00\",\"chain\":\"base\"},{\"address\":\"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"amount\":\"40.00\",\"chain\":\"base\"},{\"address\":\"0x3574999dd4c96eb73bd6e11d4177010c83e14f5b\",\"amount\":\"10.00\",\"chain\":\"base\"}]) }}",
+              "type": "string"
+            },
+            {
+              "id": "p1",
+              "name": "max_usdc_per_check",
+              "value": "0.05",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "max_rows",
+              "value": 50,
+              "type": "number"
+            },
+            {
+              "id": "p3",
+              "name": "hold_contracts",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "p4",
+              "name": "accept_terms",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "p5",
+              "name": "base",
+              "value": "https://coord.taifoon.dev",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "safe-payout-desk-4",
+      "name": "Agreements",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Payout list').first().json.base || 'https://coord.taifoon.dev' }}/v1/access/agreements",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Taifoon-Channel",
+              "value": "n8n-template:safe-payout-desk"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "safe-payout-desk-5",
+      "name": "Terms",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// _GATE_ERRORS_v1_ (coord lang/cue/gate-errors.cue): every answer read into { ok: true, data } or the OpenAI-style error of the table.\nconst TABLE = {\"invalid_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_input\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_json\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"context_length_exceeded\":[\"context_length_exceeded\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"shorten the messages or lower max_tokens\"],\"invalid_api_key\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"unauthorized\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"expired\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"insufficient_balance\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"budget\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_allowance_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_budget_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"key_spend_limit_exceeded\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"cap_reached\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"agreement_required\":[\"agreement_required\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"POST https://coord.taifoon.dev/v1/access/agreements {doc, product}; GET it lists the gaps\"],\"scope_not_allowed\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"free_scope\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"child_managed_by_reseller\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"forbidden\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"model_not_found\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"not_resold\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"conflict\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"already_registered\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"duplicate\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"payload_too_large\":[\"payload_too_large\",413,\"invalid_request_error\",\"APIError\",\"no\",\"send fewer or shorter messages\"],\"content_policy_violation\":[\"content_policy_violation\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"change the request; nothing was charged\"],\"card_unreadable\":[\"card_unreadable\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"serve your card as JSON at an https URL (an A2A agent card, an MCP server card or an ERC-8004 registration) and claim again\"],\"rate_limit_exceeded\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"rate_limited\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"upstream_failed\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"provider_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"gate_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"no_answer\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"model_unavailable\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"waits_on_funding\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"walls_not_open\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"model_at_capacity\":[\"model_at_capacity\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"retry after Retry-After seconds, or name another model\"],\"request_timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"],\"timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"]};\nconst SDK = (s) => s === 400 ? 'BadRequestError' : s === 401 ? 'AuthenticationError' : s === 403 ? 'PermissionDeniedError' : s === 404 ? 'NotFoundError' : s === 409 ? 'ConflictError' : s === 422 ? 'UnprocessableEntityError' : s === 429 ? 'RateLimitError' : s >= 500 ? 'InternalServerError' : 'APIError';\nfunction norm(res, step) {\n  const status = Number(res?.statusCode ?? 0); const body = res?.body ?? null;\n  if (status >= 200 && status < 300 && !(body && body.ok === false)) return { ok: true, step, status, data: body };\n  const layer = typeof body?.error === 'object' && body.error ? body.error.code : body?.code;\n  const message = typeof body?.error === 'object' && body?.error ? body.error.message : (body?.error ?? body?.message ?? (status ? 'HTTP ' + status : 'no answer'));\n  const row = TABLE[String(layer ?? '')] ?? TABLE[String(body?.taifoon?.layer_code ?? '')];\n  const s = row ? row[1] : status || 503;\n  const retryAfter = Number(res?.headers?.['retry-after'] ?? body?.retry_after_seconds ?? body?.taifoon?.retry_after_seconds) || null;\n  return { ok: false, step, status: s, error: { code: row ? row[0] : String(layer ?? (status ? 'http_' + status : 'no_answer')), status: s, type: row ? row[2] : (s >= 500 ? 'api_error' : 'invalid_request_error'),\n    sdk: row ? row[3] : SDK(s), retry: row ? row[4] : (s === 429 ? 'after' : s >= 500 ? 'backoff' : 'no'), message: String(message).slice(0, 300), next: (body?.taifoon?.next_step) || (row ? row[5] : null) },\n    retry_after: retryAfter, layer: body?.taifoon ?? null };\n}\n// the documents the key still lacks for hire; accepted here only when you consented (accept_terms: true, a click-through acceptance)\nconst i = $('Payout list').first().json; const agr = norm($('Agreements').first().json, 'agreements');\nconst gaps = agr.ok ? (agr.data.gaps?.['hire'] ?? []) : [];\nif (!i.accept_terms || !gaps.length) return [{ json: { accept: false } }];\nreturn gaps.map((doc) => ({ json: { accept: true, doc, product: 'hire' } }));"
+      }
+    },
+    {
+      "id": "safe-payout-desk-6",
+      "name": "Accept?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.accept }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "safe-payout-desk-7",
+      "name": "Accept document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Payout list').first().json.base || 'https://coord.taifoon.dev' }}/v1/access/agreements",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Taifoon-Channel",
+              "value": "n8n-template:safe-payout-desk"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ doc: $json.doc, product: $json.product, how: \"clickwrap\" }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "safe-payout-desk-8",
+      "name": "Price",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Payout list').first().json.base || 'https://coord.taifoon.dev' }}/v1/venues?view=pipeline",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Taifoon-Channel",
+              "value": "n8n-template:safe-payout-desk"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
+        }
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "notes": "the wall's own terms for risk.address (read every run; nothing is bought here)",
+      "notesInFlow": true
+    },
+    {
+      "id": "safe-payout-desk-9",
+      "name": "Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// _GATE_ERRORS_v1_ (coord lang/cue/gate-errors.cue): every answer read into { ok: true, data } or the OpenAI-style error of the table.\nconst TABLE = {\"invalid_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_input\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_json\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"context_length_exceeded\":[\"context_length_exceeded\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"shorten the messages or lower max_tokens\"],\"invalid_api_key\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"unauthorized\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"expired\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"insufficient_balance\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"budget\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_allowance_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_budget_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"key_spend_limit_exceeded\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"cap_reached\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"agreement_required\":[\"agreement_required\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"POST https://coord.taifoon.dev/v1/access/agreements {doc, product}; GET it lists the gaps\"],\"scope_not_allowed\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"free_scope\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"child_managed_by_reseller\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"forbidden\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"model_not_found\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"not_resold\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"conflict\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"already_registered\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"duplicate\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"payload_too_large\":[\"payload_too_large\",413,\"invalid_request_error\",\"APIError\",\"no\",\"send fewer or shorter messages\"],\"content_policy_violation\":[\"content_policy_violation\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"change the request; nothing was charged\"],\"card_unreadable\":[\"card_unreadable\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"serve your card as JSON at an https URL (an A2A agent card, an MCP server card or an ERC-8004 registration) and claim again\"],\"rate_limit_exceeded\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"rate_limited\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"upstream_failed\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"provider_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"gate_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"no_answer\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"model_unavailable\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"waits_on_funding\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"walls_not_open\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"model_at_capacity\":[\"model_at_capacity\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"retry after Retry-After seconds, or name another model\"],\"request_timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"],\"timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"]};\nconst SDK = (s) => s === 400 ? 'BadRequestError' : s === 401 ? 'AuthenticationError' : s === 403 ? 'PermissionDeniedError' : s === 404 ? 'NotFoundError' : s === 409 ? 'ConflictError' : s === 422 ? 'UnprocessableEntityError' : s === 429 ? 'RateLimitError' : s >= 500 ? 'InternalServerError' : 'APIError';\nfunction norm(res, step) {\n  const status = Number(res?.statusCode ?? 0); const body = res?.body ?? null;\n  if (status >= 200 && status < 300 && !(body && body.ok === false)) return { ok: true, step, status, data: body };\n  const layer = typeof body?.error === 'object' && body.error ? body.error.code : body?.code;\n  const message = typeof body?.error === 'object' && body?.error ? body.error.message : (body?.error ?? body?.message ?? (status ? 'HTTP ' + status : 'no answer'));\n  const row = TABLE[String(layer ?? '')] ?? TABLE[String(body?.taifoon?.layer_code ?? '')];\n  const s = row ? row[1] : status || 503;\n  const retryAfter = Number(res?.headers?.['retry-after'] ?? body?.retry_after_seconds ?? body?.taifoon?.retry_after_seconds) || null;\n  return { ok: false, step, status: s, error: { code: row ? row[0] : String(layer ?? (status ? 'http_' + status : 'no_answer')), status: s, type: row ? row[2] : (s >= 500 ? 'api_error' : 'invalid_request_error'),\n    sdk: row ? row[3] : SDK(s), retry: row ? row[4] : (s === 429 ? 'after' : s >= 500 ? 'backoff' : 'no'), message: String(message).slice(0, 300), next: (body?.taifoon?.next_step) || (row ? row[5] : null) },\n    retry_after: retryAfter, layer: body?.taifoon ?? null };\n}\nconst usdcOf = (u) => (u == null || u === '' || !Number.isFinite(Number(u)) ? null : (Number(u) / 1e6).toFixed(6));\n// every row of the payout list, validated; the wall's price against your cap; a row that is not checked is held with its reasons.\n// A chain is a chain id or a name of the address registry (packages/addresses chains).\nconst CHAINS = {\"abstract\":2741,\"apechain\":33139,\"arbitrum\":42161,\"arbitrum one\":42161,\"arc\":5042,\"avalanche\":43114,\"avalanche c-chain\":43114,\"base\":8453,\"berachain\":80094,\"blast\":81457,\"bnb\":56,\"bnb smart chain\":56,\"bob\":60808,\"celo\":42220,\"cronos\":25,\"ethereum\":1,\"gnosis\":100,\"gravity\":1625,\"gravity alpha\":1625,\"hemi\":43111,\"hyperevm\":999,\"immutable\":13371,\"immutable zkevm\":13371,\"ink\":57073,\"linea\":59144,\"lisk\":1135,\"mantle\":5000,\"megaeth\":4326,\"metis\":1088,\"metis andromeda\":1088,\"mode\":34443,\"monad\":143,\"op\":10,\"op mainnet\":10,\"opbnb\":204,\"plume\":98866,\"polygon\":137,\"polygon pos\":137,\"robinhood\":4663,\"robinhood chain\":4663,\"ronin\":2020,\"rootstock\":30,\"scroll\":534352,\"sei\":1329,\"soneium\":1868,\"sonic\":146,\"taifoon devnet\":36927,\"taifoon mainnet\":3692781,\"unichain\":130,\"world\":480,\"world chain\":480,\"x\":196,\"x layer\":196,\"zksync\":324,\"zksync era\":324};\nconst cfg = $('Payout list').first().json;\nlet rows = null; try { rows = typeof cfg.payouts === 'string' ? JSON.parse(cfg.payouts) : cfg.payouts; } catch (e) { rows = null; }\nconst p = norm($('Price').first().json, 'price');\nconst terms = p.ok ? ((p.data.resale || []).find((r) => r.class === 'risk.address') || {}).terms : null;\nconst price = terms && Number(terms.price_units) > 0 ? { usdc: usdcOf(terms.price_units), units: String(terms.price_units), source: 'GET /v1/venues?view=pipeline (the wall\\'s terms)', read_at: p.data.read_at ?? null } : null;\nconst capText = String(cfg.max_usdc_per_check ?? '').trim(); const cap = capText === '' ? null : Number(capText);\nconst maxRows = Number(cfg.max_rows) || 50;\nconst chainOf = (c) => { const n = Number(c); if (Number.isInteger(n) && n > 0) return n; return CHAINS[String(c ?? '').trim().toLowerCase()] ?? null; };\nif (!Array.isArray(rows) || !rows.length) return [{ json: { i: 0, address: null, amount: null, chain: null, chainId: null, check: false, ready: false, level: '', reasons: ['no payout list: give payouts as [{ address, amount, chain }]'], price } }];\nreturn rows.map((r, i) => {\n  const reasons = []; const address = String(r?.address ?? '').trim(); const chainId = chainOf(r?.chain);\n  if (!/^0x[0-9a-fA-F]{40}$/.test(address)) reasons.push('not an EVM address (0x and 40 hex digits)');\n  if (!(Number(r?.amount) > 0)) reasons.push('the amount is not a positive number');\n  if (!chainId) reasons.push('unknown chain \"' + (r?.chain ?? '') + '\": give a chain id or a chain name');\n  if (i >= maxRows) reasons.push('past max_rows (' + maxRows + '): split the list');\n  if (Number.isNaN(cap)) reasons.push('max_usdc_per_check is not a number: nothing is bought');\n  else if (cap != null && !price) reasons.push('the wall\\'s price could not be read and you set a cap: nothing is bought');\n  else if (cap != null && Number(price.usdc) > cap) reasons.push('the wall\\'s price ' + price.usdc + ' USDC is above your cap of ' + cap + ' USDC: nothing is bought');\n  return { json: { i, address, amount: r?.amount ?? null, chain: r?.chain ?? null, chainId, check: reasons.length === 0, ready: false, level: '', reasons, price } };\n});"
+      }
+    },
+    {
+      "id": "safe-payout-desk-10",
+      "name": "Check it?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.check }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "safe-payout-desk-11",
+      "name": "Risk check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Payout list').first().json.base || 'https://coord.taifoon.dev' }}/v1/x402/class/risk.address",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Taifoon-Channel",
+              "value": "n8n-template:safe-payout-desk"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ input: { address: $json.address, chainId: $json.chainId } }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "one keyed call per row; a failure continues (and is held)",
+      "notesInFlow": true
+    },
+    {
+      "id": "safe-payout-desk-12",
+      "name": "Verdict",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        160
+      ],
+      "parameters": {
+        "jsCode": "// _GATE_ERRORS_v1_ (coord lang/cue/gate-errors.cue): every answer read into { ok: true, data } or the OpenAI-style error of the table.\nconst TABLE = {\"invalid_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_input\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_json\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"context_length_exceeded\":[\"context_length_exceeded\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"shorten the messages or lower max_tokens\"],\"invalid_api_key\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"unauthorized\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"expired\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"insufficient_balance\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"budget\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_allowance_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_budget_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"key_spend_limit_exceeded\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"cap_reached\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"agreement_required\":[\"agreement_required\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"POST https://coord.taifoon.dev/v1/access/agreements {doc, product}; GET it lists the gaps\"],\"scope_not_allowed\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"free_scope\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"child_managed_by_reseller\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"forbidden\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"model_not_found\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"not_resold\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"conflict\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"already_registered\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"duplicate\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"payload_too_large\":[\"payload_too_large\",413,\"invalid_request_error\",\"APIError\",\"no\",\"send fewer or shorter messages\"],\"content_policy_violation\":[\"content_policy_violation\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"change the request; nothing was charged\"],\"card_unreadable\":[\"card_unreadable\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"serve your card as JSON at an https URL (an A2A agent card, an MCP server card or an ERC-8004 registration) and claim again\"],\"rate_limit_exceeded\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"rate_limited\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"upstream_failed\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"provider_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"gate_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"no_answer\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"model_unavailable\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"waits_on_funding\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"walls_not_open\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"model_at_capacity\":[\"model_at_capacity\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"retry after Retry-After seconds, or name another model\"],\"request_timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"],\"timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"]};\nconst SDK = (s) => s === 400 ? 'BadRequestError' : s === 401 ? 'AuthenticationError' : s === 403 ? 'PermissionDeniedError' : s === 404 ? 'NotFoundError' : s === 409 ? 'ConflictError' : s === 422 ? 'UnprocessableEntityError' : s === 429 ? 'RateLimitError' : s >= 500 ? 'InternalServerError' : 'APIError';\nfunction norm(res, step) {\n  const status = Number(res?.statusCode ?? 0); const body = res?.body ?? null;\n  if (status >= 200 && status < 300 && !(body && body.ok === false)) return { ok: true, step, status, data: body };\n  const layer = typeof body?.error === 'object' && body.error ? body.error.code : body?.code;\n  const message = typeof body?.error === 'object' && body?.error ? body.error.message : (body?.error ?? body?.message ?? (status ? 'HTTP ' + status : 'no answer'));\n  const row = TABLE[String(layer ?? '')] ?? TABLE[String(body?.taifoon?.layer_code ?? '')];\n  const s = row ? row[1] : status || 503;\n  const retryAfter = Number(res?.headers?.['retry-after'] ?? body?.retry_after_seconds ?? body?.taifoon?.retry_after_seconds) || null;\n  return { ok: false, step, status: s, error: { code: row ? row[0] : String(layer ?? (status ? 'http_' + status : 'no_answer')), status: s, type: row ? row[2] : (s >= 500 ? 'api_error' : 'invalid_request_error'),\n    sdk: row ? row[3] : SDK(s), retry: row ? row[4] : (s === 429 ? 'after' : s >= 500 ? 'backoff' : 'no'), message: String(message).slice(0, 300), next: (body?.taifoon?.next_step) || (row ? row[5] : null) },\n    retry_after: retryAfter, layer: body?.taifoon ?? null };\n}\nconst usdcOf = (u) => (u == null || u === '' || !Number.isFinite(Number(u)) ? null : (Number(u) / 1e6).toFixed(6));\n// each answer read in the one error contract; ready ONLY when the answer is for this address and chain, every code check passed,\n// the level is \"low\" and (hold_contracts) the address is not a contract; anything else, a refusal or no answer, is held\nconst cfg = $('Payout list').first().json; const base = cfg.base || 'https://coord.taifoon.dev';\nconst rows = $('Check it?').all(0).map((x) => x.json);\nreturn $input.all().map((it, k) => {\n  const row = rows[k] || {}; const res = it.json || {};\n  const r = res && 'statusCode' in res ? norm(res, 'risk.address') : { ok: false, error: { code: 'no_answer', message: String((res.error && res.error.message) || res.error || 'the call did not answer') } };\n  const b = (res && res.body && typeof res.body === 'object') ? res.body : {};\n  const receipt = b.sale ? { sale: b.sale.id ?? null, key: b.sale.key ?? null, charged_usdc: usdcOf(b.sale.price_units), seller: b.seller ?? null, url: b.sale.id ? base + '/v1/resale/sales/' + b.sale.id : null } : null;\n  const reasons = []; let d = null;\n  if (!r.ok) reasons.push('the check was refused: ' + r.error.code + ' (' + r.error.message + ')' + (b.sale ? '' : ', nothing charged'));\n  else {\n    d = (b.answer?.parts ?? []).find((x) => x && x.data)?.data ?? null;\n    if (!d) reasons.push('no risk answer in the reply');\n    else {\n      if (String(d.address || '').toLowerCase() !== String(row.address || '').toLowerCase()) reasons.push('the answer names another address');\n      if (Number(d.chain_id) !== Number(row.chainId)) reasons.push('the answer names another chain');\n      if (d.level !== 'low') reasons.push('risk level ' + (d.level || 'missing') + (d.score != null ? ' (score ' + d.score + ')' : ''));\n      if (cfg.hold_contracts !== false && d.is_contract === true) reasons.push('the address has code on this chain (a contract, or a wallet delegated to one with EIP-7702): confirm it can receive this token before you pay it');\n    }\n    const failed = Object.entries(b.checks || {}).filter(([, v]) => v !== true).map(([x]) => x);\n    if (!b.checks) reasons.push('no code checks on the answer'); else if (failed.length) reasons.push('checks failed: ' + failed.join(', '));\n  }\n  const ready = reasons.length === 0;\n  return { json: { i: row.i, address: row.address, amount: row.amount, chain: row.chain, chainId: row.chainId, check: true, ready, level: d && typeof d.level === 'string' ? d.level : '',\n    score: d?.score ?? null, is_contract: d?.is_contract ?? null, reasons: [...reasons, ...((d?.reasons ?? []).map((x) => 'the agent: ' + x))], receipt, price: row.price ?? null } };\n});"
+      }
+    },
+    {
+      "id": "safe-payout-desk-13",
+      "name": "All rows",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2640,
+        300
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 2
+      }
+    },
+    {
+      "id": "safe-payout-desk-14",
+      "name": "Ready to pay?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2880,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.ready }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.level }}",
+              "rightValue": "low",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "safe-payout-desk-15",
+      "name": "Ready to pay",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        160
+      ],
+      "parameters": {
+        "jsCode": "// the plain list your own payout tool pays (this workflow signs and sends nothing): one item per row\nreturn $input.all().map(({ json: r }) => ({ json: { decision: 'ready', address: r.address, amount: r.amount, chain: r.chain, chainId: r.chainId, risk: { level: r.level, score: r.score }, receipt: r.receipt } }));"
+      }
+    },
+    {
+      "id": "safe-payout-desk-16",
+      "name": "Held, with the reasons",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        440
+      ],
+      "parameters": {
+        "jsCode": "// every row that is not ready: medium or high, a contract, a refused or failed call, no answer, a bad row, over the cap\nreturn $input.all().map(({ json: r }) => ({ json: { decision: 'held', address: r.address, amount: r.amount, chain: r.chain, chainId: r.chainId, level: r.level || null, score: r.score ?? null,\n  reasons: r.reasons && r.reasons.length ? r.reasons : ['not ready (no reason given: held by default)'], receipt: r.receipt ?? null } }));"
+      }
+    },
+    {
+      "id": "safe-payout-desk-17",
+      "name": "Desk",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3360,
+        300
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 2
+      }
+    },
+    {
+      "id": "safe-payout-desk-18",
+      "name": "Desk summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const usdcOf = (u) => (u == null || u === '' || !Number.isFinite(Number(u)) ? null : (Number(u) / 1e6).toFixed(6));\n// one answer for the run (and for the webhook): what is ready, what is held and why, what the checks cost; nothing signed or sent\nconst all = $input.all().map((x) => x.json); const ready = all.filter((x) => x.decision === 'ready'); const held = all.filter((x) => x.decision !== 'ready');\nconst price = (() => { try { return ($('Rows').all().find((x) => x.json.price) || { json: {} }).json.price || null; } catch (e) { return null; } })();\nconst charged = all.map((x) => x.receipt && x.receipt.charged_usdc).filter((x) => x != null);\nconst sum = (xs) => xs.reduce((a, x) => a + Number(x), 0);\nconst byChain = {}; for (const r of ready) byChain[r.chain] = (byChain[r.chain] || 0) + Number(r.amount);\nreturn [{ json: { template: 'safe-payout-desk', ready, held, counts: { rows: all.length, ready: ready.length, held: held.length }, ready_amount_by_chain: byChain,\n  price_per_check: price, checks_charged: charged.length, spent_usdc: charged.length ? sum(charged).toFixed(6) : '0.000000', receipts: all.map((x) => x.receipt).filter(Boolean), signed: false, sent: false } }];"
+      }
+    },
+    {
+      "id": "safe-payout-desk-19",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        40
+      ],
+      "parameters": {
+        "width": 700,
+        "height": 760,
+        "content": "## Safe Payout Desk: check every payout address before you pay\n**For:** teams that pay many wallet addresses from a list (affiliates, bounties, refunds, creator and contractor payouts) and must not send money to a risky address or to a contract.\n**What it does:** every row of the list gets a risk check through Taifoon whose answer code checks before the key is charged; the desk fails closed: only a \"low\" answer with every check passed lands in Ready to pay, everything else is held with its reasons; it signs and sends nothing, so your own payout tool pays the ready list.\n\n1. Get a key: `POST https://coord.taifoon.dev/v1/register`; it pays each check from its balance.\n2. Add a **Header Auth** credential: name `X-API-Key`, value your `tfr_` key. Select it on **Agreements**, **Accept document**, **Price** and **Risk check**.\n3. Put your list in **Payout list** (`payouts`: rows of `{ address, amount, chain }`, chain an id or a name), or POST `{ \"payouts\": [...] }` to **Payout webhook**. Before you activate the webhook, set its Authentication: anyone with the URL spends your key's checks.\n4. Run. Hand **Ready to pay** to your own payout tool; read **Held, with the reasons**. **Desk summary** has both, the price per check and what the run spent.\n\n**Fails closed:** only an answer for this address and chain, with every code check passed, level `low` and (`hold_contracts`) no code at the address goes to Ready to pay. Medium, high, code at the address (a contract, or a wallet delegated with EIP-7702), an error, a refused call or no answer is held.\n**Price:** never typed here: **Price** reads the wall's own terms every run and **Rows** holds everything when it is above `max_usdc_per_check`; each check's receipt (`receipt.charged_usdc`, the sale) is what the key paid. Read TSUL-1.1 and TAT before you set `accept_terms` to true.\n\n**Built-in nodes only**: no community node needed. Taifoon's node for n8n is `n8n-nodes-taifoon` 1.2.1 (https://www.npmjs.com/package/n8n-nodes-taifoon); this template does not need it.\n**Tested:** n8n 2.45.5 with none (built-in nodes only), 2026-10-29, imported from this JSON into a fresh n8n and run against coord.taifoon.dev."
+      }
+    },
+    {
+      "id": "safe-payout-desk-20",
+      "name": "1 · The payout list",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        40
+      ],
+      "parameters": {
+        "width": 460,
+        "height": 560,
+        "color": 7,
+        "content": "### 1 · The payout list\nBy hand or from the webhook: rows of `{ address, amount, chain }`, your cap per check and the row limit."
+      }
+    },
+    {
+      "id": "safe-payout-desk-21",
+      "name": "2 · Terms and the price",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        440,
+        40
+      ],
+      "parameters": {
+        "width": 1180,
+        "height": 560,
+        "color": 7,
+        "content": "### 2 · Terms and the price\nWhat the key still lacks (accepted only with `accept_terms`), then the wall's own price for one check, read now."
+      }
+    },
+    {
+      "id": "safe-payout-desk-22",
+      "name": "3 · One risk check per address",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        40
+      ],
+      "parameters": {
+        "width": 980,
+        "height": 560,
+        "color": 7,
+        "content": "### 3 · One risk check per address\nEach valid row is checked on the key; a refused or failed call continues and is held. Bad rows and rows over the cap are never bought."
+      }
+    },
+    {
+      "id": "safe-payout-desk-23",
+      "name": "4 · Ready to pay or held",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2620,
+        40
+      ],
+      "parameters": {
+        "width": 1220,
+        "height": 560,
+        "color": 7,
+        "content": "### 4 · Ready to pay or held\nThe IF fails closed: `ready` AND level `low`, or held with the reasons. Nothing here signs or sends money."
+      }
+    }
+  ],
+  "connections": {
+    "Run by hand": {
+      "main": [
+        [
+          {
+            "node": "Payout list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payout webhook": {
+      "main": [
+        [
+          {
+            "node": "Payout list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payout list": {
+      "main": [
+        [
+          {
+            "node": "Agreements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agreements": {
+      "main": [
+        [
+          {
+            "node": "Terms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terms": {
+      "main": [
+        [
+          {
+            "node": "Accept?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accept?": {
+      "main": [
+        [
+          {
+            "node": "Accept document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accept document": {
+      "main": [
+        [
+          {
+            "node": "Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Price": {
+      "main": [
+        [
+          {
+            "node": "Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows": {
+      "main": [
+        [
+          {
+            "node": "Check it?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check it?": {
+      "main": [
+        [
+          {
+            "node": "Risk check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "All rows",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Risk check": {
+      "main": [
+        [
+          {
+            "node": "Verdict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verdict": {
+      "main": [
+        [
+          {
+            "node": "All rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All rows": {
+      "main": [
+        [
+          {
+            "node": "Ready to pay?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready to pay?": {
+      "main": [
+        [
+          {
+            "node": "Ready to pay",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Held, with the reasons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready to pay": {
+      "main": [
+        [
+          {
+            "node": "Desk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Held, with the reasons": {
+      "main": [
+        [
+          {
+            "node": "Desk",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Desk": {
+      "main": [
+        [
+          {
+            "node": "Desk summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "taifoon": {
+      "rule": "N8N_TEMPLATES_OURS_v1",
+      "template": "safe-payout-desk",
+      "class": "risk.address",
+      "kinds": [
+        "risk.address"
+      ],
+      "channel": "n8n-template:safe-payout-desk",
+      "price": {
+        "rule": "resold",
+        "per": "check",
+        "source": "read on every run from the wall's terms (GET /v1/venues?view=pipeline, resale risk.address terms.price_units), checked against your cap; each check's receipt (sale.price_units) is what the key paid"
+      },
+      "seller_of_record": "taifoon",
+      "vault": "vault:taifoon:loop",
+      "pool": "vault:assurance:pools",
+      "agreement": [
+        "TSUL-1.1",
+        "TAT"
+      ],
+      "door": "https://coord.taifoon.dev/v1/x402/class/risk.address",
+      "hub": true,
+      "signs": false,
+      "sends": false,
+      "verified": true
+    }
+  },
+  "tags": [
+    {
+      "name": "Taifoon"
+    },
+    {
+      "name": "payouts"
+    },
+    {
+      "name": "risk"
+    }
+  ]
+}

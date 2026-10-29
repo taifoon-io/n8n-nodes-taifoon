@@ -48,6 +48,7 @@
     "!workflows/ours/coord-lang",
     "!workflows/ours/build.mjs",
     "!workflows/ours/pending",
+    "!workflows/ours/samples",
     "LICENSE",
     "README.md",
     "REFERENCE.md",

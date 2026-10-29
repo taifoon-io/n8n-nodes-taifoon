@@ -1,10 +1,10 @@
 {
  "schema": "taifoon.n8n.workflow-runs.v1",
  "rule": "_N8N_RUNS_v1_",
- "at": "2026-10-29T09:47:49.162Z",
+ "at": "2026-10-29T17:37:01.359Z",
  "against": "https://coord.taifoon.dev",
  "n8n": "2.45.5",
- "node_package": "n8n-nodes-taifoon@1.0.3",
+ "node_package": "n8n-nodes-taifoon@1.2.1",
  "files": {
   "examples/1a-free-key-and-tenant.json": {
    "sha256": "490981cbb188b188c415a75fa6f54341f48ceaa992980ef91a6b90ef55d52315",
@@ -1343,8 +1343,8 @@
    "node_package": "n8n-nodes-taifoon@1.0.3"
   },
   "workflows/ours/16-chat-on-one-key.json": {
-   "sha256": "b22242dc40ddd3bf41a1a2fbf63e54e0ea295fc1b6142038d84d14c94a449613",
-   "name": "Taifoon: an AI answer on one key (0.001 USDC, checked before you pay)",
+   "sha256": "00236d5fcd0042dd9de09aacba21fb705ecf2c25af87bfecd7b279e85aa313f2",
+   "name": "Taifoon: AI answers on one key, up to 0.001 USDC each (charged per token)",
    "paths": [
     {
      "trigger": "Start",
@@ -1380,7 +1380,7 @@
        "status": "not_reached"
       },
       {
-       "name": "Buy",
+       "name": "Chat",
        "status": "ok",
        "items": 1
       },
@@ -1392,12 +1392,12 @@
      ]
     }
    ],
-   "at": "2026-10-28T20:33:45.873Z",
+   "at": "2026-10-29T16:11:04.268Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.2.1"
   },
   "workflows/ours/17-text-digest.json": {
-   "sha256": "1dc1eb571725d5a9db0f11867018a8c6eb21f384daf8e7d794e91038cf727953",
+   "sha256": "e7db6b427048c2270d3b8f8a8cf7bcadc544cd7996e4aab57c66fcb804f18312",
    "name": "Taifoon: the sha256 digest of a text, from a checked agent",
    "paths": [
     {
@@ -1446,12 +1446,12 @@
      ]
     }
    ],
-   "at": "2026-10-28T20:33:45.873Z",
+   "at": "2026-10-29T16:11:04.268Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.2.1"
   },
   "workflows/ours/18-address-risk.json": {
-   "sha256": "cf643d739af7c4ffc5fc3a10eebbed86a59791e5397d47069621ef7e63d82571",
+   "sha256": "e01e2bf587fb5e7e3bccbb5de02ea56603ad869f21a054108b52361909b1381c",
    "name": "Taifoon: is this wallet address risky? A checked answer before you pay out",
    "paths": [
     {
@@ -1500,9 +1500,196 @@
      ]
     }
    ],
-   "at": "2026-10-28T20:33:45.873Z",
+   "at": "2026-10-29T16:11:04.268Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.2.1"
+  },
+  "workflows/ours/19-safe-payout-desk.json": {
+   "sha256": "94289646a9a43e9901207189840d6b914b8d02f252f873c95e7c220abde8a455",
+   "name": "Safe Payout Desk: check every payout address before you pay",
+   "paths": [
+    {
+     "trigger": "Run by hand",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Run by hand",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Payout list",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Agreements",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Terms",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept document",
+       "status": "not_reached"
+      },
+      {
+       "name": "Price",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Rows",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Check it?",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Risk check",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Verdict",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "All rows",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Ready to pay?",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Ready to pay",
+       "status": "not_reached"
+      },
+      {
+       "name": "Held, with the reasons",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Desk",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Desk summary",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    },
+    {
+     "trigger": "Payout webhook",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Payout webhook",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Payout list",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Agreements",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Terms",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept document",
+       "status": "not_reached"
+      },
+      {
+       "name": "Price",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Rows",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Check it?",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Risk check",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Verdict",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "All rows",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Ready to pay?",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Ready to pay",
+       "status": "not_reached"
+      },
+      {
+       "name": "Held, with the reasons",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Desk",
+       "status": "ok",
+       "items": 3
+      },
+      {
+       "name": "Desk summary",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-29T17:37:01.359Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.2.1"
   },
   "workflows/ours/pending/19-onboard-agent.json": {
    "sha256": "7093273d1a3a6c4cb885540b3355c38e8113088c74d328b6c466da2354eac3f4",

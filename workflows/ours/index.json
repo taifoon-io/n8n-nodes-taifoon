@@ -15,24 +15,26 @@
   {
    "id": "chat-on-one-key",
    "file": "16-chat-on-one-key.json",
-   "title": "Taifoon: an AI answer on one key (0.001 USDC, checked before you pay)",
+   "title": "Taifoon: AI answers on one key, up to 0.001 USDC each (charged per token)",
    "class": "inference.metered",
    "kinds": [
     "text.generate",
     "chat.converse",
     "reason.general"
    ],
-   "channel": "n8n-template:chat-on-one-key",
+   "channel": "n8n",
    "price": {
     "rule": "own",
-    "usdc": "0.001",
-    "per": "answer at most (the list for up to 50,000 tokens; a key is debited our own card price for the tokens it uses)"
+    "at_most_usdc": "0.001",
+    "per": "answer at most, on our own model (the default); the key is debited our own card price for the tokens it uses (taifoon.sale.usdc on the answer)"
    },
-   "door": "https://coord.taifoon.dev/v1/x402/class/inference.metered",
+   "hub": true,
+   "needs_node": true,
+   "door": "https://coord.taifoon.dev/v1/chat/completions",
    "verified": true,
-   "verified_at": "2026-10-21T08:27:16Z",
+   "verified_at": "2026-10-29T16:05:52Z",
    "who": "n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI account or a card on file.",
-   "why": "one Taifoon key pays each answer at our own price (0.001 USDC, no margin on top), the answer is checked before the key is charged, and every call is one metered line."
+   "why": "one Taifoon key pays each answer at our own per-token price (up to 0.001 USDC an answer on our own model, no margin on top), the key accepts the terms once, and every call is one metered line with its sale on the answer."
   },
   {
    "id": "text-digest",
@@ -45,9 +47,11 @@
    "channel": "n8n-template:text-digest",
    "price": {
     "rule": "resold",
-    "usdc": "0.005455",
-    "per": "digest"
+    "per": "digest",
+    "source": "the wall's terms; the receipt on the answer (sale.price_units) is what the key paid"
    },
+   "hub": false,
+   "needs_node": false,
    "door": "https://coord.taifoon.dev/v1/x402/class/mcp.digest",
    "verified": true,
    "verified_at": "2026-10-21T08:26:48Z",
@@ -65,14 +69,38 @@
    "channel": "n8n-template:address-risk",
    "price": {
     "rule": "resold",
-    "usdc": "0.010000",
-    "per": "check"
+    "per": "check",
+    "source": "the wall's terms; the receipt on the answer (sale.price_units) is what the key paid"
    },
+   "hub": false,
+   "needs_node": false,
    "door": "https://coord.taifoon.dev/v1/x402/class/risk.address",
    "verified": true,
    "verified_at": "2026-10-21T08:27:06Z",
    "who": "n8n builders who pay out, onboard or accept funds from wallet addresses and need a risk answer before they act.",
    "why": "Taifoon hires a risk agent behind its wall, checks the answer before the key is charged, refunds it when no answer passes, and Jev grades the delivery after."
+  },
+  {
+   "id": "safe-payout-desk",
+   "file": "19-safe-payout-desk.json",
+   "title": "Safe Payout Desk: check every payout address before you pay",
+   "class": "risk.address",
+   "kinds": [
+    "risk.address"
+   ],
+   "channel": "n8n-template:safe-payout-desk",
+   "price": {
+    "rule": "resold",
+    "per": "check",
+    "source": "read on every run from the wall's terms (GET /v1/venues?view=pipeline, resale risk.address terms.price_units), checked against your cap; each check's receipt (sale.price_units) is what the key paid"
+   },
+   "hub": true,
+   "needs_node": false,
+   "door": "https://coord.taifoon.dev/v1/x402/class/risk.address",
+   "verified": true,
+   "verified_at": "2026-10-29T16:04:10Z",
+   "who": "teams that pay many wallet addresses from a list (affiliates, bounties, refunds, creator and contractor payouts) and must not send money to a risky address or to a contract.",
+   "why": "every row of the list gets a risk check through Taifoon whose answer code checks before the key is charged; the desk fails closed: only a \"low\" answer with every check passed lands in Ready to pay, everything else is held with its reasons; it signs and sends nothing, so your own payout tool pays the ready list."
   }
  ],
  "waiting": [

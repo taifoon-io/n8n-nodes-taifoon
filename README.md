@@ -103,7 +103,7 @@ it: [taifoon.io/docs/n8n](https://www.taifoon.io/docs/n8n#workflows); the listin
 [`workflows/TEMPLATES.md`](workflows/TEMPLATES.md).
 
 <!-- workflow-runs -->
-Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.0.3 against `coord.taifoon.dev` (2026-10-28, 2026-10-29): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
+Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.0.3, n8n-nodes-taifoon@1.2.1 against `coord.taifoon.dev` (2026-10-28, 2026-10-29): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
 
 | Workflow | Trigger → result |
 |---|---|
@@ -132,9 +132,10 @@ Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.0.3 
 | [`tf-chat.json`](workflows/agentic-commerce/tf-chat.json)<br>tf.chat: OpenAI-compatible chat completion through the gate | sub-workflow (runs through its caller) |
 | [`tf-handshake.json`](workflows/agentic-commerce/tf-handshake.json)<br>tf.handshake: key standing, agreements, quote | sub-workflow (runs through its caller) |
 | [`tf-sell.json`](workflows/agentic-commerce/tf-sell.json)<br>tf.sell: list this n8n workflow as a seller | sub-workflow (runs through its caller) |
-| [`16-chat-on-one-key.json`](workflows/ours/16-chat-on-one-key.json)<br>Taifoon: an AI answer on one key (0.001 USDC, checked before you pay) | Start → pass |
+| [`16-chat-on-one-key.json`](workflows/ours/16-chat-on-one-key.json)<br>Taifoon: AI answers on one key, up to 0.001 USDC each (charged per token) | Start → pass |
 | [`17-text-digest.json`](workflows/ours/17-text-digest.json)<br>Taifoon: the sha256 digest of a text, from a checked agent | Start → pass |
 | [`18-address-risk.json`](workflows/ours/18-address-risk.json)<br>Taifoon: is this wallet address risky? A checked answer before you pay out | Start → pass |
+| [`19-safe-payout-desk.json`](workflows/ours/19-safe-payout-desk.json)<br>Safe Payout Desk: check every payout address before you pay | Run by hand → pass<br>Payout webhook → pass |
 <!-- /workflow-runs -->
 
 ## Security
