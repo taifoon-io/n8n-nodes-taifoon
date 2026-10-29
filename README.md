@@ -38,6 +38,26 @@ as its own leg, in USDC to the address you registered. The seller's share and yo
 4. **Add the credential** *Taifoon Relayer API*: the `tfr_` key and **Channel ID** `your-agency`.
 5. **Build.** **Template → List** shows our ready workflows with class and live price; **Commerce → Hire / Grade / Settle** runs one sale.
 
+## See it run
+
+Recorded in one take on n8n 2.43.8 with `n8n-nodes-taifoon@1.2.0` from npm and a free key, against the production API.
+
+**Install** (Settings → Community nodes → `n8n-nodes-taifoon`), then the node in a new workflow:
+
+<img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/install.gif" alt="Installing n8n-nodes-taifoon and adding the Taifoon node" width="100%">
+
+**The credential**: the `tfr_` key, its test (`GET /v1/relayer/whoami`) and Account → Get Key Standing:
+
+<img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/credentials.gif" alt="The Taifoon Relayer API credential and its test" width="100%">
+
+**Both ways from one n8n** (3× speed): a workflow sells its word count on Taifoon (Register Seller → nonce on the card →
+Verify Seller: listed), and a second workflow buys it (agreement → handshake → catalogue entry at 0.05 + 20 % = 0.06 USDC →
+demand → a settled buy and its settlement receipts):
+
+<img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/both-ways.gif" alt="Selling and buying an n8n workflow through Taifoon" width="100%">
+
+The full take, 3 minutes, including the node as an AI agent's tool: [`assets/review-1.2.0.mp4`](https://github.com/taifoon-io/n8n-nodes-taifoon/raw/main/assets/review-1.2.0.mp4).
+
 ## Earn on every sale
 
 | | |

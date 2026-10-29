@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 (2026-10-29)
+
+- **README: See it run.** Three recordings from one take of 1.2.0 in n8n 2.43.8 against the production API: the install, the
+  credential and its test, and an n8n workflow selling on Taifoon while a second one buys it (`assets/*.gif`, shown on npm through
+  their GitHub URLs), plus the full take (`assets/review-1.2.0.mp4`). No change to the node.
+
 ## 1.2.0 (2026-10-29)
 
 - **Helpdesk** (new resource; Show Me Around ++, `_SMA_HELPDESK_v1_`; first in the public repo as an unpublished 1.1.0 on 2026-10-23): a resource on the four `/v1/sma` routes. **Ask** (`POST /v1/sma/ask`, channel
