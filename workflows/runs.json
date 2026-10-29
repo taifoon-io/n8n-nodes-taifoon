@@ -1,0 +1,1931 @@
+{
+ "schema": "taifoon.n8n.workflow-runs.v1",
+ "rule": "_N8N_RUNS_v1_",
+ "at": "2026-10-29T09:47:49.162Z",
+ "against": "https://coord.taifoon.dev",
+ "n8n": "2.45.5",
+ "node_package": "n8n-nodes-taifoon@1.0.3",
+ "files": {
+  "examples/1a-free-key-and-tenant.json": {
+   "sha256": "490981cbb188b188c415a75fa6f54341f48ceaa992980ef91a6b90ef55d52315",
+   "name": "Taifoon example 1a: get a free key and check its tenant",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "NEEDS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Wallet",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Register Free Key",
+       "status": "needs",
+       "note": "one free key per calling address a UTC day: this address took today’s"
+      },
+      {
+       "name": "Get My Tenant (new key)",
+       "status": "not_reached"
+      },
+      {
+       "name": "Summary",
+       "status": "not_reached"
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:56:06.321Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "examples/1b-my-tenant.json": {
+   "sha256": "8322e9d400c42a8bdf9bba6a34dc4f7dc159dfbba8c304a40b20326d87b4fc84",
+   "name": "Taifoon example 1b: check my tenant (with the saved key)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Get My Tenant",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Summary",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:19:26.874Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "examples/2-buyer-need-to-verified.json": {
+   "sha256": "4838b852e044422d6dabfc1b560dd8cbb79f21c8540b93b8366a7940ce07dbfb",
+   "name": "Taifoon example 2: buyer (a need in words → matched → hired → graded → settled → verified)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Need",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Preview the match",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Post it?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Post demand",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Wait 20 s",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Get demand",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Ended?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Hired?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Get handshake",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Explorer",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Verify hire claim",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Result",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-29T00:21:56.832Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "examples/3-seller-claim-verify-complete.json": {
+   "sha256": "7cccb8635bdab8aac936c9b64ff7875492ec984424976da96bed2d5ba76ba9e6",
+   "name": "Taifoon example 3: seller (claim a listing → verify → receive jobs → submit completion)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Seller",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Register Seller",
+       "status": "not_reached"
+      },
+      {
+       "name": "Verify Seller",
+       "status": "not_reached"
+      },
+      {
+       "name": "Get open jobs",
+       "status": "not_reached"
+      },
+      {
+       "name": "Pick a job",
+       "status": "not_reached"
+      },
+      {
+       "name": "Job to hand in?",
+       "status": "not_reached"
+      },
+      {
+       "name": "Submit completion",
+       "status": "not_reached"
+      },
+      {
+       "name": "Completion status",
+       "status": "not_reached"
+      },
+      {
+       "name": "Result",
+       "status": "not_reached"
+      },
+      {
+       "name": "Your card filled in?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Fill in your card first",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:19:26.874Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "examples/4-discovery-to-reputation.json": {
+   "sha256": "60589147e99b810bc1658ceb7113163c28781444832e3d95bceca87b560e0834",
+   "name": "Taifoon example 4: discovery (capabilities, skills, standards, cards, market → pick a provider → reputation)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Looking for",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Capabilities",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Skills",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Standards",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Cards",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Market",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Pick a provider",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Found one?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Reputation",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Result",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "No provider this time",
+       "status": "not_reached"
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:31:04.706Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "examples/5-assurance-quote-and-plan.json": {
+   "sha256": "c9ca4161d27c1f400bdc5f72b2b35f37cae4b81f4c29e8a0a39b517ce2cc7f0f",
+   "name": "Taifoon example 5: assurance (pools → quote → unsigned fund-job calls; plan only)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Job terms",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Pools",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Pick a seller",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Quote",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Fund-job action",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Build call",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Plan",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-29T00:03:20.742Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "examples/6-proof-root-and-tx.json": {
+   "sha256": "9df4f5236a49bc273203e3b64b456738a74377c5c73ffdb4cbe7f37fba8998eb",
+   "name": "Taifoon example 6: proof (latest root → transaction proof → output)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Transaction",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Latest root",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Transaction proof",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Proof served?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Wait 10 s",
+       "status": "not_reached"
+      },
+      {
+       "name": "Output",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-29T00:03:20.742Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/1-n8n-hires-on-chain.json": {
+   "sha256": "084a6b21007cbdac85f5f983e99ea73ed33b812c27fc3fc66c9482714ecaeb4d",
+   "name": "Taifoon — n8n hires an on-chain agent",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "What you need",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Match agents",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Pick one, or stop",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Quote the guarantee",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Create the offer",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Open the handshake",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "What to sign",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-29T00:29:36.623Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/10-buy-through-taifoon.json": {
+   "sha256": "acfe4bc447d29b5b0b4dab1462355e48d18546b7d096948953457f9212c0a402",
+   "name": "Taifoon — buy through Taifoon (one click: a need in words, matched, graded, settled on chain)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Need",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Post demand",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Wait 20 s",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Get demand",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Ended?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Explorer",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Verify on chain",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Receipt",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-29T00:29:36.623Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/11-first-run.json": {
+   "sha256": "823872c94098be9048f4e8e4e3459272ac123b224a89a3fd8d81c15fbe77a15b",
+   "name": "Taifoon — first run (get a free key, post a sample demand)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "NEEDS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Wallet",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Register Free Key",
+       "status": "needs",
+       "note": "one free key per calling address a UTC day: this address took today’s"
+      },
+      {
+       "name": "Post sample demand",
+       "status": "not_reached"
+      },
+      {
+       "name": "Next steps",
+       "status": "not_reached"
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:56:06.321Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/12-sell-digest.json": {
+   "sha256": "8f56c408aac12f3721c7b90dff69953bb3b6c044ceec5e038b26501185b44ee3",
+   "name": "Taifoon — sell mcp.digest (sha256 of a UTF-8 text) from n8n",
+   "paths": [
+    {
+     "trigger": "Card",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Card",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Card JSON",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Respond with the card",
+       "status": "ok",
+       "items": 1
+      }
+     ],
+     "checks": [
+      {
+       "node": "Card JSON",
+       "path": "card.classes.0",
+       "want": "mcp.digest",
+       "got": "mcp.digest",
+       "ok": true
+      }
+     ]
+    },
+    {
+     "trigger": "Hire",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Hire",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Parse offer",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Hash it?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "SHA256",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Reply",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Respond",
+       "status": "ok",
+       "items": 1
+      }
+     ],
+     "checks": [
+      {
+       "node": "Reply",
+       "path": "reply.status",
+       "want": "delivered",
+       "got": "delivered",
+       "ok": true
+      },
+      {
+       "node": "Reply",
+       "path": "reply.result.digest",
+       "want": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+       "got": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+       "ok": true
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/13-sell-json-normalize.json": {
+   "sha256": "dc9db8976fb23f3e1d5b23a81782aad83f31673391b37a5d6ef13c02e3122d77",
+   "name": "Taifoon — sell a2a.json_normalize (sort JSON keys at every depth) from n8n",
+   "paths": [
+    {
+     "trigger": "Card",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Card",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Card JSON",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Respond with the card",
+       "status": "ok",
+       "items": 1
+      }
+     ],
+     "checks": [
+      {
+       "node": "Card JSON",
+       "path": "card.classes.0",
+       "want": "~/json_normalize/",
+       "got": "a2a.json_normalize",
+       "ok": true
+      }
+     ]
+    },
+    {
+     "trigger": "Hire",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Hire",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Normalize",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Respond",
+       "status": "ok",
+       "items": 1
+      }
+     ],
+     "checks": [
+      {
+       "node": "Normalize",
+       "path": "reply.status",
+       "want": "delivered",
+       "got": "delivered",
+       "ok": true
+      },
+      {
+       "node": "Normalize",
+       "path": "reply.result.normalized",
+       "want": {
+        "a": {
+         "c": 3,
+         "d": [
+          {
+           "y": 2,
+           "z": 1
+          }
+         ]
+        },
+        "b": 1
+       },
+       "got": "{\"a\":{\"c\":3,\"d\":[{\"y\":2,\"z\":1}]},\"b\":1}",
+       "ok": true
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/14-sell-word-count.json": {
+   "sha256": "8ae6cf6feb6f9251f9c09eb3a0ba7c26cb77b6ff84f69567a53b601e64aa5c52",
+   "name": "Taifoon — sell chat.word_count (count the words of a text) from n8n",
+   "paths": [
+    {
+     "trigger": "Card",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Card",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Card JSON",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Respond with the card",
+       "status": "ok",
+       "items": 1
+      }
+     ],
+     "checks": [
+      {
+       "node": "Card JSON",
+       "path": "card.classes.0",
+       "want": "chat.word_count",
+       "got": "chat.word_count",
+       "ok": true
+      }
+     ]
+    },
+    {
+     "trigger": "Hire",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Hire",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Count",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Respond",
+       "status": "ok",
+       "items": 1
+      }
+     ],
+     "checks": [
+      {
+       "node": "Count",
+       "path": "reply.result.words",
+       "want": 4,
+       "got": 4,
+       "ok": true
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/15-resell-through-n8n.json": {
+   "sha256": "2c9687020eb7fa32bbe13b770ac143826ac04198a724e57d859640779d676267",
+   "name": "Taifoon — resell through n8n (quote a plan, mint a customer key, read the margin)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Get Access Quote",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Mint Child Key",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "Get Reseller View",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Next steps",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/20-near-provider-entry.json": {
+   "sha256": "0e1e4d83eb04896c2178308dea83a08e74df6d99383ba4d74536bd99c7cf5030",
+   "name": "Taifoon × NEAR AI Cloud — the provider entry (one external provider, in NEAR's admin shape)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Provider entry",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Read the Taifoon catalogue",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Read NEAR AI's model list",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Shape the admin batch",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "PATCH /v1/admin/models — NEAR runs this",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "What NEAR gets",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:19:26.874Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/21-near-route-check.json": {
+   "sha256": "a06785cb6b127db10ca12281ab63c72d2744c16120d574928965f289ed54d39e",
+   "name": "Taifoon × NEAR AI Cloud — one routed call, as NEAR's router makes it, and its settlement line",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "List models",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "One call",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Settlement line",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-29T00:03:20.742Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/22-near-settlement-reconcile.json": {
+   "sha256": "0865f7376e31f13f67e1a6000ceb67f3b86b09d33677b3d11a4dfaf4f7a565e2",
+   "name": "Taifoon × NEAR AI Cloud — reconcile the day against the Taifoon sale run (digest)",
+   "paths": [
+    {
+     "trigger": "Every day",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Every day",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Sale run",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Key standing",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "GET /v1/admin/platform/model-revenue — NEAR runs this",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "Digest",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:19:26.874Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/23-near-agent-market-worker.json": {
+   "sha256": "21450faa0680420fb9aacd8d367515b9ffacccd54a0a3346fedc16366e7b3a2c",
+   "name": "NEAR AI Agent Market: list as a worker, answer each brief through Taifoon",
+   "paths": [
+    {
+     "trigger": "Every minute",
+     "verdict": "NEEDS",
+     "nodes": [
+      {
+       "name": "Every minute",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "My assignments",
+       "status": "needs",
+       "note": "needs the partner’s own credential"
+      },
+      {
+       "name": "Open briefs → prompts",
+       "status": "not_reached"
+      },
+      {
+       "name": "Taifoon — chat completions",
+       "status": "not_reached"
+      },
+      {
+       "name": "Submit the deliverable",
+       "status": "not_reached"
+      },
+      {
+       "name": "A sample brief?",
+       "status": "not_reached"
+      },
+      {
+       "name": "The deliverable (sample, not submitted)",
+       "status": "not_reached"
+      }
+     ]
+    },
+    {
+     "trigger": "Try one brief (no NEAR key)",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Open briefs → prompts",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Taifoon — chat completions",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Submit the deliverable",
+       "status": "not_reached"
+      },
+      {
+       "name": "Try one brief (no NEAR key)",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "A sample brief",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "A sample brief?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "The deliverable (sample, not submitted)",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-29T09:47:49.162Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/24-n8n-sells-through-taifoon.json": {
+   "sha256": "211c32b879ce28887e5049c0a2ee9ff0de7f671778d88160344ea0952d3b8011",
+   "name": "24 · An n8n workflow sells through Taifoon (MCP Client)",
+   "paths": [
+    {
+     "trigger": "Card",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Card",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Card JSON",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Respond with the card",
+       "status": "ok",
+       "items": 1
+      }
+     ],
+     "checks": [
+      {
+       "node": "Card JSON",
+       "path": "card.classes.0",
+       "want": "chat.word_count",
+       "got": "chat.word_count",
+       "ok": true
+      }
+     ]
+    },
+    {
+     "trigger": "Hire",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Hire",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Count",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Respond",
+       "status": "ok",
+       "items": 1
+      }
+     ],
+     "checks": [
+      {
+       "node": "Count",
+       "path": "reply.status",
+       "want": "delivered",
+       "got": "delivered",
+       "ok": true
+      },
+      {
+       "node": "Count",
+       "path": "reply.result.words",
+       "want": 4,
+       "got": 4,
+       "ok": true
+      },
+      {
+       "node": "Count",
+       "path": "reply.nonce",
+       "want": "run-nonce-1",
+       "got": "run-nonce-1",
+       "ok": true
+      }
+     ]
+    },
+    {
+     "trigger": "List once",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "List once",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Seller",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Claim listing (MCP)",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "Read the claim",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Verify listing (MCP)",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "Register for dispatch (MCP)",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      }
+     ]
+    },
+    {
+     "trigger": "Every hour",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Every hour",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Offers (MCP)",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Offers and payouts",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Paid (held: Taifoon vault signer)",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:31:37.601Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/3-watch-the-chain.json": {
+   "sha256": "c5240a749527ad739e6ef5a8030b87c4dbf2fa4f7b8b3de8cb46d6b39ebbb069",
+   "name": "Taifoon — watch the chain for completed jobs",
+   "paths": [
+    {
+     "trigger": "When a job completes",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "When a job completes",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Check it against the chain",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Report",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-29T00:29:36.623Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/agentic-commerce/taifoon-agentic-commerce.json": {
+   "sha256": "9e231c4de2f3c61105d9eb2a0b1e85174e9e049afb8ddb86853a988bb4adcb41",
+   "name": "Taifoon: agentic commerce in n8n (buy, sell, chat)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "What to do",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "tf.handshake",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Ready?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Mode",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "tf.chat",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "tf.buy",
+       "status": "not_reached"
+      },
+      {
+       "name": "tf.sell",
+       "status": "not_reached"
+      },
+      {
+       "name": "Report",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Not ready",
+       "status": "not_reached"
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/agentic-commerce/tf-buy.json": {
+   "sha256": "8cabf3faca829b9366eb9073d2cfc35d1382fbb4c02f954d7da3e27bbcb33635",
+   "name": "tf.buy: hire through the layer, graded and settled",
+   "paths": [
+    {
+     "trigger": null,
+     "verdict": "SUB",
+     "note": "a sub-workflow: run through its caller"
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/agentic-commerce/tf-chat.json": {
+   "sha256": "f8eb7a854b4ae912ec84a3936cd82cad721353de6f8629b1ccb2232aff6a8f81",
+   "name": "tf.chat: OpenAI-compatible chat completion through the gate",
+   "paths": [
+    {
+     "trigger": null,
+     "verdict": "SUB",
+     "note": "a sub-workflow: run through its caller"
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/agentic-commerce/tf-handshake.json": {
+   "sha256": "e9675dcf8536d58ea4d0f920df388bb4a71108f10454e6ef50bbde2f342ec0fc",
+   "name": "tf.handshake: key standing, agreements, quote",
+   "paths": [
+    {
+     "trigger": null,
+     "verdict": "SUB",
+     "note": "a sub-workflow: run through its caller"
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/agentic-commerce/tf-sell.json": {
+   "sha256": "ff75ba668c33ccc8d3e8186b79086f675ec354da058c3a2c4d9e511671a06ced",
+   "name": "tf.sell: list this n8n workflow as a seller",
+   "paths": [
+    {
+     "trigger": null,
+     "verdict": "SUB",
+     "note": "a sub-workflow: run through its caller"
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/ours/16-chat-on-one-key.json": {
+   "sha256": "b22242dc40ddd3bf41a1a2fbf63e54e0ea295fc1b6142038d84d14c94a449613",
+   "name": "Taifoon: an AI answer on one key (0.001 USDC, checked before you pay)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Agreements",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Terms",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept document",
+       "status": "not_reached"
+      },
+      {
+       "name": "Buy",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Answer",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/ours/17-text-digest.json": {
+   "sha256": "1dc1eb571725d5a9db0f11867018a8c6eb21f384daf8e7d794e91038cf727953",
+   "name": "Taifoon: the sha256 digest of a text, from a checked agent",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Agreements",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Terms",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept document",
+       "status": "not_reached"
+      },
+      {
+       "name": "Buy",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Answer",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/ours/18-address-risk.json": {
+   "sha256": "cf643d739af7c4ffc5fc3a10eebbed86a59791e5397d47069621ef7e63d82571",
+   "name": "Taifoon: is this wallet address risky? A checked answer before you pay out",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Agreements",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Terms",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Accept document",
+       "status": "not_reached"
+      },
+      {
+       "name": "Buy",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Answer",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/ours/pending/19-onboard-agent.json": {
+   "sha256": "7093273d1a3a6c4cb885540b3355c38e8113088c74d328b6c466da2354eac3f4",
+   "name": "Taifoon: onboard an agent as a seller (its spec checked, the fix back to its owner, buyer demand, a quote, the plans unsigned)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Agent",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Spec check",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Ready",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Ready?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Fix handoff",
+       "status": "not_reached"
+      },
+      {
+       "name": "Seller",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Handshake",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "Venues pipeline",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Buyer register",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Quote",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Decide",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Sign guard",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Pool-open plan",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "Edge plan",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "First job",
+       "status": "not_reached"
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:52:25.508Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/ours/pending/20-agentic-commerce.json": {
+   "sha256": "85dcaa5e06a8581afd6b4d769ae66d6898e67b289e0091c0d08eb9cea43dce3b",
+   "name": "Taifoon: agentic commerce, strict (discover, spec check, quote, list, pay in, then every hop of the sale, OK · HELD · MISSING · BROKEN)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "discover",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "offer-in",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "spec-check",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "classify",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "quote",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "list",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "listed",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "pay-in",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "hired",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "delivered",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "graded",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "settled",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "legs",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "accrued",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "split",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "paid",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "recorded",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Hops",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/ours/pending/20-seller-check.json": {
+   "sha256": "03adf5befb3e0e17ba54960d26d3745c1c2a7243c9a1852718ee736c47832065",
+   "name": "Taifoon: check a seller before you resell it (its own 402, buyer demand, Jev on its own tool, listed · recheck · held)",
+   "paths": [
+    {
+     "trigger": "Daily",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Daily",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Read 402",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Offer",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Demand leaves",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Buyer register",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Guard",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Paid check (loop signer)",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "Decision",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Grade input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Cause",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Listing state",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Draft gate",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    },
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Read 402",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Offer",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Demand leaves",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Buyer register",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Guard",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Paid check (loop signer)",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "Decision",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Grade input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Cause",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Listing state",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Draft gate",
+       "status": "ok",
+       "items": 1
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:52:25.508Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  },
+  "workflows/ours/pending/21-pay-in.json": {
+   "sha256": "93ec2334c19aaf54849c59f9806d531841ff94e8cfb17298f01bafce21a55c2d",
+   "name": "Taifoon: pay in from any venue (your venue's own bridge to your own address, then x402 per call, into the vault)",
+   "paths": [
+    {
+     "trigger": "Start",
+     "verdict": "PASS",
+     "nodes": [
+      {
+       "name": "Start",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Input",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Row",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Bridge?",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Bridge quote",
+       "status": "not_reached"
+      },
+      {
+       "name": "Challenge",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Terms",
+       "status": "ok",
+       "items": 1
+      },
+      {
+       "name": "Bridge deposit",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      },
+      {
+       "name": "Pay with x402",
+       "status": "off",
+       "note": "disabled in the file (run on purpose by its owner)"
+      }
+     ]
+    }
+   ],
+   "at": "2026-10-28T20:33:45.873Z",
+   "n8n": "2.45.5",
+   "node_package": "n8n-nodes-taifoon@1.0.3"
+  }
+ }
+}

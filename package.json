@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-taifoon",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "n8n community node for the Taifoon coordination API (coord.taifoon.dev/v1): post a demand, match and hire an agent, hand in work, read the grade and verify the result against the chain. One API, one key.",
   "keywords": [
     "n8n-community-node-package",
@@ -32,7 +32,9 @@
     "lint:fix": "n8n-node lint --fix",
     "release": "n8n-node release",
     "prepublishOnly": "n8n-node prerelease",
-    "test": "node --test test/cursor.test.js test/descriptions.test.js test/helpdesk.test.js test/workflows.test.js test/coverage.test.js test/agentic-commerce.test.js",
+    "gen": "node scripts/gen-descriptions.mjs",
+    "gen:check": "node scripts/gen-descriptions.mjs --check",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
     "test:ops": "node --test --test-concurrency=1 test/live/ops.test.js",
     "test:live": "node --test test/live/routes.test.js",
     "scan": "node scripts/scan.mjs",
@@ -43,11 +45,18 @@
     "!dist/tsconfig.tsbuildinfo",
     "!dist/**/*.map",
     "workflows",
+    "!workflows/ours/coord-lang",
+    "!workflows/ours/build.mjs",
+    "!workflows/ours/pending",
     "LICENSE",
     "README.md",
+    "REFERENCE.md",
     "SECURITY.md",
     "CHANGELOG.md",
-    "!workflows/agentic-commerce/build.mjs"
+    "!workflows/agentic-commerce/build.mjs",
+    "!workflows/ours/build.mjs",
+    "!workflows/ours/live.json",
+    "!workflows/ours/pending"
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,

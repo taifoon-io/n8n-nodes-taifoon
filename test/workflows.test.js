@@ -253,3 +253,50 @@ test('14: no text → refused; the liveness probe → READY', () => {
 	assertReply(count({ body: { nonce: NONCE } }), 'refused');
 	assert.strictEqual(assertReply(count({ body: { kind: 'taifoon.probe.v1', probe: true, task: 'Taifoon onboarding probe: reply with the single word READY.', nonce: NONCE } }), 'delivered'), 'READY');
 });
+
+// ── 1.2.0: template 24, an n8n workflow sells through Taifoon with n8n's own MCP Client node (coord n8n-resale.cue n8n.mcp-seller) ──
+test('24-n8n-sells-through-taifoon.json: the MCP Client nodes call the coord MCP in the sell order, the writes and the payout stay disabled', () => {
+	const wf = W('24-n8n-sells-through-taifoon.json');
+	assert.strictEqual(wf.active, false);
+	assert.deepStrictEqual(wf.settings.executionOrder, 'v1');
+	assert.ok(!/tfr_[A-Za-z0-9_-]{8,}|sk-[A-Za-z0-9]{20,}/.test(JSON.stringify(wf)), 'no key in the template');
+	for (const n of wf.nodes) {
+		assert.ok(typeof n.notes === 'string' && n.notes.includes(' · ') && n.notesInFlow === true, `${n.name} carries a note`);
+		assert.ok(wf.meta.taifoon.steps[n.name], `${n.name} is described in meta.taifoon.steps`);
+	}
+	const mcp = wf.nodes.filter((n) => n.type === '@n8n/n8n-nodes-langchain.mcpClient');
+	for (const n of mcp) {
+		assert.strictEqual(n.parameters.endpointUrl, 'https://coord.taifoon.dev/mcp');
+		assert.strictEqual(n.parameters.serverTransport, 'httpStreamable');
+		assert.strictEqual(n.parameters.authentication, 'headerAuth');
+		assert.strictEqual(n.parameters.tool.mode, 'id');
+		assert.strictEqual(n.parameters.inputMode, 'json');
+	}
+	const call = (n) => { const m = n.parameters.jsonInput.match(/op: '([^']+)'|action: '([^']+)'/); return `${n.parameters.tool.value} ${m[1] || m[2]}`; };
+	assert.deepStrictEqual(mcp.map(call), ['taifoon_op listings/claim', 'taifoon_op listings/:id/verify', 'taifoon_sell register', 'taifoon_sell inbox']);
+	assert.deepStrictEqual(wf.meta.taifoon.mcp.order, mcp.map(call));
+	const disabled = wf.nodes.filter((n) => n.disabled).map((n) => n.name);
+	assert.deepStrictEqual(disabled, ['Claim listing (MCP)', 'Verify listing (MCP)', 'Register for dispatch (MCP)', 'Paid (held: Taifoon vault signer)']);
+	assert.ok(!mcp.some((n) => ['taifoon_buy', 'taifoon_vault', 'taifoon_orderbook', 'taifoon_hire'].includes(n.parameters.tool.value) || /signature|payment|"pay"/i.test(n.parameters.jsonInput)), 'no MCP call buys, pays, signs or reaches a vault');
+	assert.ok(!wf.nodes.some((n) => n.type === 'n8n-nodes-base.httpRequest'), 'every call to the layer is an MCP Client node');
+});
+
+test('24: Read the claim reads the nonce from the MCP answer, and Count is template 14\'s seller', () => {
+	const wf = W('24-n8n-sells-through-taifoon.json');
+	const answer = { content: [{ type: 'text', text: JSON.stringify({ listing: { id: 'ls_1', state: 'claimed' }, challenge: { nonce: NONCE, put_in: 'taifoon_listing' } }) }] };
+	const r = run(wf, 'Read the claim', { json: answer });
+	assert.deepStrictEqual([r.listing_id, r.state, r.nonce], ['ls_1', 'claimed', NONCE]);
+	const refused = run(wf, 'Read the claim', { json: { content: [{ type: 'text', text: '422: {"ok":false,"problems":["class"]}' }] } });
+	assert.strictEqual(refused.nonce, null);
+	assert.deepStrictEqual(refused.problems, ['class']);
+	assert.strictEqual(wf.nodes.find((n) => n.name === 'Count').parameters.jsCode, W('14-sell-word-count.json').nodes.find((n) => n.name === 'Count').parameters.jsCode);
+});
+
+test('24: the sell order is the one coord names (surfaces n8n.mcp-seller), when coord-lang/ is here', { skip: !require('node:fs').existsSync(join(__dirname, '..', 'coord-lang', 'n8n-resale.json')) && 'no coord-lang/' }, () => {
+	const lang = JSON.parse(readFileSync(join(__dirname, '..', 'coord-lang', 'n8n-resale.json'), 'utf8'));
+	const s = lang.surfaces.find((x) => x.id === 'n8n.mcp-seller');
+	const named = s.sells.map((x) => `${x.tool} ${(x.args.match(/op: "([^"]+)"|action: "([^"]+)"/) || []).slice(1).find(Boolean)}`);
+	const wf = W('24-n8n-sells-through-taifoon.json');
+	for (const c of wf.meta.taifoon.mcp.order) assert.ok(named.includes(c), `${c} is a step coord names`);
+	assert.strictEqual(s.node.split(' ')[0], '@n8n/n8n-nodes-langchain.mcpClient');
+});

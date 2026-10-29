@@ -4,12 +4,14 @@
 // (the layer's src/lib/openapi-shapes.generated.ts). Run after a deliberate change to a response; the op tests then hold the live
 // answers to the declared shape.
 //   TAIFOON_PROBE_KEY=… node test/live/shapes.mjs [--runs 3] [--keep <the current table>] > …/openapi-shapes.generated.ts
+//   … [--only "GET access/agreements"[,…]]   sample only those operations (their lines, to add to the table)
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { operations } = require('./node-request.js');
 const { SPEC } = require('./ops.spec.js');
 const { BASE, sampleIds, callOp } = require('./harness.js');
 const RUNS = Number(process.argv[process.argv.indexOf('--runs') + 1] || 3);
+const ONLY = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1].split(',') : null;
 const oa = await (await fetch(`${BASE}/openapi.json`)).json();
 const opName = (method, url) => {
 	const p = '/v1' + url.replace(/^=/, '').replace(/\{\{[^}]+\}\}/g, '{x}');
@@ -25,6 +27,10 @@ const NULL_AS = {
 	next: 'object',
 	// a key with no low-balance threshold (GET access/key): { under_grid, now } once one is set
 	low_balance: 'object',
+	// a key that inherits no agreement from a reseller (GET access/agreements): { reseller, keys } on a child key
+	inherited_from: 'object',
+	// agents/cards on the harvester path: the crawl's window and registry
+	window_blocks: 'integer', registry: 'string',
 };
 // Operations that answer in more than one form, whose sample may show only one: their declared shape is the union, required
 // only what every form carries. GET proof/tx answers the proof, or the pending answer while the producer builds it.
@@ -44,7 +50,7 @@ for (const op of operations()) {
 	const s = SPEC[`${op.resource}.${op.operation}`];
 	if (!s || s.mode === 'refusal-only') continue;
 	const name = opName(op.method, op.url);
-	if (!name) continue;
+	if (!name || (ONLY && !ONLY.includes(`${op.method} ${name}`))) continue;
 	const seen = {}; let n = 0; const statuses = new Set();
 	for (let i = 0; i < RUNS; i++) {
 		const r = await callOp(op.resource, op.operation, s.params(ids), { key: s.key });
@@ -66,7 +72,13 @@ for (const op of operations()) {
 }
 // fields a sample may show filled that the handler sets to null in another state (a settled handshake has no next step)
 // (a key with no low-balance threshold set answers low_balance: null)
-const NULLABLE = { 'GET handshake/:id': ['next'], 'GET access/key': ['low_balance'] };
+// _PLAN_NULLABLE_v1_: GET access/key answers plan: null for a key that never held a plan (planStanding: no plan, no last plan, no
+// free agreement because it holds a credited balance); the probe key is such a key since 2026-10-29.
+// _CARDS_NULLABLE_v1_: agents/cards answers from a live Base crawl when the harvester feed is unreachable, and says reasons_unreadable and
+// skills_seen_total are null there (it cannot know them); the samples rarely catch that path, so it is declared here. The other way
+// round, window_blocks and registry (the crawl's window and the registry it read) are null on the harvester path.
+const NULLABLE = { 'GET handshake/:id': ['next'], 'GET access/key': ['low_balance', 'plan'], 'GET agents/cards': ['reasons_unreadable', 'skills_seen_total', 'window_blocks', 'registry'],
+	'GET access/agreements': ['inherited_from'] };
 // money is a decimal: a sample of whole prices must not declare an integer (GET agents/market price_min was 1 on 2026-10-01)
 const MONEY = /^(price|usdc)(_|$)|_usdc$/;
 for (const v of Object.values(out)) for (const [f, t] of Object.entries(v.props)) if (MONEY.test(f)) v.props[f] = t.replace(/\binteger\b/, 'number');
@@ -76,19 +88,22 @@ for (const [k, fs] of Object.entries(NULLABLE)) if (out[k]) for (const f of fs) 
 const keepAt = process.argv.indexOf('--keep');
 if (keepAt > 0) {
 	const { readFileSync } = await import('node:fs');
-	const prev = {};
-	for (const m of readFileSync(process.argv[keepAt + 1], 'utf8').matchAll(/^\s+"([^"]+)": \{ status: \[[^\]]*\], props: (\{.*?\}), required: (\[.*?\]) \},$/gm)) prev[m[1]] = JSON.parse(m[2]);
+	const prev = {}; const prevRequired = {};
+	for (const m of readFileSync(process.argv[keepAt + 1], 'utf8').matchAll(/^\s+"([^"]+)": \{ status: \[[^\]]*\], props: (\{.*?\}), required: (\[.*?\]) \},$/gm)) { prev[m[1]] = JSON.parse(m[2]); prevRequired[m[1]] = JSON.parse(m[3]); }
 	for (const [k, v] of Object.entries(out)) for (const [f, t] of Object.entries(v.props)) {
 		const was = prev[k]?.[f];
 		if (!was) continue;
-		if (t === 'null') v.props[f] = was.endsWith('?') ? was : `${was}?`;
+		// seen only as null (NULLABLE may already have marked it "null?"): the declared type, may be null
+		if (t.replace(/\?$/, '') === 'null') v.props[f] = was.endsWith('?') ? was : `${was}?`;
 		else if (was.endsWith('?') && !t.endsWith('?')) v.props[f] = `${t}?`;
 		if (v.props[f].endsWith('?')) v.required = v.required.filter((x) => x !== f);
 	}
 	// a field the table did not declare is new: a few samples of one kind of record cannot prove every record carries it
 	for (const [k, v] of Object.entries(out)) if (prev[k]) v.required = v.required.filter((f) => prev[k][f] !== undefined);
+	// nor that a field the table lets be absent is always there (agents/cards: the crawl path carries fewer fields than the feed)
+	for (const [k, v] of Object.entries(out)) if (prevRequired[k]) v.required = v.required.filter((f) => prevRequired[k].includes(f));
 }
-Object.assign(out, MULTI_FORM);
+if (!ONLY) Object.assign(out, MULTI_FORM);
 const lines = Object.entries(out).map(([k, v]) => `  ${JSON.stringify(k)}: { status: ${JSON.stringify(v.status)}, props: ${JSON.stringify(v.props)}, required: ${JSON.stringify(v.required)} },`);
 process.stdout.write(`// GENERATED by n8n-nodes-taifoon test/live/shapes.mjs from live answers (${new Date().toISOString().slice(0, 10)}) — do not
 // edit by hand; regenerate after a deliberate change to a response. Each n8n node operation's 2xx body: its top-level fields

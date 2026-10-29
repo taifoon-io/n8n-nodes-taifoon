@@ -3,8 +3,10 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { accountOperations } from './descriptions/account';
 import { agentOperations } from './descriptions/agent';
+import { agreementOperations } from './descriptions/agreement.generated';
 import { assuranceOperations } from './descriptions/assurance';
 import { catalogOperations } from './descriptions/catalog';
+import { commerceOperations } from './descriptions/commerce';
 import { completionOperations } from './descriptions/completion';
 import { demandOperations } from './descriptions/demand';
 import { discoveryOperations } from './descriptions/discovery';
@@ -15,7 +17,9 @@ import { inferenceOperations } from './descriptions/inference';
 import { jobOperations } from './descriptions/job';
 import { judgeOperations } from './descriptions/judge';
 import { proofOperations } from './descriptions/proof';
+import { resellerKeyOperations } from './descriptions/reseller.generated';
 import { settlementOperations } from './descriptions/settlement';
+import { templateOperations } from './descriptions/template.generated';
 
 /**
  * The Taifoon coordination layer: find an agent, price the guarantee, fund a job, hand in the work,
@@ -56,14 +60,15 @@ export class Taifoon implements INodeType {
 				// its job; Job → Create Offer with a handshake id needs the key that opened it; Judge → Submit
 				// Review needs it (the reviewer IS the key, bound to one owner wallet). Demand: a key posts on its own
 				// counters and tenant (else the per-IP visitor budget); Account → Get My Tenant, Register Seller and Verify Seller
-				// need it. Helpdesk: Ask, the Learn and Nominate writes need the tenant's key (Graph widens with it).
-				displayOptions: { show: { resource: ['completion', 'judge', 'settlement', 'handshake', 'job', 'demand', 'account', 'inference', 'helpdesk'] } },
+				// need it. Shown on every resource (1.1.0): the credential's Channel ID goes on every call as X-Taifoon-Channel, so a
+				// sale a workflow makes pays the integrator's channel its share; the reads accept a key too.
+				// Helpdesk: Ask, the Learn and Nominate writes need the tenant's key (Graph widens with it).
 			},
 		],
 		requestDefaults: {
 			baseURL: 'https://coord.taifoon.dev/v1',
 			// X-Taifoon-Client lets the layer attribute node traffic; kept equal to package.json's version (a test checks it)
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/1.1.0' },
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/1.2.0' },
 		},
 		properties: [
 			{
@@ -74,8 +79,10 @@ export class Taifoon implements INodeType {
 				options: [
 					{ name: 'Account', value: 'account', description: 'Get a free key, read your tenant, list your workflow as a seller' },
 					{ name: 'Agent', value: 'agent', description: 'Find agents, check reputation, register a card' },
+					{ name: 'Agreement', value: 'agreement', description: 'What your key accepted (TSUL-1.1, TAT, TEL, VAULT-GRANT, CLA) and record an acceptance' },
 					{ name: 'Assurance', value: 'assurance', description: 'Price the guarantee and build unsigned calls' },
 					{ name: 'Catalog', value: 'catalog', description: 'Every hireable agent resold through the layer, priced, and the listings' },
+					{ name: 'Commerce', value: 'commerce', description: 'Hire, grade and settle (plan only) one sale; your channel earns its share' },
 					{ name: 'Completion', value: 'completion', description: 'Hand finished work to the relayer (needs an API key)' },
 					{ name: 'Demand', value: 'demand', description: 'Say what you need; the layer matches, hires, grades and settles it' },
 					{ name: 'Discovery', value: 'discovery', description: 'Verified standards deployments and the n8n capability index' },
@@ -86,12 +93,15 @@ export class Taifoon implements INodeType {
 					{ name: 'Job', value: 'job', description: 'Poll jobs, read the ledger, create an offer' },
 					{ name: 'Judge', value: 'judge', description: 'Grade work with the calibrated judge and leave the trail on chain (unsigned calls)' },
 					{ name: 'Proof', value: 'proof', description: 'Prove a transaction, or check a claim against the chain' },
+					{ name: 'Reseller Key', value: 'resellerKey', description: 'Per-builder child keys with a cap, promos and client vaults (an enrolled reseller)' },
 					{ name: 'Settlement', value: 'settlement', description: 'Settle one paid call on the assurance hook (unsigned calls, in order)' },
+					{ name: 'Template', value: 'template', description: 'Taifoon\'s own n8n templates with class and live price, and the n8n demand verdicts' },
 				],
 				default: 'agent',
 			},
 			...accountOperations,
 			...agentOperations,
+			...agreementOperations,
 			...assuranceOperations,
 			...catalogOperations,
 			...completionOperations,
@@ -104,7 +114,11 @@ export class Taifoon implements INodeType {
 			...jobOperations,
 			...judgeOperations,
 			...proofOperations,
+			...resellerKeyOperations,
 			...settlementOperations,
+			// 1.1.0, last so the fields Commerce re-binds are found under their own operations first
+			...commerceOperations,
+			...templateOperations,
 		],
 	};
 }

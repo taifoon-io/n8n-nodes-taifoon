@@ -1,0 +1,160 @@
+{
+ "17": {
+  "status": 200,
+  "body": {
+   "ok": true,
+   "class": "mcp.digest",
+   "seller": "api.inamprotocol.org",
+   "answer": {
+    "hash": "sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
+   },
+   "checks": {
+    "digest_exact": true,
+    "task_bound": true,
+    "no_tool_error": true,
+    "content": true
+   },
+   "task": "mcp.digest: return the sha256 digest (hex) of the UTF-8 text \"hello world\".",
+   "latency_ms": 33,
+   "sale": {
+    "id": "rs_mvhum54c_5b76859191",
+    "key": "usage:3692781:st_4cd6e1db55e79507",
+    "kept": true,
+    "channel": "n8n-template:text-digest",
+    "paid_by": "key_balance",
+    "paid_with": "balance",
+    "price_units": "5455",
+    "owed_units": "5455",
+    "fee_units": "2000",
+    "seller_share_units": "3455",
+    "reseller_markup_units": "0"
+   },
+   "payout": {
+    "state": "held",
+    "held_by": "payout_network_unset",
+    "why": "no payout network is set for keyed sales on this deployment (RESALE_KEYED_PAYOUT_NETWORK, the owner’s choice)",
+    "network": null,
+    "vault": "vault:taifoon:loop",
+    "queued": false,
+    "digest": null
+   },
+   "meter": {
+    "step": "st_4cd6e1db55e79507",
+    "list_micro": 5455,
+    "legs": [
+     {
+      "to": "provider",
+      "micro": 3455
+     },
+     {
+      "to": "our_fee",
+      "micro": 2000
+     }
+    ]
+   },
+   "seller_of_record": "taifoon",
+   "vault": "vault:taifoon:loop",
+   "assurance": {
+    "pool": "vault:assurance:pools",
+    "job": "rs_mvhum54c_5b76859191",
+    "evidence": "the delivery capture (source resold)",
+    "grade": "Jev, within 15 minutes",
+    "cover": "none bought on this call: the assured demand (POST /v1/demands) buys the pool cover"
+   },
+   "grade": "Jev grades this delivery within 15 minutes (the delivery evidence)",
+   "rule": "RESALE_KEYED_v1"
+  }
+ },
+ "18": {
+  "status": 200,
+  "body": {
+   "ok": true,
+   "class": "risk.address",
+   "seller": "whale-momentum-72343955726.us-central1.run.app",
+   "answer": {
+    "kind": "message",
+    "messageId": "5f12585d-a268-470e-bbb5-fd1212b76e66",
+    "role": "agent",
+    "contextId": "ce4e8b8a-d43b-43e6-bbbc-d90e72040959",
+    "parts": [
+     {
+      "kind": "text",
+      "text": "{\"ref\": \"r7dba13c4ba8f45c\", \"address\": \"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\", \"chain_id\": 8453, \"is_contract\": true, \"score\": 15, \"level\": \"low\", \"reasons\": [\"Verified on-chain eth_getCode bytecode on chain 8453 (is_contract=True).\"]}"
+     },
+     {
+      "data": {
+       "ref": "r7dba13c4ba8f45c",
+       "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+       "chain_id": 8453,
+       "is_contract": true,
+       "score": 15,
+       "level": "low",
+       "reasons": [
+        "Verified on-chain eth_getCode bytecode on chain 8453 (is_contract=True)."
+       ]
+      }
+     }
+    ]
+   },
+   "checks": {
+    "reply_held": true,
+    "data_present": true,
+    "ref_echo": true,
+    "address_bound": true,
+    "schema_ok": true,
+    "level_consistent": true,
+    "code_fact": true,
+    "content": true
+   },
+   "task": "risk.address: assess the risk of sending funds to the address 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 on Base (chain 8453). Reply with only a JSON object {\"ref\":\"r7dba13c4ba8f45c\",\"address\":\"<the address>\",\"chain_id\":8453,\"is_contract\":true|false,\"score\":<0-100>,\"level\":\"low\"|\"medium\"|\"high\",\"reasons\":[\"<why>\"]}: is_contract is whether the address has code on that chain now; level is low for a score of 0-33, medium for 34-66, high for 67-100; give at least one reason. A paid job: code checks the answer before the buyer is charged, then it is graded.",
+   "latency_ms": 259,
+   "sale": {
+    "id": "rs_mvhumivz_158588bb0e",
+    "key": "usage:3692781:st_0d6cf01c379dbcd7",
+    "kept": true,
+    "channel": "n8n-template:address-risk",
+    "paid_by": "key_balance",
+    "paid_with": "balance",
+    "price_units": "10000",
+    "owed_units": "10000",
+    "fee_units": "2000",
+    "seller_share_units": "8000",
+    "reseller_markup_units": "0"
+   },
+   "payout": {
+    "state": "held",
+    "held_by": "payout_network_unset",
+    "why": "no payout network is set for keyed sales on this deployment (RESALE_KEYED_PAYOUT_NETWORK, the owner’s choice)",
+    "network": null,
+    "vault": "vault:taifoon:loop",
+    "queued": false,
+    "digest": null
+   },
+   "meter": {
+    "step": "st_0d6cf01c379dbcd7",
+    "list_micro": 10000,
+    "legs": [
+     {
+      "to": "provider",
+      "micro": 8000
+     },
+     {
+      "to": "our_fee",
+      "micro": 2000
+     }
+    ]
+   },
+   "seller_of_record": "taifoon",
+   "vault": "vault:taifoon:loop",
+   "assurance": {
+    "pool": "vault:assurance:pools",
+    "job": "rs_mvhumivz_158588bb0e",
+    "evidence": "the delivery capture (source resold)",
+    "grade": "Jev, within 15 minutes",
+    "cover": "none bought on this call: the assured demand (POST /v1/demands) buys the pool cover"
+   },
+   "grade": "Jev grades this delivery within 15 minutes (the delivery evidence)",
+   "rule": "RESALE_KEYED_v1"
+  }
+ }
+}

@@ -9,7 +9,7 @@ const { buildRequest } = require('./live/node-request');
 const d = new Taifoon().description;
 const ops = (resource) => d.properties.find((p) => p.name === 'operation' && p.displayOptions.show.resource[0] === resource).options;
 const route = (resource, op) => ops(resource).find((o) => o.value === op).routing.request;
-const KEY = 'tfr_test_0000000000000000';
+const KEY = 'tfr_testkey';
 
 test('Helpdesk is a resource with the nine operations on the four sma routes, alphabetical, Ask the default', () => {
 	assert.ok(d.properties.find((p) => p.name === 'resource').options.some((o) => o.value === 'helpdesk'));
@@ -21,7 +21,7 @@ test('Helpdesk is a resource with the nine operations on the four sma routes, al
 	assert.deepEqual(route('helpdesk', 'getWeakest'), { method: 'GET', url: '/sma/graph', qs: { weakest: '1' } });
 	for (const op of ['answer', 'grade', 'tune']) assert.deepEqual(route('helpdesk', op), { method: 'POST', url: '/sma/learn' });
 	for (const op of ['nominate', 'acceptNomination', 'revokeNomination']) assert.deepEqual(route('helpdesk', op), { method: 'POST', url: '/sma/nominate' });
-	assert.ok(d.credentials[0].displayOptions.show.resource.includes('helpdesk'), 'the relayer key (X-API-Key) rides on helpdesk ops');
+	assert.equal(d.credentials[0].displayOptions, undefined, 'the relayer key (X-API-Key) rides on every resource, helpdesk included (1.1.0 channel)');
 });
 
 test('Ask: POST /sma/ask { product, question, channel: "n8n" } with X-Taifoon-Channel: n8n and the client header; hint and route only when set', async () => {
@@ -71,7 +71,7 @@ test('Learn: Answer, Grade and Tune each POST /sma/learn with { case } and exact
 	assert.equal(grade.url, '/sma/learn');
 	assert.deepEqual(grade.body, { case: 'case_0123456789abcdef', grade: { score: 0.8, by: 'buyer' } }, 'SmaLearn.grade: score and by, no answer or tuning beside it');
 	assert.equal(grade.headers['X-API-Key'], KEY);
-	assert.equal(grade.headers['X-Taifoon-Channel'], undefined);
+	assert.equal(grade.headers['X-Taifoon-Channel'], 'n8n', 'the channel rides on every call (empty Channel ID: n8n)');
 	assert.deepEqual(d.properties.find((p) => p.name === 'smaGradeBy').options.map((o) => o.value).sort(), ['admin', 'buyer', 'jev'], 'the grade.by enum');
 	const score = d.properties.find((p) => p.name === 'smaGradeScore');
 	assert.deepEqual([score.typeOptions.minValue, score.typeOptions.maxValue], [0, 1]);

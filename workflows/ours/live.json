@@ -1,0 +1,102 @@
+{
+  "schema": "taifoon.n8n.templates.live.v1",
+  "rule": "N8N_TEMPLATES_OURS_v1",
+  "how": "one run per template in a real n8n (CLI: n8n import:workflow + n8n execute) against production coord.taifoon.dev, the Header Auth credential's value an env expression (the key is never in a file); the Answer node's output recorded here",
+  "templates": {
+    "chat-on-one-key": {
+      "verified": true,
+      "at": "2026-10-21T08:27:16Z",
+      "n8n": "2.43.8 (CLI: import:workflow + execute, Header Auth value an env expression)",
+      "against": "https://coord.taifoon.dev (x-taifoon-build 971032af8245)",
+      "key": "the sandbox key (keychain taifoon-n8n-reseller-sandbox)",
+      "status": 200,
+      "ok": true,
+      "sale": {
+        "id": "gpu_mvhums5y_0e0a9551f3",
+        "channel": "n8n-template:chat-on-one-key",
+        "paid_by": "key_balance",
+        "micro": "6",
+        "usdc": "0.000006",
+        "price_rule": "OWN_INFERENCE_PRICE_v1",
+        "vault": "vault:taifoon:loop"
+      },
+      "answer": "17 × 24 = 408 (nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16, 32 tokens in, 53 out)",
+      "meter": {
+        "step": "st_2de56d2755d5e7f7",
+        "list_micro": 6,
+        "channel": "n8n-template:chat-on-one-key",
+        "vault": "vault:taifoon:loop"
+      },
+      "notes": [
+        "the keyed debit is 0.000006 USDC under price_rule OWN_INFERENCE_PRICE_v1 (our own card's per-token price, no markup), not a flat 0.001: 0.001 is the wall's list for up to 50,000 tokens",
+        "first run 2026-10-21T07:44:51Z on build 3119ab8af01f: 200, sale gpu_mvht46ua_549df1c0c6, 0.000006 USDC, no channel, no vault on the sale"
+      ]
+    },
+    "text-digest": {
+      "verified": true,
+      "at": "2026-10-21T08:26:48Z",
+      "n8n": "2.43.8 (CLI: import:workflow + execute, Header Auth value an env expression)",
+      "against": "https://coord.taifoon.dev (x-taifoon-build 971032af8245)",
+      "key": "the sandbox key (keychain taifoon-n8n-reseller-sandbox)",
+      "status": 200,
+      "ok": true,
+      "sale": {
+        "id": "rs_mvhum54c_5b76859191",
+        "key": "usage:3692781:st_4cd6e1db55e79507",
+        "channel": "n8n-template:text-digest",
+        "paid_by": "key_balance",
+        "paid_with": "balance",
+        "price_units": "5455",
+        "owed_units": "5455",
+        "fee_units": "2000",
+        "seller_share_units": "3455"
+      },
+      "answer": "sha256 of \"hello world\" = b94d27b9…cde9 from api.inamprotocol.org, checks digest_exact/task_bound/content true",
+      "meter": {
+        "step": "st_4cd6e1db55e79507",
+        "list_micro": 5455,
+        "channel": "n8n-template:text-digest",
+        "vault": "vault:taifoon:loop"
+      },
+      "notes": [
+        "price 5455 units = the wall's 0.005455 USDC; legs provider 3455 + our_fee 2000",
+        "payout Held payout_network_unset (the owner's RESALE_KEYED_PAYOUT_NETWORK)",
+        "first run 2026-10-21T07:45:20Z on build 3119ab8af01f: 402 payment_required (no keys on resale yet)",
+        "after this run the Answer node reads the digest from answer.hash (display only; the call is unchanged; checked against this run's body in test/fixtures)"
+      ]
+    },
+    "address-risk": {
+      "verified": true,
+      "at": "2026-10-21T08:27:06Z",
+      "n8n": "2.43.8 (CLI: import:workflow + execute, Header Auth value an env expression)",
+      "against": "https://coord.taifoon.dev (x-taifoon-build 971032af8245)",
+      "key": "the sandbox key (keychain taifoon-n8n-reseller-sandbox)",
+      "status": 200,
+      "ok": true,
+      "sale": {
+        "id": "rs_mvhumivz_158588bb0e",
+        "key": "usage:3692781:st_0d6cf01c379dbcd7",
+        "channel": "n8n-template:address-risk",
+        "paid_by": "key_balance",
+        "paid_with": "balance",
+        "price_units": "10000",
+        "owed_units": "10000",
+        "fee_units": "2000",
+        "seller_share_units": "8000"
+      },
+      "answer": "USDC on Base: is_contract true, score 15, level low, from whale-momentum (A2A), every check true",
+      "meter": {
+        "step": "st_0d6cf01c379dbcd7",
+        "list_micro": 10000,
+        "channel": "n8n-template:address-risk",
+        "vault": "vault:taifoon:loop"
+      },
+      "notes": [
+        "price 10000 units = the wall's 0.01 USDC; legs provider 8000 + our_fee 2000",
+        "payout Held payout_network_unset",
+        "first run 2026-10-21T07:45:29Z on build 3119ab8af01f: 402 payment_required",
+        "after this run the Answer node reads the risk from the A2A data part (display only; checked against this run's body in test/fixtures)"
+      ]
+    }
+  }
+}

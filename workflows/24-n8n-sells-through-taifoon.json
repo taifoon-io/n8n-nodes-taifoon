@@ -1,0 +1,620 @@
+{
+  "id": "tfn-24-n8n-sells-through-taifoon",
+  "name": "24 · An n8n workflow sells through Taifoon (MCP Client)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "tfn-mcp-word-count-card",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "card",
+      "name": "Card",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        60
+      ],
+      "webhookId": "tfn-mcp-word-count-card",
+      "notes": "in: — → out: agent.json · GET: a buyer or the layer asks who this seller is (the Claim listing step sends this URL)",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── set these two, then run List once → paste the nonce Read the claim returned here → enable Verify listing ──\nconst TAIFOON_LISTING = ''; // the nonce Read the claim returned (empty until you claim)\nconst ADDRESS = '0xYOUR_PAYOUT_ADDRESS'; // your payout address (a label for the seller of record; nothing is signed with it)\n// The seller's card (GET), ERC-8004 registration-v1 shaped, kind n8n: the Hire webhook is the endpoint,\n// on the host this card was read on (behind a proxy: its forwarded host and scheme), so there is no URL to edit.\nconst h = $('Card').first().json.headers || {};\nconst endpoint = `${h['x-forwarded-proto'] || 'https'}://${h['x-forwarded-host'] || h.host}/webhook/tfn-mcp-word-count`;\nreturn [{ json: { card: {\n  type: 'https://eips.ethereum.org/EIPS/eip-8004#registration-v1',\n  name: \"n8n word counter\",\n  description: \"An n8n workflow that counts the words of a text. Hire it with a task of class chat.word_count: Count the words in: \\\"…\\\" (reply with the number of words). It answers { words } and echoes the offer nonce.\",\n  kind: 'n8n', address: ADDRESS, endpoint,\n  services: [{ name: 'webhook', endpoint, version: 'taifoon-offer-v1' }],\n  skills: ['word-count', 'text', 'count', 'n8n'],\n  classes: ['chat.word_count'],\n  price_usdc: 0.05,\n  verify: ['self'],\n  taifoon_listing: TAIFOON_LISTING,\n  supportedTrust: ['reputation'],\n} } }];"
+      },
+      "id": "card-json",
+      "name": "Card JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        60
+      ],
+      "notes": "in: agent.json → out: agent.json · the card: kind n8n, class chat.word_count, price 0.05, the Hire webhook. Set TAIFOON_LISTING (the claim nonce) and ADDRESS (your payout address) at the top",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.card) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-card",
+      "name": "Respond with the card",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        60
+      ],
+      "notes": "in: agent.json → out: agent.json · answer with the card JSON; Verify listing reads the nonce here",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tfn-mcp-word-count",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "hire",
+      "name": "Hire",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "tfn-mcp-word-count",
+      "notes": "in: — → out: hire.json · hop hired: the §2 offer (POST) the layer dispatches to this workflow, or the harvester's liveness probe",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ADDRESS must equal the card's address: the payout address you listed with (replace the placeholder in BOTH Code nodes).\nconst ADDRESS = '0xYOUR_PAYOUT_ADDRESS';\n// The §2 offer as the Hire webhook received it: { jobId, chain, client, provider, evaluator, verify, phase, state, budget_usdc,\n// task, required_skills, reply_to, nonce } (a class probe also carries class_probe: true).\nconst body = ($('Hire').first().json || {}).body || {};\nconst base = { nonce: body.nonce ?? null, provider: ADDRESS.toLowerCase() };\n// The reply is ALWAYS { nonce, provider, status: delivered | refused, result }, answered 200.\nconst reply = (status, result) => [{ json: { ...base, reply: { ...base, status, result } } }];\nconst refuse = (error) => reply('refused', { error });\n// The harvester's liveness probe ({ kind: \"taifoon.probe.v1\", probe: true, … }) does no work: READY. A class probe does the work.\nif (body.class_probe !== true && (body.probe === true || body.kind === 'taifoon.probe.v1')) return reply('delivered', 'READY');\nconst task = typeof body.task === 'string' ? body.task : '';\n// Task: chat.word_count: Count the words in: \"<text>\" (reply with the number of words)\nconst START = 'Count the words in: \"', END = '\" (reply';\nconst i = task.indexOf(START), k = task.lastIndexOf(END);\nif (i < 0 || k < i + START.length) return refuse('the task carries no text; expected: Count the words in: \"<text>\" (reply with the number of words)');\nconst text = task.slice(i + START.length, k);\n// Words are runs of non-whitespace; an empty or blank text has 0. The result carries this one number and nothing else.\nconst words = text.trim().split(/\\s+/).filter(Boolean).length;\nreturn reply('delivered', { words });"
+      },
+      "id": "count",
+      "name": "Count",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "in: hire.json → out: delivery.json · hop delivered: the words of the task's text, { words } (the reply is graded by the class's own check: hop graded)",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.reply || { nonce: null, provider: null, status: 'refused', result: { error: 'the seller could not read the offer' } }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        300
+      ],
+      "notes": "in: delivery.json → out: delivery.json · always 200 JSON: the reply (delivered or refused); the layer records its digest on the handshake",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {},
+      "id": "list-once",
+      "name": "List once",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        560
+      ],
+      "notes": "in: — → out: — · run once by the seller, after Card JSON has its ADDRESS: lists this workflow through the coord MCP",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "card-url",
+              "name": "CARD_URL",
+              "value": "https://YOUR-N8N-HOST/webhook/tfn-mcp-word-count-card",
+              "type": "string"
+            },
+            {
+              "id": "payout",
+              "name": "PAYOUT_ADDRESS",
+              "value": "0xYOUR_PAYOUT_ADDRESS",
+              "type": "string"
+            },
+            {
+              "id": "listing",
+              "name": "LISTING_ID",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "seller",
+      "name": "Seller",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        560
+      ],
+      "notes": "in: — → out: — · set CARD_URL (this workflow's Card webhook, production URL) and PAYOUT_ADDRESS (the same address as in Card JSON); LISTING_ID after the claim",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://coord.taifoon.dev/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "taifoon_op"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ JSON.stringify({ op: 'listings/claim', method: 'POST', body: { card_url: $json.CARD_URL, kind: 'n8n' } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "claim",
+      "name": "Claim listing (MCP)",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        560
+      ],
+      "disabled": true,
+      "notes": "in: Seller → out: MCP tool result · hops offer in + classify: POST /v1/listings/claim through taifoon_op; answers the listing and the nonce (422 when the class is not one n8n sells). Disabled until CARD_URL is yours; the seller enables it and runs it once",
+      "notesInFlow": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "taifoon-key",
+          "name": "Taifoon key (X-API-Key)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// The MCP Client answers the tool's result; taifoon_op returns the /v1 answer as JSON text (content[0].text) or as an object.\nconst r = $json || {};\n// Claim listing (MCP) ships disabled: its input (the Seller fields) passes through until you set CARD_URL and enable it\nif ('CARD_URL' in r) return [{ json: { listing_id: null, next: /YOUR-N8N-HOST/.test(r.CARD_URL) ? 'set CARD_URL and PAYOUT_ADDRESS in Seller (and ADDRESS in both Code nodes), enable Claim listing (MCP), run List once' : 'enable Claim listing (MCP), run List once' } }];\nif (r.error) return [{ json: { listing_id: null, refused: String(r.error.message || r.error).replace(/\\s+/g, ' ').slice(0, 300), next: 'fix what the refusal names in Seller, run List once again' } }];\nconst t = (r.content && r.content[0] && r.content[0].text) || r.result || r;\n// a refusal comes as '<status>: <json>' (taifoon_op), an answer as the JSON text itself\nlet j = t; if (typeof t === 'string') { const m = t.match(/^(\\d{3}): ([\\s\\S]*)$/); try { j = JSON.parse(m ? m[2] : t); if (m) j.http_status = Number(m[1]); } catch { j = { raw: t }; } }\nconst listing = j.listing || {};\nconst nonce = (j.challenge && j.challenge.nonce) || null;\nreturn [{ json: { listing_id: listing.id || null, state: listing.state || null, nonce, problems: j.problems || null,\n  next: nonce ? 'paste the nonce into Card JSON TAIFOON_LISTING, set LISTING_ID in Seller, enable Verify listing and Register for dispatch, run List once again' : 'the claim did not answer a nonce: read problems' } }];"
+      },
+      "id": "read-claim",
+      "name": "Read the claim",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        560
+      ],
+      "notes": "in: MCP tool result → out: — · the listing id, its state and the nonce to put in the card (or the claim's problems)",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://coord.taifoon.dev/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "taifoon_op"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ JSON.stringify({ op: 'listings/:id/verify', method: 'POST', params: { id: $('Seller').first().json.LISTING_ID } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "verify",
+      "name": "Verify listing (MCP)",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        560
+      ],
+      "disabled": true,
+      "notes": "in: — → out: MCP tool result · hop listed: POST /v1/listings/{id}/verify through taifoon_op: the nonce on the card, then one class probe graded by code (nothing is paid). Disabled until the nonce is in the card; the seller enables it",
+      "notesInFlow": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "taifoon-key",
+          "name": "Taifoon key (X-API-Key)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://coord.taifoon.dev/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "taifoon_sell"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ JSON.stringify({ action: 'register', card_url: $('Seller').first().json.CARD_URL }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "register",
+      "name": "Register for dispatch (MCP)",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        560
+      ],
+      "disabled": true,
+      "notes": "in: — → out: MCP tool result · listed for dispatch: POST /v1/agents/register through taifoon_sell (path A: handshakes reach the Hire webhook). Disabled until the card is served; the seller enables it",
+      "notesInFlow": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "taifoon-key",
+          "name": "Taifoon key (X-API-Key)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "every-hour",
+      "name": "Every hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        820
+      ],
+      "notes": "in: — → out: — · once the workflow is active: read the offers addressed to this seller",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://coord.taifoon.dev/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "taifoon_sell"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ JSON.stringify({ action: 'inbox', provider: '0xYOUR_PAYOUT_ADDRESS', limit: 20 }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "inbox",
+      "name": "Offers (MCP)",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        820
+      ],
+      "notes": "in: — → out: MCP tool result · hops hired + delivered: GET /v1/handshake?provider= through taifoon_sell inbox: the offers sent to this seller and what it answered (a read; set provider to your payout address)",
+      "notesInFlow": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "taifoon-key",
+          "name": "Taifoon key (X-API-Key)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// One line per offer: when, what came back. Settled → legs written → accrued → split happen in the layer on an outside buyer's paid hire;\n// PAID is the seller's share in Base USDC to the card's payout address, sent by Taifoon's vault signer (held until the owner turns keyed payouts on).\nconst r = $json || {};\nif (r.error) return [{ json: { ok: false, refused: String(r.error.message || r.error).replace(/\\s+/g, ' ').slice(0, 300), next: 'set provider in Offers (MCP) to the payout address you listed with, then run again' } }];\nconst t = (r.content && r.content[0] && r.content[0].text) || r.result || r;\n// a refusal comes as '<status>: <json>' (taifoon_op), an answer as the JSON text itself\nlet j = t; if (typeof t === 'string') { const m = t.match(/^(\\d{3}): ([\\s\\S]*)$/); try { j = JSON.parse(m ? m[2] : t); if (m) j.http_status = Number(m[1]); } catch { j = { raw: t }; } }\nconst rows = j.handshakes || j.offers || j.rows || [];\nreturn [{ json: { offers: rows.length, delivered: rows.filter((h) => (h.delivery && h.delivery.status) === 'delivered' || h.status === 'delivered').length,\n  rows: rows.slice(0, 20).map((h) => ({ id: h.handshake_id || h.id || null, at: h.created_at || h.at || null, task: h.task || null, delivery: (h.delivery && h.delivery.status) || h.status || null })),\n  paid: 'HELD: the seller\\'s share is paid by Taifoon\\'s vault signer on its own venue (Base USDC); nothing here moves money' } }];"
+      },
+      "id": "summary",
+      "name": "Offers and payouts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        820
+      ],
+      "notes": "in: MCP tool result → out: — · count the offers and the deliveries; the payout reads HELD until it is sent",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {},
+      "id": "paid-held",
+      "name": "Paid (held: Taifoon vault signer)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        660,
+        820
+      ],
+      "disabled": true,
+      "notes": "in: — → out: — · hop PAID: never run here. Taifoon's vault signer signs the seller's share and the keyed relayer submits it (owner step keyed-payout-submit-on); n8n holds no key that moves money",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Card": {
+      "main": [
+        [
+          {
+            "node": "Card JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Card JSON": {
+      "main": [
+        [
+          {
+            "node": "Respond with the card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hire": {
+      "main": [
+        [
+          {
+            "node": "Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List once": {
+      "main": [
+        [
+          {
+            "node": "Seller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seller": {
+      "main": [
+        [
+          {
+            "node": "Claim listing (MCP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim listing (MCP)": {
+      "main": [
+        [
+          {
+            "node": "Read the claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read the claim": {
+      "main": [
+        [
+          {
+            "node": "Verify listing (MCP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify listing (MCP)": {
+      "main": [
+        [
+          {
+            "node": "Register for dispatch (MCP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every hour": {
+      "main": [
+        [
+          {
+            "node": "Offers (MCP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Offers (MCP)": {
+      "main": [
+        [
+          {
+            "node": "Offers and payouts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Offers and payouts": {
+      "main": [
+        [
+          {
+            "node": "Paid (held: Taifoon vault signer)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "A seller of class chat.word_count that lists itself through the coord MCP with n8n's own MCP Client node (no AI Agent, no community node needed): List once claims the listing (taifoon_op listings/claim), you put the nonce in the card, Verify listing probes it (taifoon_op listings/:id/verify) and Register for dispatch registers the card (taifoon_sell register); the Hire webhook delivers; Every hour reads the offers (taifoon_sell inbox). The MCP Client nodes need one Header Auth credential: name X-API-Key, value your Taifoon key. Nothing here signs or moves money: the seller's share is paid by Taifoon's vault signer on Base (held until keyed payouts are on).",
+    "taifoon": {
+      "contract": "https://www.taifoon.io/schemas/coordination/v1/",
+      "class": "chat.word_count",
+      "lang": "coord lang/cue/n8n-resale.cue surfaces n8n.mcp-seller · e2e_sell n8n-workflow→taifoon",
+      "mcp": {
+        "endpoint": "https://coord.taifoon.dev/mcp",
+        "transport": "httpStreamable",
+        "auth": "headerAuth (X-API-Key)",
+        "order": [
+          "taifoon_op listings/claim",
+          "taifoon_op listings/:id/verify",
+          "taifoon_sell register",
+          "taifoon_sell inbox"
+        ]
+      },
+      "webhooks": {
+        "card": {
+          "method": "GET",
+          "path": "tfn-mcp-word-count-card"
+        },
+        "hire": {
+          "method": "POST",
+          "path": "tfn-mcp-word-count"
+        }
+      },
+      "held": {
+        "paid": "keyed-payout-submit-on (owner)"
+      },
+      "steps": {
+        "Card": {
+          "in": null,
+          "out": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "does": "GET: a buyer or the layer asks who this seller is (the Claim listing step sends this URL)"
+        },
+        "Card JSON": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "does": "the card: kind n8n, class chat.word_count, price 0.05, the Hire webhook. Set TAIFOON_LISTING (the claim nonce) and ADDRESS (your payout address) at the top"
+        },
+        "Respond with the card": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/agent.json",
+          "does": "answer with the card JSON; Verify listing reads the nonce here"
+        },
+        "Hire": {
+          "in": null,
+          "out": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "does": "hop hired: the §2 offer (POST) the layer dispatches to this workflow, or the harvester's liveness probe"
+        },
+        "Count": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/hire.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/delivery.json",
+          "does": "hop delivered: the words of the task's text, { words } (the reply is graded by the class's own check: hop graded)"
+        },
+        "Respond": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/delivery.json",
+          "out": "https://www.taifoon.io/schemas/coordination/v1/delivery.json",
+          "does": "always 200 JSON: the reply (delivered or refused); the layer records its digest on the handshake"
+        },
+        "List once": {
+          "in": null,
+          "out": null,
+          "does": "run once by the seller, after Card JSON has its ADDRESS: lists this workflow through the coord MCP"
+        },
+        "Seller": {
+          "in": null,
+          "out": null,
+          "does": "set CARD_URL (this workflow's Card webhook, production URL) and PAYOUT_ADDRESS (the same address as in Card JSON); LISTING_ID after the claim"
+        },
+        "Claim listing (MCP)": {
+          "in": "https://www.taifoon.io/schemas/coordination/v1/Seller",
+          "out": "MCP tool result",
+          "does": "hops offer in + classify: POST /v1/listings/claim through taifoon_op; answers the listing and the nonce (422 when the class is not one n8n sells). Disabled until CARD_URL is yours; the seller enables it and runs it once"
+        },
+        "Read the claim": {
+          "in": "MCP tool result",
+          "out": null,
+          "does": "the listing id, its state and the nonce to put in the card (or the claim's problems)"
+        },
+        "Verify listing (MCP)": {
+          "in": null,
+          "out": "MCP tool result",
+          "does": "hop listed: POST /v1/listings/{id}/verify through taifoon_op: the nonce on the card, then one class probe graded by code (nothing is paid). Disabled until the nonce is in the card; the seller enables it"
+        },
+        "Register for dispatch (MCP)": {
+          "in": null,
+          "out": "MCP tool result",
+          "does": "listed for dispatch: POST /v1/agents/register through taifoon_sell (path A: handshakes reach the Hire webhook). Disabled until the card is served; the seller enables it"
+        },
+        "Every hour": {
+          "in": null,
+          "out": null,
+          "does": "once the workflow is active: read the offers addressed to this seller"
+        },
+        "Offers (MCP)": {
+          "in": null,
+          "out": "MCP tool result",
+          "does": "hops hired + delivered: GET /v1/handshake?provider= through taifoon_sell inbox: the offers sent to this seller and what it answered (a read; set provider to your payout address)"
+        },
+        "Offers and payouts": {
+          "in": "MCP tool result",
+          "out": null,
+          "does": "count the offers and the deliveries; the payout reads HELD until it is sent"
+        },
+        "Paid (held: Taifoon vault signer)": {
+          "in": null,
+          "out": null,
+          "does": "hop PAID: never run here. Taifoon's vault signer signs the seller's share and the keyed relayer submits it (owner step keyed-payout-submit-on); n8n holds no key that moves money"
+        }
+      }
+    }
+  }
+}

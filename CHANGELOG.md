@@ -1,14 +1,37 @@
 # Changelog
 
-## 1.1.0 (2026-10-23)
+## 1.2.0 (2026-10-29)
 
-- **Helpdesk (Show Me Around ++, `_SMA_HELPDESK_v1_`):** a new resource on the four `/v1/sma` routes. **Ask** (`POST /v1/sma/ask`, channel
+- **Helpdesk** (new resource; Show Me Around ++, `_SMA_HELPDESK_v1_`; first in the public repo as an unpublished 1.1.0 on 2026-10-23): a resource on the four `/v1/sma` routes. **Ask** (`POST /v1/sma/ask`, channel
   `n8n`, `X-Taifoon-Channel: n8n`) puts one question about one product and answers a case; **Get Graph** and **Get Weakest** read the
   product's knowledge graph and its ranked unknowns (`GET /v1/sma/graph`); **Answer Case**, **Grade Case** and **Tune Loop** close the
   loop (`POST /v1/sma/learn`); **Nominate Expert**, **Accept Nomination** and **Revoke Nomination** enlist the expert a case's provider leg
-  pays (`POST /v1/sma/nominate`). 75 operations, 15 resources. The request each one builds is pinned in `test/helpdesk.test.js`; the live
+  pays (`POST /v1/sma/nominate`). The request each one builds is pinned in `test/helpdesk.test.js`; the live
   suite skips the `/sma` routes until the layer serves them.
-- No operation renamed; saved workflows keep working. No new dependency.
+- **Generated from coord's language** (`scripts/gen-descriptions.mjs`, `npm run gen` / `npm run gen:check`): the operations coord
+  `lang/cue/n8n-resale.cue node_ops` names are emitted from `coord-lang/n8n-resale.json` (`coord gen` row `n8n-resale-node`);
+  every hand-typed op it names (Inference → Chat, List Models; Account → Register, Key Standing, Reseller View, Mint Child Key,
+  Register / Verify Seller) is checked against its gate route. A drift fails `npm test`.
+- **Reseller Key** (new resource): **Mint Child Key** (`label`, `cap_usdc`), **List Child Keys** (usage by key and channel,
+  `window`), **Revoke Child Key** (`key_id`), **Mint Promo**, **List Promos**, **Redeem Promo**, **Enrol Client Vault**,
+  **List Client Vaults**. Child keys, promos and client vaults are for an enrolled partner; a self-serve tenant is answered
+  `403 child_keys_off` (child tenants stay Account → Mint Child Key).
+- **Agreement** (new resource): **List Agreements** and **Accept Agreement** (`doc`, `product`, `how`).
+- **Template → Get Demand**: `GET /v1/n8n/demand`. Template → List is unchanged (now generated).
+- Template 24 *n8n sells through Taifoon* (`workflows/24-n8n-sells-through-taifoon.json`): the MCP Client node lists a workflow as a
+  seller and reads its offers; nothing in it moves money.
+- No operation renamed; saved workflows keep working. Published to npm from the public repo with provenance.
+
+## 1.1.0 (2026-10-21)
+
+- **Commerce** (new resource): **Hire**, **Grade** and **Settle (Plan)**, the same requests as Job → Create Offer, Judge → Grade
+  and Settlement → Settle (and the MCP tools `taifoon_hire`, `taifoon_grade`, `taifoon_settle_plan`). Settle answers the unsigned
+  calls only; nothing is signed or sent by the node.
+- **Template → List** (new resource): our own n8n templates with class, kinds of work, channel and live price (`GET /v1/n8n/templates`).
+- **Channel ID** on the credential: sent on every call as `X-Taifoon-Channel` (empty: `n8n`). A sale on Taifoon's walls that names a
+  channel registered with `POST /v1/channels` pays it 20 % of Taifoon's fee as its own leg. The credential is now offered on every resource.
+- **README** short, for n8n integrators and agencies; the long form moved to `REFERENCE.md`.
+- No operation renamed; saved workflows keep working.
 
 ## 1.0.3 (2026-10-20)
 

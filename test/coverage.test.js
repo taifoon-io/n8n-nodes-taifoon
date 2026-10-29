@@ -29,6 +29,7 @@ test('each contract is complete: a mode, a budget, refusals, and a gap note on e
 		assert.ok(Array.isArray(s.refusals), `${id}: refusals`);
 		if (s.mode === 'refusal-only') { assert.ok(s.gap, `${id}: a refusal-only op names its gap`); assert.ok(s.refusals.length > 0, `${id}: at least one refusal`); }
 		for (const r of s.refusals) assert.ok(r.status.every((x) => x >= 400 && x < 500), `${id}: a refusal is a 4xx`);
+		if ('pending' in s) assert.ok(typeof s.pending === 'string' && s.pending.length > 10, `${id}: pending names what it waits for`);
 	}
 });
 

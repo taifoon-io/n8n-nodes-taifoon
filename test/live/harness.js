@@ -37,7 +37,7 @@ async function sampleIds() {
  */
 async function callOp(resource, operation, params, { key, as = 'ok', method } = {}) {
 	const apiKey = as === 'badKey' ? BAD_KEY : as === 'noKey' ? null : key ? PROBE_KEY : null;
-	const req = await buildRequest(resource, operation, params, apiKey ? { apiKey } : {});
+	const req = await buildRequest(resource, operation, params, apiKey ? { apiKey, channel: process.env.TAIFOON_PROBE_CHANNEL || '' } : {});
 	// every call carries the probe, the bad-key refusals included: a key that does not exist is then counted as ours too
 	const extra = PROBE_KEY ? { 'x-taifoon-probe': PROBE_KEY } : {};
 	let r;

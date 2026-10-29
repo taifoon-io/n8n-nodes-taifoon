@@ -1,0 +1,124 @@
+{
+  "id": "near-route-check",
+  "name": "Taifoon × NEAR AI Cloud — one routed call, as NEAR's router makes it, and its settlement line",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "inference",
+        "operation": "listModels"
+      },
+      "id": "list",
+      "name": "List models",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "GET /v1/models with the key: the models the gate serves at the list price (the same list the registry discovers).",
+      "notesInFlow": true,
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "taifoon-relayer",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "inference",
+        "operation": "chat",
+        "model": "llama-3.3-70b-instruct",
+        "messages": "[{\"role\":\"user\",\"content\":\"Reply with the single word: routed\"}]",
+        "maxTokens": 8
+      },
+      "id": "chat",
+      "name": "One call",
+      "type": "n8n-nodes-taifoon.taifoon",
+      "typeVersion": 1,
+      "position": [
+        440,
+        300
+      ],
+      "notes": "The call NEAR's router makes: model = providerConfig.model_name of a row workflow 20 wrote (the id on Taifoon's list).",
+      "notesInFlow": true,
+      "credentials": {
+        "taifoonRelayerApi": {
+          "id": "taifoon-relayer",
+          "name": "Taifoon Relayer API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// The cost of one routed call on both sides. Taifoon charges the list price on the key (taifoon.usd_per_1m, USD per 1M tokens);\n// NEAR records the call in its own usage at the price its row carries (the same numbers when written by workflow 20).\nconst r = $('One call').first().json; const list = $('List models').first().json.data ?? [];\nconst m = list.find((x) => x.id === r.model) ?? {}; const p = m.taifoon?.usd_per_1m ?? {}; const inP = Number(p.in ?? 0), outP = Number(p.out ?? 0);\nconst u = r.usage ?? {}; const cost = ((u.prompt_tokens ?? 0) * inP + (u.completion_tokens ?? 0) * outP) / 1e6;\nreturn [{ json: { model: r.model, answer: r.choices?.[0]?.message?.content ?? null, usage: u, list_price_usd_per_mtok: { in: inP, out: outP }, cost_usd_at_list: Number(cost.toFixed(9)), charged_by_taifoon: r.taifoon?.sale ? { usdc: r.taifoon.sale.usdc, sale_id: r.taifoon.sale.id } : null, evidence: r.taifoon?.sale?.id ?? r.id ?? null } }];"
+      },
+      "id": "line",
+      "name": "Settlement line",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ],
+      "notes": "The line NEAR posts to its own settlement endpoint, computed from the usage the answer carries and the list price.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "List models",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List models": {
+      "main": [
+        [
+          {
+            "node": "One call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One call": {
+      "main": [
+        [
+          {
+            "node": "Settlement line",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "taifoon-coordination"
+  }
+}

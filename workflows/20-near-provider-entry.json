@@ -1,0 +1,249 @@
+{
+  "id": "near-provider-entry",
+  "name": "Taifoon × NEAR AI Cloud — the provider entry (one external provider, in NEAR's admin shape)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "name",
+              "name": "name",
+              "value": "taifoon",
+              "type": "string"
+            },
+            {
+              "id": "backend",
+              "name": "backend",
+              "value": "openai_compatible",
+              "type": "string"
+            },
+            {
+              "id": "base_url",
+              "name": "base_url",
+              "value": "https://coord.taifoon.dev/v1",
+              "type": "string"
+            },
+            {
+              "id": "credential_env",
+              "name": "credential_env",
+              "value": "TAIFOON_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "models_path",
+              "name": "models_path",
+              "value": "models",
+              "type": "string"
+            },
+            {
+              "id": "execution_security",
+              "name": "execution_security",
+              "value": "non_tee",
+              "type": "string"
+            },
+            {
+              "id": "default_tee_requirement",
+              "name": "default_tee_requirement",
+              "value": "any",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "entry",
+      "name": "Provider entry",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "The whole entry. On NEAR AI Cloud it becomes one row per model in PATCH /v1/admin/models (providerType external, providerConfig {backend, base_url, model_name, api_key}). The key behind TAIFOON_API_KEY is minted at POST https://coord.taifoon.dev/v1/register and funded by a USDC top-up on Base (GET /v1/access/quote); set it as an n8n environment variable. Its value is never in this workflow.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "options": {},
+        "method": "GET",
+        "url": "https://coord.taifoon.dev/v1/models"
+      },
+      "id": "models",
+      "name": "Read the Taifoon catalogue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ],
+      "notes": "Discovery at {base_url}/{models_path}: OpenAI-shaped data[], each model with taifoon.usd_per_1m {in, out} and taifoon.model_identity {weights, venue}.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "options": {},
+        "method": "GET",
+        "url": "https://cloud-api.near.ai/v1/model/list"
+      },
+      "id": "nearlist",
+      "name": "Read NEAR AI's model list",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        550,
+        460
+      ],
+      "notes": "Public, no key: every model NEAR lists with its modelId, aliases and price per token. A row is written only for weights not listed here.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// PATCH /v1/admin/models of NEAR AI's live API (cloud-api openapi): the body is a map keyed by model name, each value an\n// UpdateModelApiRequest (camelCase; prices in nano-USD per token, so USD per 1M tokens × 1000). A model name holds ONE providerConfig\n// (the upsert merges into it), so a row is written only for weights NEAR does not list. A model NEAR already lists (matched by its\n// modelId) and a name NEAR already uses as an alias are NEAR's naming choice: reported below, never sent.\nconst e = $('Provider entry').first().json;\nconst wall = $('Read the Taifoon catalogue').first().json.data ?? [];\nconst near = $(\"Read NEAR AI's model list\").first().json.models ?? [];\nconst base = (s) => String(s ?? '').toLowerCase().replace(/^[^/]+\\//, '').replace(/-(fp8|bf16|fp4|int4|int8|awq)$/, '').replace(/-instruct$/, '');\nconst perToken = (usdPerMtok) => ({ amount: Math.round(usdPerMtok * 1000), currency: 'USD' });\nconst usdPer1m = (c) => (c && Number.isFinite(c.amount) ? c.amount * 1e6 / 10 ** (c.scale ?? 9) : null);\nconst listed = new Map(near.map((m) => [base(m.modelId), m]));\nconst alias = new Map();\nfor (const m of near) for (const a of m.metadata?.aliases ?? []) alias.set(String(a).toLowerCase(), m.modelId);\nconst body = {}, naming_choice = [], alias_taken = [], skipped = [];\nfor (const m of wall) {\n  const t = m.taifoon ?? {}, id = t.model_identity ?? {}, p = t.usd_per_1m ?? {};\n  if (id.venue === 'near-ai' || m.owned_by === 'near-ai') { skipped.push({ model: m.id, why: 'served by NEAR AI itself' }); continue; }\n  const quote = { in: Number(p.in), out: Number(p.out) };\n  if (t.available === false || !Number.isFinite(quote.in) || !Number.isFinite(quote.out)) { skipped.push({ model: m.id, why: 'no live price' }); continue; }\n  const weights = id.weights ?? m.id;\n  const theirs = listed.get(base(weights));\n  if (theirs) {\n    naming_choice.push({ near_model: theirs.modelId, taifoon_model: m.id, weights, near_usd_per_1m: { in: usdPer1m(theirs.inputCostPerToken), out: usdPer1m(theirs.outputCostPerToken) }, taifoon_usd_per_1m: quote });\n    continue;\n  }\n  if (alias.has(weights.toLowerCase())) { alias_taken.push({ name: weights, alias_of: alias.get(weights.toLowerCase()), taifoon_model: m.id, taifoon_usd_per_1m: quote }); continue; }\n  body[weights] = {\n    modelDisplayName: id.name ?? m.id,\n    modelDescription: (id.name ?? m.id) + ' through Taifoon (' + e.base_url + '), an external OpenAI-compatible provider; not a TEE route.',\n    ownedBy: e.name,\n    providerType: 'external',\n    providerConfig: { backend: e.backend, base_url: e.base_url, model_name: m.id },\n    inputCostPerToken: perToken(quote.in),\n    outputCostPerToken: perToken(quote.out),\n    attestationSupported: false,\n    verifiable: false,\n    huggingFaceId: weights,\n    ...(id.quant && id.quant !== 'unknown' ? { quantization: id.quant } : {}),\n    inputModalities: ['text'],\n    outputModalities: ['text'],\n    isActive: true,\n    isListed: true,\n  };\n}\nreturn [{ json: { body, count: Object.keys(body).length, naming_choice, alias_taken, skipped } }];"
+      },
+      "id": "shape",
+      "name": "Shape the admin batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ],
+      "notes": "Pure. Only weights NEAR does not list are written; overlaps and alias collisions are reported for NEAR to decide.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "options": {},
+        "method": "PATCH",
+        "url": "https://cloud-api.near.ai/v1/admin/models",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.fromEntries(Object.entries($json.body).map(([name, m]) => [name, { ...m, providerConfig: { ...m.providerConfig, api_key: $env[$('Provider entry').first().json.credential_env] } }]))) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "patch",
+      "name": "PATCH /v1/admin/models — NEAR runs this",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        300
+      ],
+      "notes": "Disabled on purpose: NEAR's admin call (admin session or read_write token). The body is the map from the node before; api_key is added at send time from the environment variable the entry names.",
+      "notesInFlow": true,
+      "disabled": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "near-cloud-admin",
+          "name": "NEAR AI Cloud admin — Authorization: Bearer …"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $('Shape the admin batch').first().json;\nreturn [{ json: {\n  models_written: Object.keys(b.body),\n  first_rows: Object.entries(b.body).slice(0, 3).map(([name, m]) => ({ model: name, model_name: m.providerConfig.model_name, in_usd_per_mtok: m.inputCostPerToken.amount / 1000, out_usd_per_mtok: m.outputCostPerToken.amount / 1000 })),\n  needs_near_naming_choice: b.naming_choice,\n  alias_taken: b.alias_taken,\n  skipped: b.skipped,\n  then: ['run the PATCH on your n8n with your admin credential (read_write) and TAIFOON_API_KEY set', 'a model you already list is one providerConfig per name: switch its upstream or list ours under a new name, your choice', 'reconcile each day with workflow 22'],\n  docs: 'https://www.taifoon.io/docs/provider-entry',\n} }];"
+      },
+      "id": "summary",
+      "name": "What NEAR gets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        300
+      ],
+      "notes": "The summary a reviewer reads.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Provider entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Provider entry": {
+      "main": [
+        [
+          {
+            "node": "Read the Taifoon catalogue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read the Taifoon catalogue": {
+      "main": [
+        [
+          {
+            "node": "Read NEAR AI's model list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape the admin batch": {
+      "main": [
+        [
+          {
+            "node": "PATCH /v1/admin/models — NEAR runs this",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PATCH /v1/admin/models — NEAR runs this": {
+      "main": [
+        [
+          {
+            "node": "What NEAR gets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read NEAR AI's model list": {
+      "main": [
+        [
+          {
+            "node": "Shape the admin batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "taifoon-coordination"
+  }
+}

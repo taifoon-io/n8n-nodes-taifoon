@@ -1,0 +1,144 @@
+{
+ "schema": "taifoon.n8n.templates.index.v1",
+ "rule": "N8N_TEMPLATES_OURS_v1",
+ "source": "workflows/ours/build.mjs (written to workflows/ours/index.json)",
+ "setup": {
+  "seller_of_record": "taifoon",
+  "vault": "vault:taifoon:loop",
+  "pool": "vault:assurance:pools",
+  "agreement": [
+   "TSUL-1.1",
+   "TAT"
+  ]
+ },
+ "templates": [
+  {
+   "id": "chat-on-one-key",
+   "file": "16-chat-on-one-key.json",
+   "title": "Taifoon: an AI answer on one key (0.001 USDC, checked before you pay)",
+   "class": "inference.metered",
+   "kinds": [
+    "text.generate",
+    "chat.converse",
+    "reason.general"
+   ],
+   "channel": "n8n-template:chat-on-one-key",
+   "price": {
+    "rule": "own",
+    "usdc": "0.001",
+    "per": "answer at most (the list for up to 50,000 tokens; a key is debited our own card price for the tokens it uses)"
+   },
+   "door": "https://coord.taifoon.dev/v1/x402/class/inference.metered",
+   "verified": true,
+   "verified_at": "2026-10-21T08:27:16Z",
+   "who": "n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI account or a card on file.",
+   "why": "one Taifoon key pays each answer at our own price (0.001 USDC, no margin on top), the answer is checked before the key is charged, and every call is one metered line."
+  },
+  {
+   "id": "text-digest",
+   "file": "17-text-digest.json",
+   "title": "Taifoon: the sha256 digest of a text, from a checked agent",
+   "class": "mcp.digest",
+   "kinds": [
+    "mcp.digest"
+   ],
+   "channel": "n8n-template:text-digest",
+   "price": {
+    "rule": "resold",
+    "usdc": "0.005455",
+    "per": "digest"
+   },
+   "door": "https://coord.taifoon.dev/v1/x402/class/mcp.digest",
+   "verified": true,
+   "verified_at": "2026-10-21T08:26:48Z",
+   "who": "n8n builders who fingerprint documents, webhook payloads or records and want the digest from an agent whose answer is checked by code.",
+   "why": "Taifoon hires the best-ranked of the digest agents behind its wall, checks the answer before the key is charged, refunds it when no answer passes, and Jev grades the delivery after."
+  },
+  {
+   "id": "address-risk",
+   "file": "18-address-risk.json",
+   "title": "Taifoon: is this wallet address risky? A checked answer before you pay out",
+   "class": "risk.address",
+   "kinds": [
+    "risk.address"
+   ],
+   "channel": "n8n-template:address-risk",
+   "price": {
+    "rule": "resold",
+    "usdc": "0.010000",
+    "per": "check"
+   },
+   "door": "https://coord.taifoon.dev/v1/x402/class/risk.address",
+   "verified": true,
+   "verified_at": "2026-10-21T08:27:06Z",
+   "who": "n8n builders who pay out, onboard or accept funds from wallet addresses and need a risk answer before they act.",
+   "why": "Taifoon hires a risk agent behind its wall, checks the answer before the key is charged, refunds it when no answer passes, and Jev grades the delivery after."
+  }
+ ],
+ "waiting": [
+  {
+   "kind": "market.price",
+   "class": "market.price",
+   "why": "the keyed path does not take keys on market.price yet: its wall answers an x402 challenge to a key; no template until a key buys it"
+  },
+  {
+   "kind": "plan.steps",
+   "class": "plan.steps",
+   "why": "the keyed path answers 409 not_metered: the meter line does not price plan.steps, so it is not sold to a key (every X-API-Key call is metered)"
+  }
+ ],
+ "flows": [
+  {
+   "id": "onboard-agent",
+   "file": "pending/19-onboard-agent.json",
+   "title": "Taifoon: onboard an agent as a seller (its spec checked, the fix back to its owner, buyer demand, a quote, the plans unsigned)",
+   "flow": "flow:onboard-agent",
+   "channel": "n8n-flow:onboard-agent",
+   "signs": false,
+   "sends": false,
+   "verified": false,
+   "verified_at": null,
+   "who": "operators who bring an outside agent to the layer on request (a worklist row, a show-me-around tour that finished, or by hand), and its owners.",
+   "why": "one opt-in flow walks the same steps every time: the spec check, the fix handed back as a draft, the proof of a real answer, a class with a det, buyers before any spend, the quote, then the pool-open and edge plans for the owner to sign; existing keys and sellers are untouched, and it never signs and never sends."
+  },
+  {
+   "id": "seller-check",
+   "file": "pending/20-seller-check.json",
+   "title": "Taifoon: check a seller before you resell it (its own 402, buyer demand, Jev on its own tool, listed · recheck · held)",
+   "flow": "flow:seller-check",
+   "channel": "n8n-flow:seller-check",
+   "signs": false,
+   "sends": false,
+   "verified": false,
+   "verified_at": null,
+   "who": "operators of a resale catalog who list outside x402 sellers and must know, before they sell them on, that a paid answer does what the seller says.",
+   "why": "one flow does the whole check the same way every time: the seller’s own offer, a spend only where buyers exist and inside the cap and the day’s count, the grade on the seller’s own tool, the cause of a reject, the listing state and the draft gate; it never signs and never sends."
+  },
+  {
+   "id": "agentic-commerce",
+   "file": "pending/20-agentic-commerce.json",
+   "title": "Taifoon: agentic commerce, strict (discover, spec check, quote, list, pay in, then every hop of the sale, OK · HELD · MISSING · BROKEN)",
+   "flow": "flow:agentic-commerce",
+   "channel": "n8n-flow:agentic-commerce",
+   "signs": false,
+   "sends": false,
+   "verified": false,
+   "verified_at": null,
+   "who": "operators and builders who walk one seller through the layer and must see, hop by hop, where its sale stands: listed, paid in, delivered, settled, PAID.",
+   "why": "one flow walks the same seventeen steps every time, each one /v1 operation of the contract (coord lang/cue/lambda-studio.cue flow:agentic-commerce); the reads run, the record and plan steps stay disabled; nothing signs, sends, spends or holds a key, and a hop that did not happen reads MISSING, never OK."
+  },
+  {
+   "id": "pay-in",
+   "file": "pending/21-pay-in.json",
+   "title": "Taifoon: pay in from any venue (your venue's own bridge to your own address, then x402 per call, into the vault)",
+   "flow": "flow:pay-in",
+   "channel": "n8n-flow:pay-in",
+   "signs": false,
+   "sends": false,
+   "verified": false,
+   "verified_at": null,
+   "who": "buyers whose money sits on another venue (USDC on NEAR, Solana, Arc, Robinhood Chain, Monad, Arbitrum or Base) and the workflows that buy for them.",
+   "why": "one standard subflow for every venue: quote the venue's own bridge to the buyer's OWN address (dry, free, keyless), read the door's 402 for its network, then the two acts (the bridge deposit and the x402 authorization) that only the buyer's wallet signs; no key, no account, no gas money, nothing of ours required."
+  }
+ ]
+}

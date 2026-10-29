@@ -1,0 +1,186 @@
+{
+  "id": "near-settlement-reconcile",
+  "name": "Taifoon × NEAR AI Cloud — reconcile the day against the Taifoon sale run (digest)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "every-day",
+      "name": "Every day",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {},
+        "method": "GET",
+        "url": "https://api.taifoon.dev/coordination/sale-run.json"
+      },
+      "id": "salerun",
+      "name": "Sale run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "The public summary of the one sale-run ledger: every sale Taifoon took as seller of record, its legs and whether they sum (sigma). Re-rendered every 5 minutes on box 116.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "options": {},
+        "method": "GET",
+        "url": "https://coord.taifoon.dev/v1/access/key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "standing",
+      "name": "Key standing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        500
+      ],
+      "notes": "The key's own standing: balance, calls metered today, the refusals. Header X-API-Key: the key behind TAIFOON_API_KEY.",
+      "notesInFlow": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "taifoon-key",
+          "name": "Taifoon key (X-API-Key)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {},
+        "method": "GET",
+        "url": "https://cloud-api.near.ai/v1/admin/platform/model-revenue",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "provider_type",
+              "value": "external"
+            },
+            {
+              "name": "start",
+              "value": "={{ new Date(Date.now() - 864e5).toISOString() }}"
+            },
+            {
+              "name": "end",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "limit",
+              "value": "200"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "nearrev",
+      "name": "GET /v1/admin/platform/model-revenue — NEAR runs this",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ],
+      "notes": "Disabled on purpose: NEAR's admin read (admin session or read_write token). Per model, the last 24 h: requests, tokens, consumed_cost_usd, provider_type.",
+      "notesInFlow": true,
+      "disabled": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "near-cloud-admin",
+          "name": "NEAR AI Cloud admin — Authorization: Bearer …"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// One digest both sides read: Taifoon's public sale run and the key's standing, beside NEAR's own per-model consumption\n// (GET /v1/admin/platform/model-revenue, external providers, last 24 h) when NEAR runs the admin read.\nconst s = $('Sale run').first().json; let k = {}; try { k = $('Key standing').first().json; } catch {}\nlet near = []; try { near = ($('GET /v1/admin/platform/model-revenue — NEAR runs this').first().json.data ?? []); } catch {}\nconst ours = near.filter((r) => r.provider_type === 'external');\nconst inference = (s.cells ?? []).filter((c) => /inference/.test(c.class ?? ''));\nreturn [{ json: { date: new Date().toISOString().slice(0, 10),\n  ledger: { sales: s.sales, events: s.events, sigma: s.sigma, invariant: s.invariant, reconcile: s.reconcile },\n  inference_pairs: inference.map((c) => ({ venue_in: c.venue_in, venue_out: c.venue_out, stage: c.stage, outcomes: c.outcomes })),\n  key: { balance_usdc: k.balance?.usdc ?? null, spent_usdc: k.balance?.spent_usdc ?? null, metered_today_grid: k.budgets?.metered_today_grid ?? null },\n  near_external_last_24h: { models: ours.map((r) => ({ model: r.model_name, requests: r.requests, tokens: r.tokens, consumed_cost_usd: r.consumed_cost_usd })), consumed_cost_usd: ours.reduce((a, r) => a + (r.consumed_cost_usd ?? 0), 0) },\n  rule: 'each answer is one sale on the key at the list price; NEAR reconciles its consumed cost for the Taifoon rows against the key spend and the sale run' } }];"
+      },
+      "id": "digest",
+      "name": "Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "notes": "What both sides read: Taifoon's ledger, the key's standing, the rule a settlement follows.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Every day": {
+      "main": [
+        [
+          {
+            "node": "Sale run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sale run": {
+      "main": [
+        [
+          {
+            "node": "Key standing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Key standing": {
+      "main": [
+        [
+          {
+            "node": "GET /v1/admin/platform/model-revenue — NEAR runs this",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /v1/admin/platform/model-revenue — NEAR runs this": {
+      "main": [
+        [
+          {
+            "node": "Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "taifoon-coordination"
+  }
+}

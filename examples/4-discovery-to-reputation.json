@@ -24,12 +24,6 @@
               "type": "string"
             },
             {
-              "id": "f1",
-              "name": "chain",
-              "value": 8453,
-              "type": "number"
-            },
-            {
               "id": "f2",
               "name": "skill_hint",
               "value": "",
@@ -96,7 +90,6 @@
         "operation": "getCards",
         "cardFilters": {
           "speaks": "={{ $('Looking for').first().json.speaks }}",
-          "chain": "={{ $('Looking for').first().json.chain }}",
           "limit": 20
         }
       },
@@ -125,7 +118,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// The first card with a full owner address, preferring one whose skills include skill_hint.\nconst want = ($('Looking for').first().json.skill_hint || '').toLowerCase();\nconst cards = $('Cards').first().json.cards || [];\nconst ok = cards.filter((c) => /^0x[0-9a-fA-F]{40}$/.test(c.owner || ''));\nconst pick = (want && ok.find((c) => (c.skills || []).some((s) => String(s).toLowerCase().includes(want)))) || ok[0];\nif (!pick) throw new Error('no card with an owner address came back; widen the filters in Looking for');\nreturn [{ json: { address: pick.owner, name: pick.name, kind: pick.kind, skills: pick.skills, endpoint: pick.endpoint || null, chain: pick.chainId, agent_id: pick.agentId || null, cards_seen: cards.length } }];"
+        "jsCode": "// The first card with a full owner address, preferring one whose skills include skill_hint. A read without one (the cards feed\n// can fall back to a live crawl whose cards carry no owner) is no provider this time: found: false says why, nothing fails.\nconst want = ($('Looking for').first().json.skill_hint || '').toLowerCase();\nconst read = $('Cards').first().json;\nconst cards = read.cards || [];\nconst ownerOf = (c) => [c.owner, c.address, c.agentWallet].find((a) => /^0x[0-9a-fA-F]{40}$/.test(a || '')) || null;\nconst ok = cards.filter((c) => ownerOf(c));\nconst pick = (want && ok.find((c) => (c.skills || []).some((s) => String(s).toLowerCase().includes(want)))) || ok[0];\nif (!pick) return [{ json: { found: false, why: `no card with an owner address in this read (${cards.length} cards, source: ${read.source || 'unknown'}); run again, or widen the filters in Looking for`, cards_seen: cards.length } }];\nreturn [{ json: { found: true, address: ownerOf(pick), name: pick.name, kind: pick.kind, skills: pick.skills, endpoint: pick.endpoint || null, chain: pick.chainId, agent_id: pick.agentId || null, cards_seen: cards.length } }];"
       },
       "id": "tfnexdiscover001-07",
       "name": "Pick a provider",
@@ -135,6 +128,40 @@
         1680,
         300
       ]
+    },
+    {
+      "id": "tfex4found00001",
+      "name": "Found one?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1900,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c-found",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
     },
     {
       "parameters": {
@@ -147,7 +174,7 @@
       "type": "n8n-nodes-taifoon.taifoon",
       "typeVersion": 1,
       "position": [
-        1920,
+        2140,
         300
       ]
     },
@@ -160,9 +187,22 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2160,
+        2380,
         300
       ]
+    },
+    {
+      "id": "tfex4none000001",
+      "name": "No provider this time",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2140,
+        480
+      ],
+      "parameters": {
+        "jsCode": "// Nothing to read the reputation of: the pick says why. Run again, or widen Looking for.\nconst p = $('Pick a provider').first().json;\nreturn [{ json: { provider: null, why: p.why, cards_seen: p.cards_seen, market: $('Market').first().json.provider_count ?? null } }];"
+      }
     },
     {
       "parameters": {
@@ -263,7 +303,7 @@
       "main": [
         [
           {
-            "node": "Reputation",
+            "node": "Found one?",
             "type": "main",
             "index": 0
           }
@@ -275,6 +315,24 @@
         [
           {
             "node": "Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Found one?": {
+      "main": [
+        [
+          {
+            "node": "Reputation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No provider this time",
             "type": "main",
             "index": 0
           }

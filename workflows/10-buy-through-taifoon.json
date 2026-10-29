@@ -150,7 +150,10 @@
       ],
       "onError": "continueRegularOutput",
       "notes": "in: job.json → out: job.json · Taifoon Explorer → Get: buyer, doer, payee (seller of record), the code grade, money and every devnet transaction with its link",
-      "notesInFlow": true
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {

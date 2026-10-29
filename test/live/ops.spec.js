@@ -95,21 +95,25 @@ const SPEC = {
 		openai: true,
 		mode: 'read', key: true, params: () => ({ model: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16', messages: '[{"role":"user","content":"Say hello in five words."}]', maxTokens: 16 }),
 		ok: { status: 200, fields: ['id', 'choices', 'usage'], lists: ['choices'], nonEmpty: ['choices'] },
-		refusals: [NO_KEY, BAD_KEY, { why: 'no messages', params: { model: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16', messages: '[]', maxTokens: 16 }, status: [400] }],
+		// _PROBE_402_v1_ (web 2026-10-22): the chat door is also an x402 door, so a call with no key is offered the price (402), never 401
+		refusals: [{ ...NO_KEY, why: 'no credential: the x402 door answers 402 with the price', status: [402] }, BAD_KEY, { why: 'no messages', params: { model: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16', messages: '[]', maxTokens: 16 }, status: [400] }],
 		budgetMs: 20000,
 	},
 	'account.registerSeller': {
 		mode: 'refusal-only', key: true, params: () => ({ cardUrl: 'https://n8n.taifoon.dev/webhook/tfn-digest-card' }),
 		ok: { status: 201, fields: ['listing', 'nonce'] },
-		refusals: [NO_KEY, BAD_KEY, { why: 'not a URL', params: { cardUrl: 'not a url' }, status: [400, 422] }],
-		gap: 'a claim writes a listing row (20 a day per key); no recorded success body exists, so only the refusals are called',
+		// _KEYLESS_CLAIM_SPEC_v1_ (2026-10-28): since _PAY_IN_v1_ (coord pay-in.cue s-claim-key) a claim needs no key, so "no credential"
+		// with a real card URL WROTE a listing row every hour until 116's address hit its 20 a day (then 429). The keyless case now
+		// sends a body the card check refuses before any write; 429 is the same refusal once the address's day is spent.
+		refusals: [{ why: 'no credential, not a URL: a keyless claim reaches the card check and writes nothing', noKey: true, params: { cardUrl: 'not a url' }, status: [400, 422, 429] }, BAD_KEY, { why: 'not a URL', params: { cardUrl: 'not a url' }, status: [400, 422] }],
+		gap: 'a claim writes a listing row (20 a day per key or, keyless, per address); no recorded success body exists, so only the refusals are called',
 		budgetMs: 6000,
 	},
 	'account.verifySeller': {
 		mode: 'refusal-only', key: true, params: () => ({ sellerListingId: 'ls_0000000000000000' }),
 		ok: { status: 200, fields: ['listing'] },
-		refusals: [NO_KEY, { why: 'unknown listing', params: { sellerListingId: 'ls_0000000000000000' }, status: [404] }],
-		gap: 'only the key that claimed a listing may verify it, and verifying probes the seller; only the refusals are called',
+		refusals: [{ why: 'no credential: a keyless verify reaches the listing lookup (the served nonce proves the seller)', noKey: true, params: { sellerListingId: 'ls_0000000000000000' }, status: [404] }, { why: 'unknown listing', params: { sellerListingId: 'ls_0000000000000000' }, status: [404] }],
+		gap: 'the claimant (its key, or keyless its address) verifies by serving the nonce, and verifying probes the seller; only the refusals are called',
 		budgetMs: 8000,
 	},
 
@@ -287,6 +291,85 @@ const SPEC = {
 	'settlement.settle': {
 		mode: 'plan', key: false, params: () => ({ kind: 'agent', chainId: 36927, buyer: '0x1111111111111111111111111111111111111111', seller: ADDR, price: '100000', evidence: '0x' + 'ab'.repeat(32), refId: TEST_TAG }),
 		ok: { status: 200, fields: [] }, refusals: [{ why: 'an evidence that is not bytes32', params: { kind: 'agent', chainId: 36927, buyer: '0x1111111111111111111111111111111111111111', seller: ADDR, price: '100000', evidence: '0xab', refId: TEST_TAG }, status: [400] }], budgetMs: 10000,
+	},
+
+	// ── Commerce (1.1.0): hire, grade, settle as one resource, the same requests as Job → Create Offer, Judge → Grade, Settlement →
+	// Settle (and the MCP tools taifoon_hire, taifoon_grade, taifoon_settle_plan). Settle is a plan only. `key: true`: the probe
+	// key rides with its channel (X-Taifoon-Channel), as an integrator's credential would.
+	'commerce.hire': { mode: 'plan', key: true, params: () => ({ chainId: 8453, seller: ADDR, price: '100000' }), ok: { status: 200, fields: ['calls'], lists: ['calls'] },
+		refusals: [{ why: 'not an integer price', params: { chainId: 8453, seller: ADDR, price: 'abc' }, status: [400, 422] }], budgetMs: 10000,
+		extra: [{ why: 'an offer is unsigned: no call carries a signature and nothing was sent', check: (j) => (JSON.stringify(j ?? {}).match(/"(signature|signedTx|raw_tx)"\s*:\s*"0x[0-9a-f]{20,}/i) ? ['a signed call'] : []) }] },
+	'commerce.grade': {
+		mode: 'refusal-only', key: true, params: () => ({ items: '[{"id":"1","state":"delivered"}]' }), ok: { status: 200, fields: [] },
+		refusals: [{ why: 'no items', params: { items: '[]' }, status: [400] }, { why: 'no TypeSafe key of your own', params: { items: '[{"id":"1","state":"delivered"}]' }, status: [402, 403] }],
+		gap: 'a grade is a Jev call on the caller\'s own TypeSafe key; only the refusals are called', budgetMs: 30000,
+	},
+	'commerce.settle': {
+		mode: 'plan', key: true, params: () => ({ kind: 'agent', chainId: 36927, buyer: '0x1111111111111111111111111111111111111111', seller: ADDR, price: '100000', evidence: '0x' + 'ab'.repeat(32), refId: TEST_TAG }),
+		ok: { status: 200, fields: ['calls'], lists: ['calls'] },
+		refusals: [{ why: 'an evidence that is not bytes32', params: { kind: 'agent', chainId: 36927, buyer: '0x1111111111111111111111111111111111111111', seller: ADDR, price: '100000', evidence: '0xab', refId: TEST_TAG }, status: [400] }], budgetMs: 10000,
+		extra: [{ why: 'a plan only: every call is unsigned and names who signs it', check: (j) => (Array.isArray(j?.calls) ? j.calls.filter((c) => c && (c.signed === true || c.signature)).map((c) => `signed: ${c.to ?? c.step ?? '?'}`) : ['no calls[]']) }],
+	},
+
+	// ── Template (1.1.0) ──
+	// ── 1.2.0, generated from coord lang/cue/n8n-resale.cue node_ops (scripts/gen-descriptions.mjs): the reseller's child keys, promos and
+	// client vaults, the agreements, the n8n demand. The probe key is a self-serve tenant: the partner-only writes answer their refusal. ──
+	'resellerKey.mintChildKey': {
+		mode: 'refusal-only', key: true, params: () => ({ childLabel: TEST_TAG, capUsdc: 1 }),
+		ok: { status: 201, fields: ['key_id', 'prefix', 'cap_usdc', 'shown_once'] },
+		refusals: [NO_KEY, BAD_KEY, { why: 'a self-serve reseller has no child keys', status: [403], code: 'child_keys_off' }],
+		budgetMs: 6000,
+		gap: 'mints a real child key (shown once) for an enrolled partner only; the probe tenant is self-serve, so only the refusals are called',
+	},
+	'resellerKey.listChildKeys': { mode: 'read', key: true, params: () => ({ usageWindow: '1d' }), ok: { status: 200, fields: ['children', 'count', 'program'], lists: ['children', 'by_key', 'by_channel'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 6000 },
+	'resellerKey.revokeChildKey': {
+		mode: 'refusal-only', key: true, params: () => ({ childKeyId: 'ck_000000000000000000000000' }),
+		ok: { status: 200, fields: ['key_id', 'revoked'] },
+		refusals: [NO_KEY, BAD_KEY, { why: 'a key id that is no child of this reseller', status: [404], code: 'not_found' }],
+		budgetMs: 6000,
+		gap: 'revokes a real child key; with no child of ours only the refusals are called',
+	},
+	'resellerKey.mintPromo': {
+		mode: 'refusal-only', key: true, params: () => ({ promoKind: 'rebate', rebateBps: 100, maxRedemptions: 1, expiresInDays: 1 }),
+		ok: { status: 201, fields: ['promo'] },
+		refusals: [NO_KEY, BAD_KEY, { why: 'a self-serve reseller may not mint a promo', status: [403] }],
+		budgetMs: 6000,
+		gap: 'mints a code (shown once) for an enrolled partner only; only the refusals are called',
+	},
+	'resellerKey.listPromos': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: ['promos', 'may_mint'], lists: ['promos'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 6000 },
+	'resellerKey.redeemPromo': {
+		mode: 'refusal-only', key: true, params: () => ({ promoCode: 'NOT-A-REAL-CODE' }),
+		ok: { status: 200, fields: ['promo', 'kind'] },
+		refusals: [NO_KEY, BAD_KEY, { why: 'a code that does not exist', params: { promoCode: 'NOT-A-REAL-CODE' }, status: [400, 404, 422] }],
+		budgetMs: 6000,
+		gap: 'a redemption binds a promo to the key; with no real code only the refusals are called',
+	},
+	'resellerKey.enrolClientVault': {
+		mode: 'refusal-only', key: true, params: () => ({ clientLabel: TEST_TAG }),
+		ok: { status: 201, fields: ['vault_id', 'client_tenant'] },
+		refusals: [NO_KEY, BAD_KEY, { why: 'a self-serve reseller may not enrol a vault', status: [403] }],
+		budgetMs: 6000,
+		gap: 'enrols a client tenant and its vault record for an enrolled partner only; only the refusals are called',
+	},
+	'resellerKey.listClientVaults': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: ['vaults', 'may_enrol'], lists: ['vaults'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 6000 },
+	'agreement.listAgreements': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: ['acceptances', 'gaps', 'documents'], lists: ['acceptances', 'documents'], nonEmpty: ['documents'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 6000 },
+	'agreement.acceptAgreement': {
+		mode: 'refusal-only', key: true, params: () => ({ agreementDoc: 'TAT', agreementProduct: 'api-access', agreementHow: 'clickwrap' }),
+		ok: { status: 201, fields: ['acceptance'] },
+		refusals: [NO_KEY, BAD_KEY],
+		budgetMs: 6000,
+		gap: 'records an acceptance for the probe key (an envelope on the stream); the acceptance is the key holder\'s act, so only the refusals are called',
+	},
+	// _N8N_DEMAND_PAID_v1_: the harvest rows answer paid keys only; a free probe key is told the price and the top-up (402)
+	'template.demand': { mode: 'read', key: true, params: () => ({ demandKind: 'template', demandLimit: 1 }), ok: { status: [200, 402], fields: ['rows', 'count', 'total'], lists: ['rows'] }, refusals: [NO_KEY], budgetMs: 8000,
+		extra: [{ why: 'a paid key reads the rows; a free key gets 402 paid_key_required with the price and a top-up step', check: (j, status) => (status === 200
+			? (Array.isArray(j?.rows) ? [] : ['rows is not a list'])
+			: [j?.code === 'paid_key_required' ? null : `code ${j?.code}`, j?.price?.per_call_usdc ? null : 'no price', j?.next_step?.action === 'top_up' ? null : 'no top_up step'].filter(Boolean)) }] },
+	'template.list': {
+		mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['templates', 'count'], lists: ['templates'], nonEmpty: ['templates'] },
+		refusals: [{ why: 'a class no template sells', params: { templateClass: 'video.edit' }, status: [404], code: 'not_found' }], budgetMs: 8000,
+		pending: 'GET /v1/n8n/templates ships with the channel-share release of the API; live after the owner\'s deploy',
+		extra: [{ why: 'each template names its class, its channel and a price (the live one, or — with why)', check: (j) => (j?.templates ?? []).flatMap((t) => [t.class ? null : `${t.id}: class`, /^n8n-template:/.test(t.channel) ? null : `${t.id}: channel`, t.price?.usdc ? null : `${t.id}: price`]).filter(Boolean) }],
 	},
 };
 

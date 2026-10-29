@@ -43,10 +43,10 @@ test('optional settle fields are omitted when empty, never sent as ""', () => {
 	for (const o of coll.options) assert.match(o.routing.send.value, /\$value \|\| undefined/, `${o.name} drops its empty value`);
 });
 
-test('the relayer credential is offered on Completion, Judge, Settlement, Handshake, Job, Demand, Account, Inference and Helpdesk, and stays optional', () => {
+test('the relayer credential is offered on every resource (1.1.0: it carries the channel on every call), and stays optional', () => {
 	assert.strictEqual(d.credentials.length, 1);
 	assert.strictEqual(d.credentials[0].required, false, 'a required credential breaks every public read (found by running the node)');
-	assert.deepStrictEqual(d.credentials[0].displayOptions.show.resource, ['completion', 'judge', 'settlement', 'handshake', 'job', 'demand', 'account', 'inference', 'helpdesk']);
+	assert.strictEqual(d.credentials[0].displayOptions, undefined, 'no resource hides it: the Channel ID rides on every call');
 });
 
 test('Judge → Submit Review: the owner is optional once bound, and the binding signature rides as owner_signature', () => {
@@ -102,7 +102,7 @@ test('Judge → Record Answers posts /judge/answers/record with the constants on
 	assert.strictEqual(sent.credential_path.type, 'hidden');
 	assert.strictEqual(sent.credential_path.default, 'caller-credential');
 	assert.strictEqual(sent.caller.default, 'n8n');
-	assert.ok(d.credentials[0].displayOptions.show.resource.includes('judge'), 'the relayer key (X-API-Key) rides on judge ops');
+	assert.strictEqual(d.credentials[0].displayOptions, undefined, 'the relayer key (X-API-Key) rides on judge ops');
 });
 
 test('Demand: Post / Get / Get Many hit /v1/demands, and each way of asking sends only its own fields', () => {
@@ -141,7 +141,7 @@ const onOp = (resource, op) =>
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '1.1.0');
+	assert.strictEqual(pkg.version, '1.2.0');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
@@ -163,8 +163,8 @@ test('Account → Verify Seller posts /listings/{id}/verify with no body', () =>
 	assert.strictEqual(props[0].routing, undefined, 'the ID is in the path, not the body');
 });
 
-test('Register Seller and Verify Seller carry the credential (Account is in its list)', () => {
-	assert.ok(d.credentials[0].displayOptions.show.resource.includes('account'));
+test('Register Seller and Verify Seller carry the credential (shown on every resource)', () => {
+	assert.strictEqual(d.credentials[0].displayOptions, undefined);
 });
 
 test('Account → Register Free Key sends X-Taifoon-Channel: n8n (the tenant is recorded via n8n), and only the mint operations and Helpdesk → Ask do', async () => {
@@ -254,4 +254,47 @@ test('README: the operation and resource counts are the built node’s', () => {
 	assert.match(readme, new RegExp(`badge/operations-${ops}-`), `the badge says ${ops} operations`);
 	assert.match(readme, new RegExp(`\\*\\*Taifoon\\*\\* \\(${ops}\\s+operations, ${resources} resources`), `Install says ${ops} operations, ${resources} resources`);
 	assert.doesNotMatch(readme, /Every read works without a key/, 'Chat and the key reads need the credential');
+});
+
+// ── 1.1.0: Commerce (hire, grade, settle as a plan), Template → List, and the channel on every call (_CHANNEL_SHARE_v1_) ──
+const { buildRequest } = require('./live/node-request');
+const { TaifoonRelayerApi } = require('../dist/credentials/TaifoonRelayerApi.credentials.js');
+
+test('Commerce: Hire, Grade and Settle are the same requests as Job → Create Offer, Judge → Grade and Settlement → Settle (the MCP tools taifoon_hire, taifoon_grade, taifoon_settle_plan)', async () => {
+	assert.deepStrictEqual(ops('commerce').map((o) => o.value), ['grade', 'hire', 'settle'], 'alphabetical, as the linter demands');
+	assert.deepStrictEqual(route('commerce', 'hire'), route('job', 'createOffer'));
+	assert.deepStrictEqual(route('commerce', 'grade'), route('judge', 'grade'));
+	assert.deepStrictEqual(route('commerce', 'settle'), route('settlement', 'settle'));
+	const same = async (a, b, params) => {
+		const x = await buildRequest(a[0], a[1], params); const y = await buildRequest(b[0], b[1], params);
+		assert.deepStrictEqual({ ...x, headers: undefined }, { ...y, headers: undefined }, `${a.join('.')} sends what ${b.join('.')} sends`);
+	};
+	await same(['commerce', 'hire'], ['job', 'createOffer'], { chainId: 8453, seller: '0x' + '11'.repeat(20), price: '100000', offerOptions: { deadline_hours: 48 } });
+	await same(['commerce', 'grade'], ['judge', 'grade'], { items: '[{"id":"1","state":"delivered"}]', question: 'Was it delivered?', key: 'ts_x' });
+	await same(['commerce', 'settle'], ['settlement', 'settle'], { kind: 'agent', chainId: 36927, buyer: '0x' + '11'.repeat(20), seller: '0x' + '22'.repeat(20), price: '100000', evidence: '0x' + 'ab'.repeat(32), refId: 'r1' });
+});
+
+test('Settle is a plan only: its description says nothing is signed or sent, and no Commerce field takes a signature or a private key', () => {
+	assert.match(ops('commerce').find((o) => o.value === 'settle').description, /plan only: nothing is signed or sent/i);
+	const fields = d.properties.filter((p) => p.displayOptions?.show?.resource?.[0] === 'commerce' && p.name !== 'operation');
+	assert.ok(fields.length >= 8);
+	for (const p of fields) assert.doesNotMatch(`${p.name} ${p.displayName}`, /signature|private|secret|mnemonic/i, p.name);
+});
+
+test('Template → List reads GET /v1/n8n/templates; Class narrows it and is not sent when empty', async () => {
+	assert.deepStrictEqual(route('template', 'list'), { method: 'GET', url: '/n8n/templates' });
+	assert.deepStrictEqual((await buildRequest('template', 'list', {})).qs, {});
+	assert.deepStrictEqual((await buildRequest('template', 'list', { templateClass: 'mcp.digest' })).qs, { class: 'mcp.digest' });
+});
+
+test('the credential’s Channel ID rides on every call as X-Taifoon-Channel (empty: n8n, which earns nobody a share)', async () => {
+	const c = new TaifoonRelayerApi();
+	const f = c.properties.find((p) => p.name === 'channelId');
+	assert.ok(f && f.displayName === 'Channel ID' && f.required !== true && f.default === '');
+	assert.strictEqual(c.authenticate.properties.headers['X-Taifoon-Channel'], '={{$credentials.channelId || "n8n"}}');
+	for (const [r, o] of [['commerce', 'hire'], ['template', 'list'], ['agent', 'search'], ['demand', 'post']]) {
+		if (!ops(r).some((x) => x.value === o)) continue;
+		assert.strictEqual((await buildRequest(r, o, {}, { apiKey: 'tfr_x', channel: 'acme-agency' })).headers['X-Taifoon-Channel'], 'acme-agency', `${r}.${o}`);
+	}
+	assert.strictEqual((await buildRequest('commerce', 'hire', {}, { apiKey: 'tfr_x' })).headers['X-Taifoon-Channel'], 'n8n');
 });

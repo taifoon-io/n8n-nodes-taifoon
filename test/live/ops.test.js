@@ -81,7 +81,9 @@ for (const op of operations()) {
 	const id = `${op.resource}.${op.operation}`;
 	const s = SPEC[id];
 	if (!s) continue; // coverage.test.js fails on it
-	test(`${id} → ${op.method} ${String(op.url).replace(/^=/, '')}`, { skip: !LIVE && 'no TAIFOON_PROBE_KEY: live op tests skipped', timeout: 180_000 }, async (t) => {
+	test(`${id} → ${op.method} ${String(op.url).replace(/^=/, '')}`, { skip: !LIVE && 'no TAIFOON_PROBE_KEY: live op tests skipped', timeout: 180_000,
+		// an op whose route is not deployed yet (s.pending) runs and reports, never fails, until OPS_PENDING=1 (the re-run after the deploy)
+		todo: s.pending && process.env.OPS_PENDING !== '1' ? `pending: ${s.pending}` : false }, async (t) => {
 		const oa = await openapi();
 		const d = declared(oa, op.method, op.url);
 		assert.ok(d, `${op.method} ${op.url} is not in the live OpenAPI document`);

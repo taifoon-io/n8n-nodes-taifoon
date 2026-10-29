@@ -23,7 +23,7 @@ const CRED = { httpHeaderAuth: { id: '', name: 'Taifoon key (Header Auth: X-API-
 // the table, compact: layer code → [standard code, status, type, sdk, retry, next]
 const TABLE = Object.fromEntries(ERRORS.errors.flatMap((e) => [e.code, ...e.from].map((c) => [c, [e.code, e.status, e.type, e.sdk, e.retry, e.next]])));
 // the one normaliser every sub-workflow carries (generated: the table is coord's lang/gen/gate-errors.json)
-const NORMALISE = `// _GATE_ERRORS_v1_ (coord lang/cue/gate-errors.cue): every answer read into { ok: true, data } or the OpenAI-style error of the table.
+export const NORMALISE = `// _GATE_ERRORS_v1_ (coord lang/cue/gate-errors.cue): every answer read into { ok: true, data } or the OpenAI-style error of the table.
 const TABLE = ${JSON.stringify(TABLE)};
 const SDK = (s) => s === 400 ? 'BadRequestError' : s === 401 ? 'AuthenticationError' : s === 403 ? 'PermissionDeniedError' : s === 404 ? 'NotFoundError' : s === 409 ? 'ConflictError' : s === 422 ? 'UnprocessableEntityError' : s === 429 ? 'RateLimitError' : s >= 500 ? 'InternalServerError' : 'APIError';
 function norm(res, step) {

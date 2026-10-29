@@ -28,11 +28,20 @@ export class TaifoonRelayerApi implements ICredentialType {
 			description:
 				'A relayer key (starts with tfr_). Required for Completion, Handshake → Attach Job, Job → Create Offer with a handshake, and Judge → Submit Review; used by Handshake → Open and the judge calls when present.',
 		},
+		{
+			displayName: 'Channel ID',
+			name: 'channelId',
+			type: 'string',
+			default: '',
+			placeholder: 'your-agency',
+			description:
+				'Optional. Your channel, sent on every call as X-Taifoon-Channel (empty: n8n, which earns nobody a share). Register it once with POST /v1/channels (the channel ID and the address your share is paid to): every sale a workflow of yours makes then pays your channel its share of Taifoon\'s fee. Lower-case letters, digits and : . _ - (at most 64).',
+		},
 	];
 
 	authenticate: IAuthenticateGeneric = {
 		type: 'generic',
-		properties: { headers: { 'X-API-Key': '={{$credentials.apiKey}}' } },
+		properties: { headers: { 'X-API-Key': '={{$credentials.apiKey}}', 'X-Taifoon-Channel': '={{$credentials.channelId || "n8n"}}' } },
 	};
 
 	// Side-effect free, and it does not count against the key's rate limit.

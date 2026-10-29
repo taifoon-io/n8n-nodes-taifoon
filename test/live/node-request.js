@@ -8,7 +8,7 @@
 //
 //   const { operations, buildRequest } = require('./node-request');
 //   operations()                              → [{ resource, operation, name, method, url, keyed }] for every op shipped
-//   buildRequest('agent', 'match', { required_skills: 'x' }, { apiKey })   → { method, url, qs, body, headers }
+//   buildRequest('agent', 'match', { required_skills: 'x' }, { apiKey, channel })   → { method, url, qs, body, headers }
 //
 // What it models (n8n-workflow routing, the subset this node uses): expressions `={{ … }}` over $value / $parameter,
 // displayOptions show/hide over any parameter (resource, operation, a mode switch), defaults for parameters not given,
@@ -52,14 +52,15 @@ function visible(p, params) {
 /** Every operation the node ships: resource, operation value, display name, method, url (as written), keyed. */
 function operations() {
 	const { d } = load();
-	const keyedResources = d.credentials[0].displayOptions.show.resource;
+	// 1.1.0: the credential is shown on every resource (no displayOptions); before, a list of resources
+	const keyedResources = d.credentials[0].displayOptions?.show?.resource ?? null;
 	const out = [];
 	for (const p of d.properties) {
 		if (p.name !== 'operation') continue;
 		const resource = p.displayOptions.show.resource[0];
 		for (const o of p.options) {
 			const r = o.routing?.request ?? {};
-			out.push({ resource, operation: o.value, name: o.name, method: r.method, url: r.url, qs: r.qs ?? null, credentialOffered: keyedResources.includes(resource) });
+			out.push({ resource, operation: o.value, name: o.name, method: r.method, url: r.url, qs: r.qs ?? null, credentialOffered: keyedResources ? keyedResources.includes(resource) : true });
 		}
 	}
 	return out;
@@ -112,7 +113,16 @@ async function buildRequest(resource, operation, given = {}, opts = {}) {
 	let out = { url: req.url, method: req.method, headers: req.headers };
 	for (const f of preSends) out = await f.call({}, out);
 	req.headers = out.headers;
-	if (opts.apiKey) req.headers['X-API-Key'] = opts.apiKey;
+	// the credential's own headers (authenticate.properties.headers), as n8n adds them once a credential is attached: X-API-Key
+	// and (1.1.0) X-Taifoon-Channel from its Channel ID
+	if (opts.apiKey) {
+		const { cred } = load();
+		const $credentials = { apiKey: opts.apiKey, channelId: opts.channel ?? '' };
+		for (const [h, v] of Object.entries(cred.authenticate?.properties?.headers ?? {})) {
+			const m = String(v).match(/^=\{\{([\s\S]*)\}\}$/);
+			req.headers[h] = m ? new Function('$credentials', `return (${m[1]});`)($credentials) : v;
+		}
+	}
 	const hasBody = Object.keys(req.body).length > 0;
 	return { method: req.method, url: req.url, qs: req.qs, body: hasBody ? req.body : undefined, headers: req.headers, baseURL: req.baseURL };
 }

@@ -1,0 +1,310 @@
+{
+  "id": "near-agent-market-worker",
+  "name": "NEAR AI Agent Market: list as a worker, answer each brief through Taifoon",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "taifoon-coordination"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://market.near.ai/v1/agents/register",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"handle\": \"taifoon\", \"name\": \"Taifoon\", \"category\": \"data\", \"email\": \"info@taifoon.io\", \"sla_seconds\": 3600}",
+        "options": {}
+      },
+      "id": "register",
+      "name": "POST /v1/agents/register — the agent owner runs this once",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        80
+      ],
+      "disabled": true,
+      "notes": "Self-registration: creates a marketplace account and accepts its Terms and Builder Agreement, so it is the account owner's call. The 201 body carries apiToken ONCE: seal it as the Header Auth credential of this workflow (and in kms-access, taifoon near-market/AGENT_TOKEN) and never log it. 409 = handle taken, 429 = registration cap, retry later. The same call from a shell: node automatch/near-market/cli.mjs register … --yes.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "every-minute",
+      "name": "Every minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://market.near.ai/v1/agents/me/assignments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "assignments",
+      "name": "My assignments",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "near-market-aat",
+          "name": "NEAR Agent Market — Authorization: Bearer aat_…"
+        }
+      },
+      "notes": "The pull side of the worker loop: every row carries the job brief and the latest buyer message, so one read is enough to act. The aat_ token pins one agent, cannot act as the owner and cannot move funds.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// keep the assignments still to answer; shape the prompt our wall answers\nconst rows = ($input.first().json.assignments || []).filter(x => x.assignment && x.assignment.status === 'in_progress' && !x.assignment.submittedAt);\nreturn rows.map(x => ({ json: {\n  assignmentId: x.assignment.assignmentId, sample: x.sample === true, jobId: x.job.jobId, title: x.job.title, escrow: `${x.assignment.escrowAmount} ${x.assignment.escrowToken}`, slaDeadlineAt: x.assignment.slaDeadlineAt,\n  messages: [\n    { role: 'system', content: 'You are Taifoon, a worker agent on the NEAR AI Agent Market. Deliver the job below as complete Markdown. State assumptions. Never invent data, prices or sources; where a fact is unknown say so. Sign nothing; name no person.' },\n    { role: 'user', content: `# ${x.job.title}\\n\\n${x.job.description}` + (x.latestMessage ? `\\n\\n---\\nLatest message from the buyer:\\n${x.latestMessage.body}` : '') },\n  ],\n}}));"
+      },
+      "id": "open",
+      "name": "Open briefs → prompts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "notes": "Only in_progress and not yet submitted. The prompt is the brief, nothing else: no buyer identifier reaches the wall.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://coord.taifoon.dev/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'deepseek-v3.2', messages: $json.messages, max_tokens: 700 }) }}",
+        "options": {}
+      },
+      "id": "wall",
+      "name": "Taifoon — chat completions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "taifoon-key",
+          "name": "Taifoon — Authorization: Bearer tfr_…"
+        }
+      },
+      "notes": "Our OpenAI-compatible door: the cheapest proven source per model behind one base URL, the quote read at /models. A paid call here is one sale of ours: its legs land in the one ledger (api.taifoon.dev/coordination/sale-run.json).",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://market.near.ai/v1/assignments/{{ $('Open briefs → prompts').item.json.assignmentId }}/submit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ deliverableMarkdown: $json.choices[0].message.content }) }}",
+        "options": {}
+      },
+      "id": "submit",
+      "name": "Submit the deliverable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "near-market-aat",
+          "name": "NEAR Agent Market — Authorization: Bearer aat_…"
+        }
+      },
+      "notes": "Markdown up to 256 KiB. The buyer accepts (the escrow releases to the marketplace account) or requests changes (hire.changes_requested → the same loop answers again); silence accepts after the acceptance window.",
+      "notesInFlow": true
+    },
+    {
+      "id": "12584b69-f526-4c2d-affc-b83b5654ee62",
+      "name": "Try one brief (no NEAR key)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        520
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "2b58b7e2-667e-46e9-a23c-10ad41c49ff8",
+      "name": "A sample brief",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        520
+      ],
+      "parameters": {
+        "jsCode": "// one assignment in the market's own shape (GET /v1/agents/me/assignments), so the path runs without a NEAR key;\n// it is marked sample and is never submitted\nreturn [{ json: { assignments: [{ sample: true,\n  assignment: { assignmentId: 'sample', status: 'in_progress', submittedAt: null, escrowAmount: '1', escrowToken: 'USDC', slaDeadlineAt: new Date(Date.now() + 36e5).toISOString() },\n  job: { jobId: 'sample', title: 'Three bullet points on what an ERC-8183 job is', description: 'Write three short bullet points that explain what an ERC-8183 job is to a developer who has never seen one.' } }] } }];"
+      }
+    },
+    {
+      "id": "4315280e-db90-4a58-928e-46709a572928",
+      "name": "A sample brief?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Open briefs → prompts').item.json.sample === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "2c7f64db-6c81-41fa-8afa-686e58e11ad4",
+      "name": "The deliverable (sample, not submitted)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        480
+      ],
+      "parameters": {
+        "jsCode": "const r = $json; const b = $('Open briefs → prompts').item.json;\nreturn [{ json: { brief: b.title, model: r.model, deliverableMarkdown: r.choices?.[0]?.message?.content ?? null, usage: r.usage ?? null, submitted: false, why: 'a sample brief: with a NEAR market key, Every minute answers your real assignments and Submit the deliverable sends them' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Every minute": {
+      "main": [
+        [
+          {
+            "node": "My assignments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "My assignments": {
+      "main": [
+        [
+          {
+            "node": "Open briefs → prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open briefs → prompts": {
+      "main": [
+        [
+          {
+            "node": "Taifoon — chat completions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Taifoon — chat completions": {
+      "main": [
+        [
+          {
+            "node": "A sample brief?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Try one brief (no NEAR key)": {
+      "main": [
+        [
+          {
+            "node": "A sample brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A sample brief": {
+      "main": [
+        [
+          {
+            "node": "Open briefs → prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A sample brief?": {
+      "main": [
+        [
+          {
+            "node": "The deliverable (sample, not submitted)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Submit the deliverable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
