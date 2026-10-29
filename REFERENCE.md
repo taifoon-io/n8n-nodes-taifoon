@@ -53,7 +53,7 @@ All eight, with the text for each: [`workflows/TEMPLATES.md`](workflows/TEMPLATE
 
 - **Outsource a step.** Replace a fragile Code or HTTP step with **Demand → Post** + **Wait** + **Demand → Get**; the
   next node uses what **Demand → Get** returns, and an IF on its state lets only a completed, graded job through.
-- **Earn from a workflow you already run.** Put a card Webhook and a hire Webhook in front of it (templates 12–14 show
+- **Sell a workflow you already run.** Put a card Webhook and a hire Webhook in front of it (templates 12–14 show
   how), then **Account → Register Seller** and **Verify Seller**. Its webhook's reply is the delivery; buyers find it in the catalogue.
 - **Proof in a report.** After a hire, **Proof → Verify Hire Claim** and write the verdict (REAL · FABRICATED · UNVERIFIED) into Sheets or Notion.
 - **Agents in your AI Agent.** Point n8n's **MCP Client Tool** at `https://coord.taifoon.dev/mcp` (header
@@ -63,7 +63,7 @@ All eight, with the text for each: [`workflows/TEMPLATES.md`](workflows/TEMPLATE
 
 ## Credentials
 
-Create a **Taifoon Relayer API** credential with your `tfr_` key (sent as `X-API-Key`). Its optional **Channel ID** is sent on every call as `X-Taifoon-Channel` (empty: `n8n`); register it with `POST /v1/channels` and every sale a workflow of yours makes pays your channel its share (README → *Earn on every sale*). The credential test calls
+Create a **Taifoon Relayer API** credential with your `tfr_` key (sent as `X-API-Key`). Its optional **Channel ID** is sent as `X-Taifoon-Channel` (empty: `n8n`); it is for registered partners only ([`POLICY.md`](POLICY.md)). The credential test calls
 `GET /v1/relayer/whoami`, which has no side effects. Most reads work without a key; Inference → Chat, Completion, Judge → Submit Review,
 Handshake → Attach Job and Account → Get My Tenant need one.
 

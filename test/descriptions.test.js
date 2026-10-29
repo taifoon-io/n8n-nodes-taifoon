@@ -287,7 +287,7 @@ test('Template → List reads GET /v1/n8n/templates; Class narrows it and is not
 	assert.deepStrictEqual((await buildRequest('template', 'list', { templateClass: 'mcp.digest' })).qs, { class: 'mcp.digest' });
 });
 
-test('the credential’s Channel ID rides on every call as X-Taifoon-Channel (empty: n8n, which earns nobody a share)', async () => {
+test('the credential’s Channel ID rides on every call as X-Taifoon-Channel (empty: n8n, no partner)', async () => {
 	const c = new TaifoonRelayerApi();
 	const f = c.properties.find((p) => p.name === 'channelId');
 	assert.ok(f && f.displayName === 'Channel ID' && f.required !== true && f.default === '');

@@ -16,27 +16,23 @@ work graded, and pay only for work that passed.
 
 ## What it solves
 
-You earn a share on the sales your workflows make. Put your channel ID in the credential once: every call the node makes
-names it (`X-Taifoon-Channel`), and every sale on Taifoon's walls it leads to pays your channel **20 % of Taifoon's fee**
-as its own leg, in USDC to the address you registered. The seller's share and your client's price do not change.
+A workflow that calls an AI agent or a paid API needs to know the price before the call, to check the answer before paying
+for it, and to pay sellers who settle on different networks. The node does this in n8n: a paid call states its price first
+(HTTP 402), the answer is checked against its class before the key is charged, and the settlement is an unsigned plan that
+the buyer's own wallet signs. The node holds no key that can move money.
 
 ```
- your client's workflow ── API key + X-Taifoon-Channel: your-agency (the credential's Channel ID)
-          │
-          ├─▶ buy a class on a Taifoon wall ──▶ one sale: price = seller's share + Taifoon's fee
-          │                                                                  └── 20 % ──▶ your pay_to (USDC)
-          │
-          └─▶ Commerce → Hire ──▶ Commerce → Grade ──▶ Commerce → Settle (plan: unsigned calls the buyer's wallet signs)
+ your workflow ── API key ──┬─▶ Template / Inference / Wall ──▶ price first (402) ──▶ answer checked ──▶ charged
+                            │
+                            └─▶ Commerce → Hire ──▶ Commerce → Grade ──▶ Commerce → Settle (unsigned plan, signed by the buyer's wallet)
 ```
 
 ## Start
 
 1. **Install.** n8n → **Settings → Community Nodes → Install** → `n8n-nodes-taifoon`.
 2. **Get a key.** `curl -X POST https://coord.taifoon.dev/v1/register`, or import [`11-first-run.json`](workflows/11-first-run.json).
-3. **Register your channel**, once, with the address your share is paid to:
-   `curl -X POST https://coord.taifoon.dev/v1/channels -H 'X-API-Key: tfr_…' -H 'content-type: application/json' -d '{"channel":"your-agency","pay_to":"0x…"}'`
-4. **Add the credential** *Taifoon Relayer API*: the `tfr_` key and **Channel ID** `your-agency`.
-5. **Build.** **Template → List** shows our ready workflows with class and live price; **Commerce → Hire / Grade / Settle** runs one sale.
+3. **Add the credential** *Taifoon Relayer API* with the `tfr_` key.
+4. **Build.** **Template → List** shows ready workflows with their class and live price; **Commerce → Hire / Grade / Settle** runs one sale.
 
 ## See it run
 
@@ -57,15 +53,6 @@ demand → a settled buy and its settlement receipts):
 <img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/both-ways.gif" alt="Selling and buying an n8n workflow through Taifoon" width="100%">
 
 The full take, 3 minutes, including the node as an AI agent's tool: [`assets/review-1.2.0.mp4`](https://github.com/taifoon-io/n8n-nodes-taifoon/raw/main/assets/review-1.2.0.mp4).
-
-## Earn on every sale
-
-| | |
-|---|---|
-| Your share | 20 % of Taifoon's fee on each sale that names your channel (the owner sets the number; `GET /v1/channels` answers it) |
-| Paid | in USDC on Base (or the network you register) to your `pay_to`, from Taifoon's vault; with no `pay_to` it is held for you |
-| Where | today: every buy of a class on Taifoon's walls (`POST /v1/x402/class/<class>`, on a key's balance or by x402), as our templates make; hires through Commerce → Hire are next |
-| Never | on your own purchases (your key, your tenant or your `pay_to`), on our own templates, or out of the seller's share |
 
 ## Commerce and templates
 
@@ -141,7 +128,7 @@ Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.0.3,
 ## Security
 
 The node holds no blockchain private key and sends no transaction. It handles one secret, the API key, kept in n8n's
-encrypted credential store and sent as `X-API-Key` over TLS to `coord.taifoon.dev` only. Details: [`SECURITY.md`](SECURITY.md).
+encrypted credential store and sent as `X-API-Key` over TLS to `coord.taifoon.dev` only. Details: [`SECURITY.md`](SECURITY.md). Pricing and partner terms: [`POLICY.md`](POLICY.md).
 
 ## Development
 

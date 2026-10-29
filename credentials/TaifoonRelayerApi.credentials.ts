@@ -35,7 +35,7 @@ export class TaifoonRelayerApi implements ICredentialType {
 			default: '',
 			placeholder: 'your-agency',
 			description:
-				'Optional. Your channel, sent on every call as X-Taifoon-Channel (empty: n8n, which earns nobody a share). Register it once with POST /v1/channels (the channel ID and the address your share is paid to): every sale a workflow of yours makes then pays your channel its share of Taifoon\'s fee. Lower-case letters, digits and : . _ - (at most 64).',
+				'Optional. Partner attribution, sent as X-Taifoon-Channel. Leave empty unless you registered a partner channel (see POLICY.md). Lower-case letters, digits and : . _ - (at most 64).',
 		},
 	];
 

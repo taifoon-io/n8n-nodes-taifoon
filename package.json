@@ -50,6 +50,7 @@
     "!workflows/ours/pending",
     "!workflows/ours/samples",
     "LICENSE",
+    "POLICY.md",
     "README.md",
     "REFERENCE.md",
     "SECURITY.md",
