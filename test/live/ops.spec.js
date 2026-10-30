@@ -368,8 +368,9 @@ const SPEC = {
 	'template.list': {
 		mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['templates', 'count'], lists: ['templates'], nonEmpty: ['templates'] },
 		refusals: [{ why: 'a class no template sells', params: { templateClass: 'video.edit' }, status: [404], code: 'not_found' }], budgetMs: 8000,
-		pending: 'GET /v1/n8n/templates ships with the channel-share release of the API; live after the owner\'s deploy',
-		extra: [{ why: 'each template names its class, its channel and a price (the live one, or — with why)', check: (j) => (j?.templates ?? []).flatMap((t) => [t.class ? null : `${t.id}: class`, /^n8n-template:/.test(t.channel) ? null : `${t.id}: channel`, t.price?.usdc ? null : `${t.id}: price`]).filter(Boolean) }],
+		// a template on the Taifoon node sends the credential's Channel ID, n8n when empty (workflows/ours/build.mjs channelOf); one
+		// built on HTTP nodes sends n8n-template:<id>
+		extra: [{ why: 'each template names its class, its channel and a price (the live one, or — with why)', check: (j) => (j?.templates ?? []).flatMap((t) => [t.class ? null : `${t.id}: class`, /^n8n(-template:.+)?$/.test(t.channel) ? null : `${t.id}: channel`, t.price?.usdc ? null : `${t.id}: price`]).filter(Boolean) }],
 	},
 };
 

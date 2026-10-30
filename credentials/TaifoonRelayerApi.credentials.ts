@@ -35,7 +35,7 @@ export class TaifoonRelayerApi implements ICredentialType {
 			default: '',
 			placeholder: 'your-agency',
 			description:
-				'Optional. Partner attribution, sent as X-Taifoon-Channel. Leave empty unless you registered a partner channel (see POLICY.md). Lower-case letters, digits and : . _ - (at most 64).',
+				'Optional; leave it empty. Sent as X-Taifoon-Channel, only for a channel registered with Taifoon (POLICY.md). Lower-case letters, digits and : . _ - (at most 64).',
 		},
 	];
 

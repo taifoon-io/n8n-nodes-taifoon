@@ -9,30 +9,113 @@
   <img src="https://img.shields.io/badge/operations-90-3DA5FF?style=flat-square&labelColor=000000" alt="90 operations">
 </p>
 
-## Who it is for
+Hire AI agents and call paid APIs from an n8n workflow. Every paid call states its price before it runs, the answer is
+checked by code before your key is charged, and anything that moves money comes back as an unsigned plan for your own
+wallet to sign. The node holds no key that can move money.
 
-**n8n integrators and agencies** who build workflows for clients, and want those workflows to hire AI agents, have the
-work graded, and pay only for work that passed.
+## Install
 
-## What it solves
+Self-hosted n8n → **Settings → Community Nodes → Install** → `n8n-nodes-taifoon`. Two nodes come with it:
+**Taifoon** (90 operations, 19 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
+[`/v1/openapi.json`](https://coord.taifoon.dev/v1/openapi.json)) and **Taifoon Trigger** (a job changed). Tested on n8n
+2.45.5; Node.js 20.15 or later.
 
-A workflow that calls an AI agent or a paid API needs to know the price before the call, to check the answer before paying
-for it, and to pay sellers who settle on different networks. The node does this in n8n: a paid call states its price first
-(HTTP 402), the answer is checked against its class before the key is charged, and the settlement is an unsigned plan that
-the buyer's own wallet signs. The node holds no key that can move money.
+## Credentials
 
+1. Get a key: **Account → Register Free Key** in the node, or `curl -X POST https://coord.taifoon.dev/v1/register`.
+2. Add a **Taifoon Relayer API** credential with the `tfr_` key. Its test calls `GET /v1/relayer/whoami`.
+
+Leave the optional Channel ID empty.
+
+## Use cases
+
+| You want to | Operations | Ready workflow |
+|---|---|---|
+| Get an AI answer without an OpenAI account or a card on file | Inference → Chat (OpenAI-compatible), List Models | [`16-chat-on-one-key.json`](workflows/ours/16-chat-on-one-key.json) |
+| Check a wallet address before you pay it | built-in HTTP Request nodes on `POST /v1/x402/class/risk.address` | [`18-address-risk.json`](workflows/ours/18-address-risk.json), [`19-safe-payout-desk.json`](workflows/ours/19-safe-payout-desk.json) |
+| Have work done from a sentence, without choosing who does it | Demand → Post, Demand → Get, Proof → Verify Hire Claim | [`10-buy-through-taifoon.json`](workflows/10-buy-through-taifoon.json), [example 2](examples/2-buyer-need-to-verified.json) |
+| Hire a specific agent, with its price and cover quoted first | Agent → Match, Assurance → Get Quote, Handshake → Open, Job → Create Offer; or Commerce → Hire, Grade, Settle (Plan) | [`1-n8n-hires-on-chain.json`](workflows/1-n8n-hires-on-chain.json) |
+| Offer a workflow as a service other agents can hire | a Webhook that answers each job; Account → Register Seller, Verify Seller to list it | [`12`](workflows/12-sell-digest.json), [`13`](workflows/13-sell-json-normalize.json), [`14`](workflows/14-sell-word-count.json), [`24`](workflows/24-n8n-sells-through-taifoon.json), [example 3](examples/3-seller-claim-verify-complete.json) |
+| Prove that a transaction happened on a chain | Proof → Get Root, Get Transaction Proof, Verify Hire Claim | [example 6](examples/6-proof-root-and-tx.json) |
+| Run a step when a job completes | Taifoon Trigger, Proof → Verify Hire Claim | [`3-watch-the-chain.json`](workflows/3-watch-the-chain.json) |
+| Ask a question about a product and get a graded answer | Helpdesk → Ask, Get Graph | — |
+
+### Check an answer before you pay for it
+
+A class call returns the answer together with the checks it passed. The key is charged only when every check passed;
+otherwise the call is refunded. This is a recorded answer for the text `hello world`
+([`17-text-digest.json`](workflows/ours/17-text-digest.json)), shortened:
+
+```json
+{
+  "ok": true,
+  "class": "mcp.digest",
+  "answer": { "hash": "sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9" },
+  "checks": { "digest_exact": true, "task_bound": true, "no_tool_error": true, "content": true },
+  "sale": { "id": "rs_mvhum54c_5b76859191", "paid_by": "key_balance", "price_units": "5455" }
+}
 ```
- your workflow ── API key ──┬─▶ Template / Inference / Wall ──▶ price first (402) ──▶ answer checked ──▶ charged
-                            │
-                            └─▶ Commerce → Hire ──▶ Commerce → Grade ──▶ Commerce → Settle (unsigned plan, signed by the buyer's wallet)
+
+`price_units` is in millionths of a USDC (0.005455 here). In n8n, branch on `{{ $json.ok }}` and read
+`{{ $json.answer }}`; a refusal has the same shape on every operation (`ok: false`, `code`, `error`, `next_step`).
+
+### AI answers on one key
+
+**Inference → Chat** calls `POST /v1/chat/completions` (OpenAI-compatible) with three fields: **Model** (Inference → List
+Models; the default is our own model), **Max Tokens**, and **Messages** in OpenAI's format:
+
+```json
+[{ "role": "user", "content": "Summarise this ticket in one line: {{ $json.body }}" }]
 ```
 
-## Start
+The answer is OpenAI's shape (`choices[0].message.content`, `usage`), plus `taifoon.sale` with what the answer cost.
 
-1. **Install.** n8n → **Settings → Community Nodes → Install** → `n8n-nodes-taifoon`.
-2. **Get a key.** `curl -X POST https://coord.taifoon.dev/v1/register`, or import [`11-first-run.json`](workflows/11-first-run.json).
-3. **Add the credential** *Taifoon Relayer API* with the `tfr_` key.
-4. **Build.** **Template → List** shows ready workflows with their class and live price; **Commerce → Hire / Grade / Settle** runs one sale.
+### Settle with your own wallet
+
+**Commerce → Settle (Plan)** and the Assurance and Judge writes return the calls to make, in order, each naming who signs.
+The first of the calls Settle (Plan) answers on the Taifoon devnet:
+
+```json
+{
+  "step": "seller approves the deposit",
+  "action": "approve-deposit",
+  "chainId": 36927,
+  "to": "0x31854D915F31A1FBe57c2b06B5b60cbbD7D42D5b",
+  "value": "0",
+  "data": "0x095ea7b3…",
+  "signer": "the seller of record",
+  "effect": "Lets the hook pull the seller's deposit of 200001 at funding. D > P by rule."
+}
+```
+
+Sign them with the wallet you already use. The node never sends a transaction.
+
+## Operations
+
+| Resource | Operations |
+|---|---|
+| Account | Register Free Key, Get Key Standing, Get My Tenant, Subscribe, Register Seller, Verify Seller, Get Access Quote, Claim Plan, Claim Top-Up, Mint Child Key, Get Reseller View |
+| Agent | Match, Get Cards, Get Market, Get Providers, Get Registered, Get Reputation, Get Wire-Ready, Register, Plan Enrollment, Publish As Seller |
+| Agreement | List Agreements, Accept Agreement |
+| Assurance | Get Pools, Get Quote, Build Call, Stamp Grade, Get Deployment |
+| Catalog | Get Many, Get, Get Many Listings, Get Listing |
+| Commerce | Hire, Grade, Settle (Plan) |
+| Completion | Submit, Get Status |
+| Demand | Post, Get, Get Many |
+| Discovery | Get Capabilities, Search Capabilities, Get Capability Skills, Get Standards |
+| Explorer | Get Many, Get |
+| Handshake | Open, Get, Attach Job |
+| Helpdesk | Ask, Get Graph, Get Weakest, Answer Case, Grade Case, Tune Loop, Nominate Expert, Accept Nomination, Revoke Nomination |
+| Inference | Chat, List Models |
+| Job | Create Offer, Get Changed, Get Ledger |
+| Judge | Grade, Judge One, Compose Verdict, Record Answers, Get Ready Jobs, Get Reviewable Jobs, Get Stages, Get Trace, Submit Review, Post Verdict (Unsigned), Give Feedback (Unsigned) |
+| Proof | Get Root, Get Transaction Proof, Verify Hire Claim |
+| Reseller Key | Mint Child Key, List Child Keys, Revoke Child Key, Mint Promo, List Promos, Redeem Promo, Enrol Client Vault, List Client Vaults |
+| Settlement | Settle, Get, Get Many |
+| Template | List, Get Demand |
+
+The request and answer of every operation: [REFERENCE.md](REFERENCE.md). The node also works as an AI agent's tool
+(`usableAsTool`).
 
 ## See it run
 
@@ -46,42 +129,13 @@ Recorded in one take on n8n 2.43.8 with `n8n-nodes-taifoon@1.2.0` from npm and a
 
 <img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/credentials.gif" alt="The Taifoon Relayer API credential and its test" width="100%">
 
-**Both ways from one n8n** (3× speed): a workflow sells its word count on Taifoon (Register Seller → nonce on the card →
-Verify Seller: listed), and a second workflow buys it (agreement → handshake → catalogue entry at 0.05 + 20 % = 0.06 USDC →
-demand → a settled buy and its settlement receipts):
+**Both ways from one n8n** (3× speed): one workflow offers its word count as a service (Register Seller → nonce on the
+card → Verify Seller: listed), and a second workflow hires it (agreement → handshake → catalogue entry → demand → the
+settled job and its receipts):
 
-<img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/both-ways.gif" alt="Selling and buying an n8n workflow through Taifoon" width="100%">
+<img src="https://raw.githubusercontent.com/taifoon-io/n8n-nodes-taifoon/main/assets/both-ways.gif" alt="Offering and hiring an n8n workflow through Taifoon" width="100%">
 
 The full take, 3 minutes, including the node as an AI agent's tool: [`assets/review-1.2.0.mp4`](https://github.com/taifoon-io/n8n-nodes-taifoon/raw/main/assets/review-1.2.0.mp4).
-
-## Commerce and templates
-
-| Operation | Request | What comes back |
-|---|---|---|
-| Commerce → Hire | `POST /v1/jobs` | the job, its terms and the unsigned calls that fund it |
-| Commerce → Grade | `POST /v1/judge/grade` | up to 4 items graded in one calibrated call, on your own TypeSafe key |
-| Commerce → Settle (Plan) | `POST /v1/settle` | the unsigned settlement calls in order, each naming who signs; a plan only |
-| Template → List | `GET /v1/n8n/templates` | our templates: class, kinds of work, channel, live price (`—` when it cannot be read) |
-| Template → Get Demand | `GET /v1/n8n/demand` | the n8n harvest's verdicts on both sides (templates, nodes, creators, publishers), with a key |
-| Reseller Key → Mint / List / Revoke Child Key | `POST`, `GET /v1/access/reseller/children`, `DELETE …/{key_id}` | a per-builder child key with a lifetime `cap_usdc`, paid from your balance (an enrolled reseller) |
-| Reseller Key → Promos, Client Vaults | `/v1/access/reseller/promos`, `/v1/promo/redeem`, `/v1/access/reseller/vaults` | rebate promos carved from your markup, and your clients' vaults |
-| Helpdesk → Ask, Graph, Learn, Nominate | `/v1/sma/ask`, `/v1/sma/graph`, `/v1/sma/learn`, `/v1/sma/nominate` | one question about a product answered as a graded case; experts nominated and paid |
-| Agreement → List / Accept | `GET`, `POST /v1/access/agreements` | what the key accepted (TSUL-1.1, TAT, TEL, VAULT-GRANT, CLA) and a new acceptance |
-
-The node signs nothing and sends no transaction: every write is an unsigned plan your own wallet signs. Two nodes:
-**Taifoon** (90 operations, 19 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
-[`/v1/openapi.json`](https://coord.taifoon.dev/v1/openapi.json)) and **Taifoon Trigger** (a job changed). Every operation, flow and answer: [REFERENCE.md](REFERENCE.md).
-
-## Verified live
-
-Run in a real n8n 2.43.8 against the production API (`coord.taifoon.dev`) with a free key, before each release.
-
-| Path | Result |
-|---|---|
-| Commerce → Hire, Settle (Plan) | 2026-10-21: the offer with its 2 unsigned calls; the settlement plan with its 6 unsigned calls, each naming who signs |
-| Commerce → Grade | 2026-10-21: the refusals (no items 400; no TypeSafe key of your own 403); a grade runs on your own key |
-| Template → List, `POST /v1/channels` | pending the next deploy of the API |
-| Every operation (`test/live/ops.test.js`) | success, refusals, schema, latency and no secret in any answer |
 
 ## Workflows, tested
 
@@ -125,10 +179,15 @@ Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.0.3,
 | [`19-safe-payout-desk.json`](workflows/ours/19-safe-payout-desk.json)<br>Safe Payout Desk: check every payout address before you pay | Run by hand → pass<br>Payout webhook → pass |
 <!-- /workflow-runs -->
 
+## Pricing and terms
+
+A paid call states its price before it runs (`402 Payment Required` with the amount, asset and network). Prices,
+refunds and the terms of use: [`POLICY.md`](POLICY.md).
+
 ## Security
 
 The node holds no blockchain private key and sends no transaction. It handles one secret, the API key, kept in n8n's
-encrypted credential store and sent as `X-API-Key` over TLS to `coord.taifoon.dev` only. Details: [`SECURITY.md`](SECURITY.md). Pricing and partner terms: [`POLICY.md`](POLICY.md).
+encrypted credential store and sent as `X-API-Key` over TLS to `coord.taifoon.dev` only. Details: [`SECURITY.md`](SECURITY.md).
 
 ## Development
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2 (2026-10-30)
+
+- **README: use cases and code first.** What you can build (a table of use cases, each with its operations and a tested
+  workflow), what a checked answer, a chat call and a settlement plan look like (recorded answers), and every operation by
+  resource. Prices and terms are in `POLICY.md`.
+- **Plainer descriptions** of the Catalog, Commerce, Inference and Reseller Key resources and of the credential's optional
+  Channel ID. No operation, field or request changed; saved workflows keep working.
+
 ## 1.2.1 (2026-10-29)
 
 - **README: See it run.** Three recordings from one take of 1.2.0 in n8n 2.43.8 against the production API: the install, the

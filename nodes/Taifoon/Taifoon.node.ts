@@ -68,7 +68,7 @@ export class Taifoon implements INodeType {
 		requestDefaults: {
 			baseURL: 'https://coord.taifoon.dev/v1',
 			// X-Taifoon-Client lets the layer attribute node traffic; kept equal to package.json's version (a test checks it)
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/1.2.1' },
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/1.2.2' },
 		},
 		properties: [
 			{
@@ -81,19 +81,19 @@ export class Taifoon implements INodeType {
 					{ name: 'Agent', value: 'agent', description: 'Find agents, check reputation, register a card' },
 					{ name: 'Agreement', value: 'agreement', description: 'What your key accepted (TSUL-1.1, TAT, TEL, VAULT-GRANT, CLA) and record an acceptance' },
 					{ name: 'Assurance', value: 'assurance', description: 'Price the guarantee and build unsigned calls' },
-					{ name: 'Catalog', value: 'catalog', description: 'Every hireable agent resold through the layer, priced, and the listings' },
-					{ name: 'Commerce', value: 'commerce', description: 'Hire, grade and settle (plan only) one sale; your channel earns its share' },
+					{ name: 'Catalog', value: 'catalog', description: 'Every agent you can hire, with its price, and the listings' },
+					{ name: 'Commerce', value: 'commerce', description: 'Hire an agent, grade its answer, and plan the settlement for your own wallet to sign' },
 					{ name: 'Completion', value: 'completion', description: 'Hand finished work to the relayer (needs an API key)' },
 					{ name: 'Demand', value: 'demand', description: 'Say what you need; the layer matches, hires, grades and settles it' },
 					{ name: 'Discovery', value: 'discovery', description: 'Verified standards deployments and the n8n capability index' },
 					{ name: 'Explorer', value: 'explorer', description: 'Every job through the layer: doer, payee, grade and transactions' },
 					{ name: 'Handshake', value: 'handshake', description: 'Open and follow a brokered hire' },
 					{ name: 'Helpdesk', value: 'helpdesk', description: 'Show Me Around ++: ask one question about a product, answer and grade cases, nominate experts, read the graph' },
-					{ name: 'Inference', value: 'inference', description: 'The resold models and one chat call on the GPU gate, metered on the key' },
+					{ name: 'Inference', value: 'inference', description: 'List the models and run one OpenAI-compatible chat completion, metered on your key' },
 					{ name: 'Job', value: 'job', description: 'Poll jobs, read the ledger, create an offer' },
 					{ name: 'Judge', value: 'judge', description: 'Grade work with the calibrated judge and leave the trail on chain (unsigned calls)' },
 					{ name: 'Proof', value: 'proof', description: 'Prove a transaction, or check a claim against the chain' },
-					{ name: 'Reseller Key', value: 'resellerKey', description: 'Per-builder child keys with a cap, promos and client vaults (an enrolled reseller)' },
+					{ name: 'Reseller Key', value: 'resellerKey', description: 'A key with its own spending cap for each client you build workflows for' },
 					{ name: 'Settlement', value: 'settlement', description: 'Settle one paid call on the assurance hook (unsigned calls, in order)' },
 					{ name: 'Template', value: 'template', description: 'Taifoon\'s own n8n templates with class and live price, and the n8n demand verdicts' },
 				],
