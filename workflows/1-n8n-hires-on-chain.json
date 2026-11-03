@@ -96,8 +96,7 @@
         "operation": "getQuote",
         "chainId": "={{ $json.chainId }}",
         "seller": "={{ $json.seller }}",
-        "price": "={{ $json.priceUnits }}",
-        "deposit": ""
+        "price": "={{ $json.priceUnits }}"
       },
       "id": "quote-the-guarantee",
       "name": "Quote the guarantee",

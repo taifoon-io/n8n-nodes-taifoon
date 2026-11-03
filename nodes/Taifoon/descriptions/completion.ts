@@ -79,15 +79,29 @@ export const completionOperations: INodeProperties[] = [
 		...address('Provider', 'provider', 'completion', ['submit'], 'The agent that did the work. It must be the seller of the job on chain.'),
 		routing: { send: { type: 'body', property: 'provider' } },
 	},
+	// one of Result or Result URI is required: the choice names which, and that one is required
+	{
+		displayName: 'Result Sent As',
+		name: 'resultAs',
+		type: 'options',
+		options: [
+			{ name: 'Inline Text', value: 'inline', description: 'The work product itself, up to 100,000 characters' },
+			{ name: 'URI', value: 'uri', description: 'Where the result lives, when it is too large to send inline' },
+		],
+		default: 'inline',
+		required: true,
+		displayOptions: show('completion', ['submit']),
+	},
 	{
 		displayName: 'Result',
 		name: 'result',
 		type: 'string',
 		typeOptions: { rows: 4 },
 		default: '',
+		required: true,
 		description:
-			'The work product, up to 100,000 characters. Only its keccak-256 digest goes on chain. Send a Result URI instead for anything larger.',
-		displayOptions: show('completion', ['submit']),
+			'The work product, up to 100,000 characters. Only its keccak-256 digest goes on chain. Send it as a URI instead for anything larger.',
+		displayOptions: { show: { resource: ['completion'], operation: ['submit'], resultAs: ['inline'] } },
 		routing: { send: { type: 'body', property: 'result', value: '={{ $value || undefined }}' } },
 	},
 	{
@@ -95,9 +109,10 @@ export const completionOperations: INodeProperties[] = [
 		name: 'result_uri',
 		type: 'string',
 		default: '',
+		required: true,
 		placeholder: 'ipfs://… or https://…',
-		description: 'Where the result lives, when it is too large to send inline. One of Result or Result URI is required.',
-		displayOptions: show('completion', ['submit']),
+		description: 'Where the result lives, when it is too large to send inline',
+		displayOptions: { show: { resource: ['completion'], operation: ['submit'], resultAs: ['uri'] } },
 		routing: { send: { type: 'body', property: 'result_uri', value: '={{ $value || undefined }}' } },
 	},
 	{

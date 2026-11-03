@@ -1,13 +1,13 @@
 {
  "schema": "taifoon.n8n.workflow-runs.v1",
  "rule": "_N8N_RUNS_v1_",
- "at": "2026-10-29T17:37:01.359Z",
+ "at": "2026-11-03T18:52:35.870Z",
  "against": "https://coord.taifoon.dev",
  "n8n": "2.45.5",
- "node_package": "n8n-nodes-taifoon@1.2.1",
+ "node_package": "n8n-nodes-taifoon@1.3.0",
  "files": {
   "examples/1a-free-key-and-tenant.json": {
-   "sha256": "490981cbb188b188c415a75fa6f54341f48ceaa992980ef91a6b90ef55d52315",
+   "sha256": "eadaf6a3c98ed74d74ea1fe1e3a30784d3848010395bfafaa127447ad56a687a",
    "name": "Taifoon example 1a: get a free key and check its tenant",
    "paths": [
     {
@@ -40,9 +40,9 @@
      ]
     }
    ],
-   "at": "2026-10-28T20:56:06.321Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "examples/1b-my-tenant.json": {
    "sha256": "8322e9d400c42a8bdf9bba6a34dc4f7dc159dfbba8c304a40b20326d87b4fc84",
@@ -70,9 +70,9 @@
      ]
     }
    ],
-   "at": "2026-10-28T20:19:26.874Z",
+   "at": "2026-10-30T09:48:28.588Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.2.2"
   },
   "examples/2-buyer-need-to-verified.json": {
    "sha256": "4838b852e044422d6dabfc1b560dd8cbb79f21c8540b93b8366a7940ce07dbfb",
@@ -80,7 +80,7 @@
    "paths": [
     {
      "trigger": "Start",
-     "verdict": "PASS",
+     "verdict": "NEEDS",
      "nodes": [
       {
        "name": "Start",
@@ -134,28 +134,26 @@
       },
       {
        "name": "Explorer",
-       "status": "ok",
-       "items": 1
+       "status": "needs",
+       "note": "the keyless rate of the calling address (600 a day): wait 3600 s"
       },
       {
        "name": "Verify hire claim",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       },
       {
        "name": "Result",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       }
      ]
     }
    ],
-   "at": "2026-10-29T00:21:56.832Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "examples/3-seller-claim-verify-complete.json": {
-   "sha256": "7cccb8635bdab8aac936c9b64ff7875492ec984424976da96bed2d5ba76ba9e6",
+   "sha256": "0fc86ef412b7aa210f1388f06231cdb8f89d13fde545fcb4307d4fbc60f5db0d",
    "name": "Taifoon example 3: seller (claim a listing → verify → receive jobs → submit completion)",
    "paths": [
     {
@@ -217,12 +215,12 @@
      ]
     }
    ],
-   "at": "2026-10-28T20:19:26.874Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "examples/4-discovery-to-reputation.json": {
-   "sha256": "60589147e99b810bc1658ceb7113163c28781444832e3d95bceca87b560e0834",
+   "sha256": "c7b46fa73496869c78cd4218ea7d93f75cbbc5646b740b1657c4ec5b88d9084c",
    "name": "Taifoon example 4: discovery (capabilities, skills, standards, cards, market → pick a provider → reputation)",
    "paths": [
     {
@@ -291,17 +289,17 @@
      ]
     }
    ],
-   "at": "2026-10-28T20:31:04.706Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "examples/5-assurance-quote-and-plan.json": {
-   "sha256": "c9ca4161d27c1f400bdc5f72b2b35f37cae4b81f4c29e8a0a39b517ce2cc7f0f",
+   "sha256": "9a7addb37cc3a1d094cfb4d1df92d72a189de21a3ffc015c16d247fe4f5a3c75",
    "name": "Taifoon example 5: assurance (pools → quote → unsigned fund-job calls; plan only)",
    "paths": [
     {
      "trigger": "Start",
-     "verdict": "PASS",
+     "verdict": "NEEDS",
      "nodes": [
       {
        "name": "Start",
@@ -315,40 +313,35 @@
       },
       {
        "name": "Pools",
-       "status": "ok",
-       "items": 1
+       "status": "needs",
+       "note": "the keyless rate of the calling address (600 a day): wait 3600 s"
       },
       {
        "name": "Pick a seller",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       },
       {
        "name": "Quote",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       },
       {
        "name": "Fund-job action",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       },
       {
        "name": "Build call",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       },
       {
        "name": "Plan",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       }
      ]
     }
    ],
-   "at": "2026-10-29T00:03:20.742Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "examples/6-proof-root-and-tx.json": {
    "sha256": "9df4f5236a49bc273203e3b64b456738a74377c5c73ffdb4cbe7f37fba8998eb",
@@ -395,17 +388,17 @@
      ]
     }
    ],
-   "at": "2026-10-29T00:03:20.742Z",
+   "at": "2026-10-30T09:48:28.588Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.2.2"
   },
   "workflows/1-n8n-hires-on-chain.json": {
-   "sha256": "084a6b21007cbdac85f5f983e99ea73ed33b812c27fc3fc66c9482714ecaeb4d",
+   "sha256": "88485b838270996d1fa95c8bfd7ad7b6a40f4374e900d85ce0ee2a826162bb2d",
    "name": "Taifoon — n8n hires an on-chain agent",
    "paths": [
     {
      "trigger": "Start",
-     "verdict": "PASS",
+     "verdict": "NEEDS",
      "nodes": [
       {
        "name": "Start",
@@ -419,40 +412,35 @@
       },
       {
        "name": "Match agents",
-       "status": "ok",
-       "items": 1
+       "status": "needs",
+       "note": "the keyless rate of the calling address (600 a day): wait 3600 s"
       },
       {
        "name": "Pick one, or stop",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       },
       {
        "name": "Quote the guarantee",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       },
       {
        "name": "Create the offer",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       },
       {
        "name": "Open the handshake",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       },
       {
        "name": "What to sign",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       }
      ]
     }
    ],
-   "at": "2026-10-29T00:29:36.623Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "workflows/10-buy-through-taifoon.json": {
    "sha256": "acfe4bc447d29b5b0b4dab1462355e48d18546b7d096948953457f9212c0a402",
@@ -510,17 +498,17 @@
      ]
     }
    ],
-   "at": "2026-10-29T00:29:36.623Z",
+   "at": "2026-10-30T09:48:28.588Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.2.2"
   },
   "workflows/11-first-run.json": {
-   "sha256": "823872c94098be9048f4e8e4e3459272ac123b224a89a3fd8d81c15fbe77a15b",
+   "sha256": "c9556ea7a60211cf87690a7891cdf1a9e8682969eb62c0f1d188b7d1ac6c22e6",
    "name": "Taifoon — first run (get a free key, post a sample demand)",
    "paths": [
     {
      "trigger": "Start",
-     "verdict": "NEEDS",
+     "verdict": "PASS",
      "nodes": [
       {
        "name": "Start",
@@ -534,23 +522,25 @@
       },
       {
        "name": "Register Free Key",
-       "status": "needs",
-       "note": "one free key per calling address a UTC day: this address took today’s"
+       "status": "ok",
+       "items": 1
       },
       {
        "name": "Post sample demand",
-       "status": "not_reached"
+       "status": "ok",
+       "items": 1
       },
       {
        "name": "Next steps",
-       "status": "not_reached"
+       "status": "ok",
+       "items": 1
       }
      ]
     }
    ],
-   "at": "2026-10-28T20:56:06.321Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "workflows/12-sell-digest.json": {
    "sha256": "8f56c408aac12f3721c7b90dff69953bb3b6c044ceec5e038b26501185b44ee3",
@@ -800,7 +790,7 @@
    "node_package": "n8n-nodes-taifoon@1.0.3"
   },
   "workflows/15-resell-through-n8n.json": {
-   "sha256": "2c9687020eb7fa32bbe13b770ac143826ac04198a724e57d859640779d676267",
+   "sha256": "d9a74621be633874b9f166f7f45ba7f1705f8b5f48c48a5662893fb963819d3b",
    "name": "Taifoon — resell through n8n (quote a plan, mint a customer key, read the margin)",
    "paths": [
     {
@@ -835,9 +825,9 @@
      ]
     }
    ],
-   "at": "2026-10-28T20:33:45.873Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "workflows/20-near-provider-entry.json": {
    "sha256": "0e1e4d83eb04896c2178308dea83a08e74df6d99383ba4d74536bd99c7cf5030",
@@ -890,7 +880,7 @@
    "node_package": "n8n-nodes-taifoon@1.0.3"
   },
   "workflows/21-near-route-check.json": {
-   "sha256": "a06785cb6b127db10ca12281ab63c72d2744c16120d574928965f289ed54d39e",
+   "sha256": "f3f1737ea4df3782493c2cf3b1234912aae0a9b8767fefdf486049ec11954728",
    "name": "Taifoon × NEAR AI Cloud — one routed call, as NEAR's router makes it, and its settlement line",
    "paths": [
     {
@@ -917,12 +907,56 @@
        "status": "ok",
        "items": 1
       }
+     ],
+     "checks": [
+      {
+       "node": "Settlement line",
+       "path": "metered.legs_sum_to_list",
+       "want": true,
+       "got": true,
+       "ok": true
+      },
+      {
+       "node": "Settlement line",
+       "path": "metered.list_matches_charge",
+       "want": true,
+       "got": true,
+       "ok": true
+      },
+      {
+       "node": "Settlement line",
+       "path": "metered.step",
+       "want": "~/^st_[0-9a-f]{16}$/",
+       "got": "st_4d1017e3f7599cca",
+       "ok": true
+      },
+      {
+       "node": "Settlement line",
+       "path": "settled.charge_matches_usage",
+       "want": "~/^(true|false)$/",
+       "got": false,
+       "ok": true
+      },
+      {
+       "node": "Settlement line",
+       "path": "settled.usage_micro",
+       "want": "~/^[0-9]+$/",
+       "got": 1,
+       "ok": true
+      },
+      {
+       "node": "Settlement line",
+       "path": "settled.charged_micro",
+       "want": "~/^[0-9]+$/",
+       "got": 4,
+       "ok": true
+      }
      ]
     }
    ],
-   "at": "2026-10-29T00:03:20.742Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "workflows/22-near-settlement-reconcile.json": {
    "sha256": "0865f7376e31f13f67e1a6000ceb67f3b86b09d33677b3d11a4dfaf4f7a565e2",
@@ -1045,9 +1079,9 @@
      ]
     }
    ],
-   "at": "2026-10-29T09:47:49.162Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "workflows/24-n8n-sells-through-taifoon.json": {
    "sha256": "211c32b879ce28887e5049c0a2ee9ff0de7f671778d88160344ea0952d3b8011",
@@ -1200,7 +1234,7 @@
    "paths": [
     {
      "trigger": "When a job completes",
-     "verdict": "PASS",
+     "verdict": "NEEDS",
      "nodes": [
       {
        "name": "When a job completes",
@@ -1209,20 +1243,19 @@
       },
       {
        "name": "Check it against the chain",
-       "status": "ok",
-       "items": 1
+       "status": "needs",
+       "note": "the keyless rate of the calling address (600 a day): wait 3600 s"
       },
       {
        "name": "Report",
-       "status": "ok",
-       "items": 1
+       "status": "not_reached"
       }
      ]
     }
    ],
-   "at": "2026-10-29T00:29:36.623Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "workflows/agentic-commerce/taifoon-agentic-commerce.json": {
    "sha256": "9e231c4de2f3c61105d9eb2a0b1e85174e9e049afb8ddb86853a988bb4adcb41",
@@ -1343,7 +1376,7 @@
    "node_package": "n8n-nodes-taifoon@1.0.3"
   },
   "workflows/ours/16-chat-on-one-key.json": {
-   "sha256": "00236d5fcd0042dd9de09aacba21fb705ecf2c25af87bfecd7b279e85aa313f2",
+   "sha256": "01851457f23c8e0a5a7cd6ab36dea80a25bc7bd05254b9dcd457fde59943a9d2",
    "name": "Taifoon: AI answers on one key, up to 0.001 USDC each (charged per token)",
    "paths": [
     {
@@ -1392,12 +1425,12 @@
      ]
     }
    ],
-   "at": "2026-10-29T16:11:04.268Z",
+   "at": "2026-11-03T18:52:35.870Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.2.1"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "workflows/ours/17-text-digest.json": {
-   "sha256": "e7db6b427048c2270d3b8f8a8cf7bcadc544cd7996e4aab57c66fcb804f18312",
+   "sha256": "9c9f7ece1d7573a52d0e14396abe849ff4b4acea1490e88bc848fb9404ea2a7b",
    "name": "Taifoon: the sha256 digest of a text, from a checked agent",
    "paths": [
     {
@@ -1446,12 +1479,12 @@
      ]
     }
    ],
-   "at": "2026-10-29T16:11:04.268Z",
+   "at": "2026-10-30T09:48:28.588Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.2.1"
+   "node_package": "n8n-nodes-taifoon@1.2.2"
   },
   "workflows/ours/18-address-risk.json": {
-   "sha256": "e01e2bf587fb5e7e3bccbb5de02ea56603ad869f21a054108b52361909b1381c",
+   "sha256": "6c7b64700cec7a0691df8c2ca8437769a1a8878c6bf29306f696770098cfdd21",
    "name": "Taifoon: is this wallet address risky? A checked answer before you pay out",
    "paths": [
     {
@@ -1500,12 +1533,12 @@
      ]
     }
    ],
-   "at": "2026-10-29T16:11:04.268Z",
+   "at": "2026-10-30T09:48:28.588Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.2.1"
+   "node_package": "n8n-nodes-taifoon@1.2.2"
   },
   "workflows/ours/19-safe-payout-desk.json": {
-   "sha256": "94289646a9a43e9901207189840d6b914b8d02f252f873c95e7c220abde8a455",
+   "sha256": "74093ce1edb07a51f970ea4b847da514a41c8568006f3730aaaf4aebd137ae03",
    "name": "Safe Payout Desk: check every payout address before you pay",
    "paths": [
     {
@@ -1578,12 +1611,13 @@
       },
       {
        "name": "Ready to pay",
-       "status": "not_reached"
+       "status": "ok",
+       "items": 1
       },
       {
        "name": "Held, with the reasons",
        "status": "ok",
-       "items": 3
+       "items": 2
       },
       {
        "name": "Desk",
@@ -1667,12 +1701,13 @@
       },
       {
        "name": "Ready to pay",
-       "status": "not_reached"
+       "status": "ok",
+       "items": 1
       },
       {
        "name": "Held, with the reasons",
        "status": "ok",
-       "items": 3
+       "items": 2
       },
       {
        "name": "Desk",
@@ -1687,9 +1722,9 @@
      ]
     }
    ],
-   "at": "2026-10-29T17:37:01.359Z",
+   "at": "2026-10-30T09:48:28.588Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.2.1"
+   "node_package": "n8n-nodes-taifoon@1.2.2"
   },
   "workflows/ours/pending/19-onboard-agent.json": {
    "sha256": "7093273d1a3a6c4cb885540b3355c38e8113088c74d328b6c466da2354eac3f4",
@@ -1905,7 +1940,7 @@
    "node_package": "n8n-nodes-taifoon@1.0.3"
   },
   "workflows/ours/pending/20-seller-check.json": {
-   "sha256": "03adf5befb3e0e17ba54960d26d3745c1c2a7243c9a1852718ee736c47832065",
+   "sha256": "3bb7a7a0597216cffd511e65ba8ecf88cd0d1964d72d809960d8a4fe11091ecb",
    "name": "Taifoon: check a seller before you resell it (its own 402, buyer demand, Jev on its own tool, listed · recheck · held)",
    "paths": [
     {
@@ -2051,9 +2086,9 @@
      ]
     }
    ],
-   "at": "2026-10-28T20:52:25.508Z",
+   "at": "2026-11-03T18:41:02.973Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.0.3"
+   "node_package": "n8n-nodes-taifoon@1.3.0"
   },
   "workflows/ours/pending/21-pay-in.json": {
    "sha256": "93ec2334c19aaf54849c59f9806d531841ff94e8cfb17298f01bafce21a55c2d",
@@ -2114,5 +2149,6 @@
    "n8n": "2.45.5",
    "node_package": "n8n-nodes-taifoon@1.0.3"
   }
- }
+ },
+ "installed_from": "npm pack of the 1.3.0 source, before the npm publish"
 }

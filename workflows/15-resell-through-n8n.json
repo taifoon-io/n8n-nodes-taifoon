@@ -42,8 +42,10 @@
       "parameters": {
         "resource": "account",
         "operation": "mintChildKey",
-        "childLabel": "customer-1",
-        "childMarkupBps": "{ \"*\": 1000 }"
+        "childMarkupBps": "{ \"*\": 1000 }",
+        "childOptions": {
+          "childLabel": "customer-1"
+        }
       },
       "id": "child",
       "name": "Mint Child Key",

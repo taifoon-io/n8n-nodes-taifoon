@@ -63,7 +63,7 @@ test('Learn: Answer, Grade and Tune each POST /sma/learn with { case } and exact
 	assert.equal(answer.method, 'POST');
 	assert.equal(answer.url, '/sma/learn');
 	assert.deepEqual(answer.body, { case: 'case_0123456789abcdef', answer: { words: 'Settings → Community Nodes.' } }, 'an empty fix is not sent');
-	const fixed = await buildRequest('helpdesk', 'answer', { smaCase: 'case_0123456789abcdef', smaAnswerWords: 'Use the credential.', smaAnswerFix: 'settings.credentials' });
+	const fixed = await buildRequest('helpdesk', 'answer', { smaCase: 'case_0123456789abcdef', smaAnswerWords: 'Use the credential.', answerOptions: { smaAnswerFix: 'settings.credentials' } });
 	assert.deepEqual(fixed.body, { case: 'case_0123456789abcdef', answer: { words: 'Use the credential.', fix: 'settings.credentials' } });
 
 	const grade = await buildRequest('helpdesk', 'grade', { smaCase: 'case_0123456789abcdef', smaGradeScore: 0.8, smaGradeBy: 'buyer' }, { apiKey: KEY });

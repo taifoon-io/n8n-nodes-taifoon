@@ -1,5 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 import { ASSURANCE_CHAINS, show, address } from './shared';
+import { returnAllLimit } from './paging';
 
 export const assuranceOperations: INodeProperties[] = [
 	{
@@ -73,13 +74,22 @@ export const assuranceOperations: INodeProperties[] = [
 		routing: { send: { type: 'body', property: 'price' } },
 	},
 	{
-		displayName: 'Deposit (Smallest Unit)',
-		name: 'deposit',
-		type: 'string',
-		default: '',
-		description: 'What the seller will lock. It must exceed the price, or the quote refuses and says why.',
+		displayName: 'Additional Fields',
+		name: 'quoteOptions',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
 		displayOptions: show('assurance', ['getQuote']),
-		routing: { send: { type: 'body', property: 'deposit', value: '={{ $value || undefined }}' } },
+		options: [
+			{
+				displayName: 'Deposit (Smallest Unit)',
+				name: 'deposit',
+				type: 'string',
+				default: '',
+				description: 'What the seller will lock. It must exceed the price, or the quote refuses and says why.',
+				routing: { send: { type: 'body', property: 'deposit', value: '={{ $value || undefined }}' } },
+			},
+		],
 	},
 	{
 		displayName: 'Kind',
@@ -122,6 +132,7 @@ export const assuranceOperations: INodeProperties[] = [
 			{ name: 'Cannot Determine', value: 4 },
 		],
 		default: 4,
+		required: true,
 		description: 'The closed vocabulary; none of it means dishonesty',
 		displayOptions: show('assurance', ['stampGrade']),
 		routing: { send: { type: 'body', property: 'action.verdict' } },
@@ -135,6 +146,7 @@ export const assuranceOperations: INodeProperties[] = [
 			{ name: 'Deterministic', value: 1 },
 		],
 		default: 2,
+		required: true,
 		description: 'A calibrated grade is an attestation from a System One model, never a proof; a deterministic one is a digest anyone recomputes',
 		displayOptions: show('assurance', ['stampGrade']),
 		routing: { send: { type: 'body', property: 'action.mode' } },
@@ -144,19 +156,38 @@ export const assuranceOperations: INodeProperties[] = [
 		name: 'stampModel',
 		type: 'string',
 		default: 'jev-1.13.0',
+		required: true,
 		description: 'Model version pinned in the stamp (up to 64 bytes)',
 		displayOptions: show('assurance', ['stampGrade']),
 		routing: { send: { type: 'body', property: 'action.model' } },
 	},
+	// the stamp call encodes a URI whether or not one is given: '' unless the Additional Fields name one
 	{
 		displayName: 'URI',
-		name: 'stampUri',
-		type: 'string',
+		name: 'stampUriDefault',
+		type: 'hidden',
 		default: '',
-		placeholder: 'https://www.taifoon.io/v1/judge/trace/8453/81067',
-		description: 'Where the long form of the grade can be read (up to 512 bytes)',
 		displayOptions: show('assurance', ['stampGrade']),
 		routing: { send: { type: 'body', property: 'action.uri' } },
+	},
+	{
+		displayName: 'Additional Fields',
+		name: 'stampOptions',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: show('assurance', ['stampGrade']),
+		options: [
+			{
+				displayName: 'URI',
+				name: 'stampUri',
+				type: 'string',
+				default: '',
+				placeholder: 'https://www.taifoon.io/v1/judge/trace/8453/81067',
+				description: 'Where the long form of the grade can be read (up to 512 bytes)',
+				routing: { send: { type: 'body', property: 'action.uri' } },
+			},
+		],
 	},
 	{
 		displayName: 'Action',
@@ -169,14 +200,5 @@ export const assuranceOperations: INodeProperties[] = [
 		displayOptions: show('assurance', ['buildCall']),
 		routing: { send: { type: 'body', property: 'action', value: '={{ typeof $value === "string" ? JSON.parse($value) : $value }}' } },
 	},
-	{
-		displayName: 'Limit',
-		name: 'limit',
-		type: 'number',
-		typeOptions: { minValue: 1 },
-		default: 50,
-		description: 'Max number of results to return',
-		displayOptions: show('assurance', ['getPools']),
-		routing: { send: { type: 'query', property: 'limit' } },
-	},
+	...returnAllLimit('assurance', 'getPools', { root: 'pools', max: 200, by: 'offset' }),
 ];

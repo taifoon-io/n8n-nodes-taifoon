@@ -47,7 +47,9 @@
         "resource": "account",
         "operation": "register",
         "walletAddress": "={{ $json.wallet_address }}",
-        "agentLabel": "={{ $json.agent_label }}"
+        "registerOptions": {
+          "agentLabel": "={{ $json.agent_label }}"
+        }
       },
       "id": "tfnexfreekey0001-02",
       "name": "Register Free Key",

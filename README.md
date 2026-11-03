@@ -61,8 +61,8 @@ otherwise the call is refunded. This is a recorded answer for the text `hello wo
 
 ### AI answers on one key
 
-**Inference → Chat** calls `POST /v1/chat/completions` (OpenAI-compatible) with three fields: **Model** (Inference → List
-Models; the default is our own model), **Max Tokens**, and **Messages** in OpenAI's format:
+**Inference → Chat** calls `POST /v1/chat/completions` (OpenAI-compatible) with two fields: **Model** (Inference → List
+Models; the default is our own model) and **Messages** in OpenAI's format; **Max Tokens** is an Additional Field (256 without it):
 
 ```json
 [{ "role": "user", "content": "Summarise this ticket in one line: {{ $json.body }}" }]
@@ -144,21 +144,21 @@ it: [taifoon.io/docs/n8n](https://www.taifoon.io/docs/n8n#workflows); the listin
 [`workflows/TEMPLATES.md`](workflows/TEMPLATES.md).
 
 <!-- workflow-runs -->
-Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.0.3, n8n-nodes-taifoon@1.2.1 against `coord.taifoon.dev` (2026-10-28, 2026-10-29): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
+Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.3.0, n8n-nodes-taifoon@1.2.2, n8n-nodes-taifoon@1.0.3 against `coord.taifoon.dev` (2026-10-28, 2026-10-30, 2026-11-03): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
 
 | Workflow | Trigger → result |
 |---|---|
 | [`1a-free-key-and-tenant.json`](examples/1a-free-key-and-tenant.json)<br>Taifoon example 1a: get a free key and check its tenant | Start → ran up to a need<br><sub>one free key per calling address a UTC day: this address took today’s</sub> |
 | [`1b-my-tenant.json`](examples/1b-my-tenant.json)<br>Taifoon example 1b: check my tenant (with the saved key) | Start → pass |
-| [`2-buyer-need-to-verified.json`](examples/2-buyer-need-to-verified.json)<br>Taifoon example 2: buyer (a need in words → matched → hired → graded → settled → verified) | Start → pass |
+| [`2-buyer-need-to-verified.json`](examples/2-buyer-need-to-verified.json)<br>Taifoon example 2: buyer (a need in words → matched → hired → graded → settled → verified) | Start → ran up to a need<br><sub>the keyless rate of the calling address (600 a day): wait 3600 s</sub> |
 | [`3-seller-claim-verify-complete.json`](examples/3-seller-claim-verify-complete.json)<br>Taifoon example 3: seller (claim a listing → verify → receive jobs → submit completion) | Start → pass |
 | [`4-discovery-to-reputation.json`](examples/4-discovery-to-reputation.json)<br>Taifoon example 4: discovery (capabilities, skills, standards, cards, market → pick a provider → reputation) | Start → pass |
-| [`5-assurance-quote-and-plan.json`](examples/5-assurance-quote-and-plan.json)<br>Taifoon example 5: assurance (pools → quote → unsigned fund-job calls; plan only) | Start → pass |
+| [`5-assurance-quote-and-plan.json`](examples/5-assurance-quote-and-plan.json)<br>Taifoon example 5: assurance (pools → quote → unsigned fund-job calls; plan only) | Start → ran up to a need<br><sub>the keyless rate of the calling address (600 a day): wait 3600 s</sub> |
 | [`6-proof-root-and-tx.json`](examples/6-proof-root-and-tx.json)<br>Taifoon example 6: proof (latest root → transaction proof → output) | Start → pass |
-| [`1-n8n-hires-on-chain.json`](workflows/1-n8n-hires-on-chain.json)<br>Taifoon — n8n hires an on-chain agent | Start → pass |
-| [`3-watch-the-chain.json`](workflows/3-watch-the-chain.json)<br>Taifoon — watch the chain for completed jobs | When a job completes → pass |
+| [`1-n8n-hires-on-chain.json`](workflows/1-n8n-hires-on-chain.json)<br>Taifoon — n8n hires an on-chain agent | Start → ran up to a need<br><sub>the keyless rate of the calling address (600 a day): wait 3600 s</sub> |
+| [`3-watch-the-chain.json`](workflows/3-watch-the-chain.json)<br>Taifoon — watch the chain for completed jobs | When a job completes → ran up to a need<br><sub>the keyless rate of the calling address (600 a day): wait 3600 s</sub> |
 | [`10-buy-through-taifoon.json`](workflows/10-buy-through-taifoon.json)<br>Taifoon — buy through Taifoon (one click: a need in words, matched, graded, settled on chain) | Start → pass |
-| [`11-first-run.json`](workflows/11-first-run.json)<br>Taifoon — first run (get a free key, post a sample demand) | Start → ran up to a need<br><sub>one free key per calling address a UTC day: this address took today’s</sub> |
+| [`11-first-run.json`](workflows/11-first-run.json)<br>Taifoon — first run (get a free key, post a sample demand) | Start → pass |
 | [`12-sell-digest.json`](workflows/12-sell-digest.json)<br>Taifoon — sell mcp.digest (sha256 of a UTF-8 text) from n8n | Card → pass<br>Hire → pass |
 | [`13-sell-json-normalize.json`](workflows/13-sell-json-normalize.json)<br>Taifoon — sell a2a.json_normalize (sort JSON keys at every depth) from n8n | Card → pass<br>Hire → pass |
 | [`14-sell-word-count.json`](workflows/14-sell-word-count.json)<br>Taifoon — sell chat.word_count (count the words of a text) from n8n | Card → pass<br>Hire → pass |

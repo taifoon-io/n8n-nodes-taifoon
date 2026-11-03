@@ -1,5 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 import { show } from './shared';
+import { returnAllLimit } from './paging';
 
 /**
  * Demand: say what you need, not whom to hire. The layer's auto-match loop claims the demand, picks the
@@ -60,6 +61,7 @@ export const demandOperations: INodeProperties[] = [
 			{ name: 'The Work in Words', value: 'need', description: 'The layer maps the words to a class by fixed rules, never a model' },
 		],
 		default: 'need',
+		required: true,
 		displayOptions: show('demand', ['post']),
 	},
 	{
@@ -86,15 +88,24 @@ export const demandOperations: INodeProperties[] = [
 		displayOptions: { show: { resource: ['demand'], operation: ['post'], demandMode: ['catalog'] } },
 	},
 	{
-		displayName: 'Work in Words',
-		name: 'catalogNeed',
-		type: 'string',
-		typeOptions: { rows: 3 },
-		default: '',
-		placeholder: 'e.g. compile these into typed questions. Rules: …',
-		description: 'The job for that seller, in words (the catalog entry’s buy.body shows an example). Left empty, the entry’s class runs on its default input.',
-		routing: { send: { type: 'body', property: 'need', value: '={{ $value || undefined }}' } },
+		displayName: 'Additional Fields',
+		name: 'catalogOptions',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
 		displayOptions: { show: { resource: ['demand'], operation: ['post'], demandMode: ['catalog'] } },
+		options: [
+			{
+				displayName: 'Work in Words',
+				name: 'catalogNeed',
+				type: 'string',
+				typeOptions: { rows: 3 },
+				default: '',
+				placeholder: 'e.g. compile these into typed questions. Rules: …',
+				description: 'The job for that seller, in words (the catalog entry’s buy.body shows an example). Left out, the entry’s class runs on its default input.',
+				routing: { send: { type: 'body', property: 'need', value: '={{ $value || undefined }}' } },
+			},
+		],
 	},
 	{
 		displayName: 'Class',
@@ -159,35 +170,36 @@ export const demandOperations: INodeProperties[] = [
 			},
 		],
 	},
+	// /demands does not page: Return All reads it once at its maximum (200)
+	...returnAllLimit('demand', 'getAll', { root: 'demands', max: 200, by: 'none' }),
 	{
-		displayName: 'State',
-		name: 'demandState',
-		type: 'options',
+		displayName: 'Filters',
+		name: 'demandFilters',
+		type: 'collection',
+		placeholder: 'Add Filter',
+		default: {},
+		displayOptions: show('demand', ['getAll']),
 		options: [
-			{ name: 'Any', value: '' },
-			{ name: 'Cancelled', value: 'cancelled' },
-			{ name: 'Claimed', value: 'claimed' },
-			{ name: 'Failed', value: 'failed' },
-			{ name: 'Graded', value: 'graded' },
-			{ name: 'Hired', value: 'hired' },
-			{ name: 'Matched', value: 'matched' },
-			{ name: 'Open', value: 'open' },
-			{ name: 'Settled', value: 'settled' },
-			{ name: 'Settling', value: 'settling' },
-			{ name: 'Unmatched', value: 'unmatched' },
+			{
+				displayName: 'State',
+				name: 'state',
+				type: 'options',
+				options: [
+					{ name: 'Cancelled', value: 'cancelled' },
+					{ name: 'Claimed', value: 'claimed' },
+					{ name: 'Failed', value: 'failed' },
+					{ name: 'Graded', value: 'graded' },
+					{ name: 'Hired', value: 'hired' },
+					{ name: 'Matched', value: 'matched' },
+					{ name: 'Open', value: 'open' },
+					{ name: 'Settled', value: 'settled' },
+					{ name: 'Settling', value: 'settling' },
+					{ name: 'Unmatched', value: 'unmatched' },
+				],
+				default: 'open',
+				description: 'Only demands in this state (left out: every state)',
+				routing: { send: { type: 'query', property: 'state' } },
+			},
 		],
-		default: '',
-		routing: { send: { type: 'query', property: 'state', value: '={{ $value || undefined }}' } },
-		displayOptions: show('demand', ['getAll']),
-	},
-	{
-		displayName: 'Limit',
-		name: 'limit',
-		type: 'number',
-		typeOptions: { minValue: 1 },
-		default: 50,
-		description: 'Max number of results to return',
-		routing: { send: { type: 'query', property: 'limit' } },
-		displayOptions: show('demand', ['getAll']),
 	},
 ];

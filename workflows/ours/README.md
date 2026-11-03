@@ -13,7 +13,7 @@ Input ─▶ Agreements ─▶ Terms ─▶ [Accept document] ─▶ Buy ─▶ 
 
 | Template | Class | n8n kinds it serves | USDC | Creator Hub | Verified live | Live answer |
 |---|---|---|---|---|---|---|
-| [16-chat-on-one-key](16-chat-on-one-key.json) | `inference.metered` | text.generate, chat.converse, reason.general | up to 0.001, per token | yes | yes | 2026-10-29: 200 ok |
+| [16-chat-on-one-key](16-chat-on-one-key.json) | `inference.metered` | text.generate, chat.converse, reason.general | up to 0.001, per token | yes | yes | 2026-11-03: 200 ok |
 | [17-text-digest](17-text-digest.json) | `mcp.digest` | mcp.digest | the wall's terms, read at run time | no | yes | 2026-10-21: 200 ok |
 | [18-address-risk](18-address-risk.json) | `risk.address` | risk.address | the wall's terms, read at run time | no | yes | 2026-10-21: 200 ok |
 | [19-safe-payout-desk](19-safe-payout-desk.json) | `risk.address` | risk.address | the wall's terms, read at run time | yes | yes | 2026-10-29: 200 ok |

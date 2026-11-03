@@ -6,6 +6,10 @@ const { Taifoon } = require('../dist/nodes/Taifoon/Taifoon.node.js');
 const d = new Taifoon().description;
 const ops = (resource) => d.properties.find((p) => p.name === 'operation' && p.displayOptions.show.resource[0] === resource).options;
 const prop = (name) => d.properties.find((p) => p.name === name);
+// 1.3.0 (n8n review): an optional field lives in its op's Additional Fields / Filters collection. `flat` lists every field an op
+// can send, a collection's options shown where the collection shows (`in` names the collection); `field` finds one by name.
+const flat = (props) => props.flatMap((p) => (p.type === 'collection' ? p.options.map((o) => ({ ...o, displayOptions: p.displayOptions, in: p.name })) : [p]));
+const field = (name) => flat(d.properties).find((p) => p.name === name);
 const route = (resource, op) => ops(resource).find((o) => o.value === op).routing.request;
 
 test('Settlement is a resource, its three operations hit /v1/settle and nothing else', () => {
@@ -50,10 +54,11 @@ test('the relayer credential is offered on every resource (1.1.0: it carries the
 });
 
 test('Judge → Submit Review: the owner is optional once bound, and the binding signature rides as owner_signature', () => {
-	assert.notStrictEqual(prop('reviewOwner').required, true);
-	assert.strictEqual(prop('reviewOwner').routing.send.property, 'owner');
-	assert.strictEqual(prop('reviewOwnerSignature').routing.send.property, 'owner_signature');
-	assert.deepStrictEqual(prop('reviewOwnerSignature').displayOptions.show.operation, ['submitReview']);
+	for (const n of ['reviewOwner', 'reviewOwnerSignature', 'reviewJev']) assert.strictEqual(field(n).in, 'reviewOptions', `${n} is an Additional Field`);
+	assert.strictEqual(prop('reviewOwner'), undefined, 'not top-level');
+	assert.strictEqual(field('reviewOwner').routing.send.property, 'owner');
+	assert.strictEqual(field('reviewOwnerSignature').routing.send.property, 'owner_signature');
+	assert.deepStrictEqual(field('reviewOwnerSignature').displayOptions.show.operation, ['submitReview']);
 });
 
 test('Judge → Compose Verdict posts /judge/compose with one subject: handshake_id or jobId + chainId', () => {
@@ -63,7 +68,9 @@ test('Judge → Compose Verdict posts /judge/compose with one subject: handshake
 	assert.deepStrictEqual(prop('composeJobId').displayOptions.show.composeSubject, ['job']);
 	assert.strictEqual(prop('composeJobId').routing.send.property, 'jobId');
 	assert.strictEqual(prop('composeChainId').routing.send.property, 'chainId');
-	assert.ok(prop('key').displayOptions.show.operation.includes('compose'), 'a bring-your-own key applies to compose too');
+	const keys = flat(d.properties).filter((p) => p.name === 'key' && p.displayOptions.show.resource[0] === 'judge');
+	assert.ok(keys.some((k) => k.in === 'composeOptions' && k.displayOptions.show.operation.includes('compose')), 'a bring-your-own key applies to compose too');
+	assert.strictEqual(field('priceUsdc').in, 'composeOptions', 'the price is an Additional Field');
 	assert.strictEqual(ops('judge')[0].value, 'compose', 'alphabetical, as the linter demands');
 });
 
@@ -84,24 +91,29 @@ test('Compose Verdict two-step: Prepare → your TypeSafe node → Answers, on y
 	assert.strictEqual(mode.default, 'single', 'the one-call path stays the default');
 	assert.strictEqual(mode.routing.send.property, 'mode');
 	assert.match(mode.routing.send.value, /"single" \? undefined/, 'single sends no mode (the old body, byte for byte)');
-	const answersOnly = ['composeAnswers', 'composeModel', 'composePrepareDigest', 'composeAnsweredBy', 'composeExecutionId', 'composeLatencyMs'];
+	const answersOnly = ['composeAnswers', 'composeModel', 'composePrepareDigest', 'composeAnsweredBy', 'composeExecutionId'];
 	const sent = Object.fromEntries(answersOnly.map((n) => [n, prop(n).routing.send.property]));
-	assert.deepStrictEqual(sent, { composeAnswers: 'answers', composeModel: 'model', composePrepareDigest: 'prepare_digest', composeAnsweredBy: 'answered_by', composeExecutionId: 'execution_id', composeLatencyMs: 'latency_ms' });
+	assert.deepStrictEqual(sent, { composeAnswers: 'answers', composeModel: 'model', composePrepareDigest: 'prepare_digest', composeAnsweredBy: 'answered_by', composeExecutionId: 'execution_id' });
 	for (const n of answersOnly) assert.deepStrictEqual(prop(n).displayOptions.show.composeMode, ['answers'], `${n} shows only in Answers mode`);
-	for (const n of ['composeAnswers', 'composeModel', 'composePrepareDigest']) assert.ok(prop(n).required, `${n} is required`);
+	for (const n of answersOnly) assert.ok(prop(n).required, `${n} is required`);
+	const answersExtra = prop('composeAnswersOptions');
+	assert.deepStrictEqual(answersExtra.displayOptions.show.composeMode, ['answers']);
+	assert.deepStrictEqual(Object.fromEntries(answersExtra.options.map((o) => [o.name, o.routing.send.property])), { latencyMs: 'latency_ms', priceUsdc: 'price_usdc' });
 	assert.deepStrictEqual(prop('composeAnsweredBy').options.map((o) => o.value), ['n8n-typesafe']);
 	assert.match(prop('composeAnswers').routing.send.value, /JSON\.parse/, 'a JSON string is sent as an object');
-	assert.deepStrictEqual(prop('key').displayOptions.hide.composeMode, ['prepare', 'answers'], 'no key travels in the two-step mode');
+	assert.deepStrictEqual(prop('composeOptions').displayOptions.show.composeMode, ['single'], 'the key rides in One Call mode only');
+	for (const n of ['composePrepareOptions', 'composeAnswersOptions']) assert.ok(!prop(n).options.some((o) => o.name === 'key'), `no key travels in the two-step mode (${n})`);
 });
 
 test('Judge → Record Answers posts /judge/answers/record with the constants on hidden fields (_JEV_RECORD_v1_)', () => {
 	assert.deepStrictEqual(route('judge', 'recordAnswers'), { method: 'POST', url: '/judge/answers/record' });
-	const props = d.properties.filter((p) => p.displayOptions?.show?.operation?.includes('recordAnswers'));
+	const props = flat(d.properties).filter((p) => p.displayOptions?.show?.operation?.includes('recordAnswers'));
 	const sent = Object.fromEntries(props.map((p) => [p.routing?.send?.property, p]));
 	for (const k of ['use_case', 'subject', 'input', 'questions', 'jev', 'model', 'upstream_model', 'latency_ms', 'decision_digest', 'credential_path', 'caller']) assert.ok(sent[k], `sends ${k}`);
 	assert.strictEqual(sent.credential_path.type, 'hidden');
 	assert.strictEqual(sent.credential_path.default, 'caller-credential');
 	assert.strictEqual(sent.caller.default, 'n8n');
+	for (const k of ['upstream_model', 'latency_ms', 'decision_digest']) assert.strictEqual(sent[k].in, 'recordOptions', `${k} is an Additional Field`);
 	assert.strictEqual(d.credentials[0].displayOptions, undefined, 'the relayer key (X-API-Key) rides on judge ops');
 });
 
@@ -113,8 +125,9 @@ test('Demand: Post / Get / Get Many hit /v1/demands, and each way of asking send
 	assert.strictEqual(prop('need').routing.send.property, 'need');
 	assert.deepStrictEqual(prop('need').displayOptions.show.demandMode, ['need']);
 	assert.strictEqual(prop('demandCatalogId').routing.send.property, 'catalog_id');
-	assert.strictEqual(prop('catalogNeed').routing.send.property, 'need');
-	assert.deepStrictEqual(prop('catalogNeed').displayOptions.show.demandMode, ['catalog']);
+	assert.strictEqual(field('catalogNeed').routing.send.property, 'need');
+	assert.strictEqual(field('catalogNeed').in, 'catalogOptions');
+	assert.deepStrictEqual(field('catalogNeed').displayOptions.show.demandMode, ['catalog']);
 	assert.strictEqual(prop('demandClass').routing.send.property, 'class');
 	assert.strictEqual(prop('demandInput').routing.send.property, 'input');
 	const opts = Object.fromEntries(prop('demandOptions').options.map((o) => [o.name, o.routing.send.property]));
@@ -137,11 +150,11 @@ test('Catalog, Explorer and Account are plain /v1 reads (and the one free-key wr
 // ── 0.6.0: sell through Taifoon (claim → nonce in the card → verify), the listings, and the n8n attribution headers ──
 const pkg = require('../package.json');
 const onOp = (resource, op) =>
-	d.properties.filter((p) => p.displayOptions?.show?.resource?.[0] === resource && (p.displayOptions.show.operation || []).includes(op));
+	flat(d.properties).filter((p) => p.displayOptions?.show?.resource?.[0] === resource && (p.displayOptions.show.operation || []).includes(op));
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '1.2.2');
+	assert.strictEqual(pkg.version, '1.3.0');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
@@ -188,8 +201,10 @@ test('Catalog → Get Listing / Get Many Listings read /listings, the filters ar
 	const f = prop('listingFilters');
 	assert.deepStrictEqual(f.displayOptions.show, { resource: ['catalog'], operation: ['getManyListings'] });
 	const q = Object.fromEntries(f.options.map((o) => [o.name, o.routing.send]));
-	for (const k of ['kind', 'state', 'class', 'whose', 'limit']) assert.strictEqual(q[k].type, 'query', `${k} is a query parameter`);
-	assert.deepStrictEqual(Object.keys(q).sort(), ['class', 'kind', 'limit', 'state', 'whose']);
+	for (const k of ['kind', 'state', 'class', 'whose']) assert.strictEqual(q[k].type, 'query', `${k} is a query parameter`);
+	assert.deepStrictEqual(Object.keys(q).sort(), ['class', 'kind', 'state', 'whose']);
+	const lim = onOp('catalog', 'getManyListings').find((p) => p.name === 'limit');
+	assert.deepStrictEqual([lim.routing.send.type, lim.routing.send.property, lim.displayOptions.show.returnAll], ['query', 'limit', [false]], 'Limit shows only without Return All');
 	const opts = (n) => f.options.find((o) => o.name === n).options.map((o) => o.value).sort();
 	assert.deepStrictEqual(opts('state'), ['candidate', 'claimed', 'delisted', 'listed', 'paused']);
 	assert.deepStrictEqual(opts('whose'), ['ours', 'outside']);
@@ -213,7 +228,7 @@ test('Account carries the key path: subscribe, quote, the two claims, the standi
 });
 
 test('a claim sends exactly what POST /v1/access/plan and /topup read; a child key is action "child" with label and markup_bps; the mint calls carry the n8n channel', () => {
-	const sent = (op) => Object.fromEntries(d.properties.filter((p) => p.displayOptions && p.displayOptions.show && p.displayOptions.show.resource && p.displayOptions.show.resource[0] === 'account' && (p.displayOptions.show.operation || []).includes(op) && p.routing && p.routing.send && p.routing.send.property).map((p) => [p.routing.send.property, p]));
+	const sent = (op) => Object.fromEntries(flat(d.properties).filter((p) => p.displayOptions && p.displayOptions.show && p.displayOptions.show.resource && p.displayOptions.show.resource[0] === 'account' && (p.displayOptions.show.operation || []).includes(op) && p.routing && p.routing.send && p.routing.send.property).map((p) => [p.routing.send.property, p]));
 	assert.deepStrictEqual(Object.keys(sent('claimPlan')).sort(), ['chainId', 'plan', 'signature', 'tx']);
 	assert.deepStrictEqual(Object.keys(sent('claimTopUp')).sort(), ['chainId', 'signature', 'tx']);
 	for (const k of ['tx', 'signature']) assert.ok(sent('claimPlan')[k].required, `${k} is required`);
@@ -237,9 +252,10 @@ test('no Account operation reads a key back: every GET of the key path answers a
 test('Inference → Chat posts the OpenAI-compatible gate on coord (POST /v1/chat/completions, the one host and the one error contract): model, messages and the hold in the body; List Models reads /v1/models', () => {
 	assert.deepStrictEqual(route('inference', 'chat'), { method: 'POST', url: '/chat/completions' });
 	assert.deepStrictEqual(route('inference', 'listModels'), { method: 'GET', url: '/models' });
-	const sent = Object.fromEntries(d.properties.filter((p) => p.displayOptions && p.displayOptions.show && p.displayOptions.show.resource && p.displayOptions.show.resource[0] === 'inference' && (p.displayOptions.show.operation || []).includes('chat') && p.routing && p.routing.send && p.routing.send.property).map((p) => [p.routing.send.property, p]));
+	const sent = Object.fromEntries(flat(d.properties).filter((p) => p.displayOptions && p.displayOptions.show && p.displayOptions.show.resource && p.displayOptions.show.resource[0] === 'inference' && (p.displayOptions.show.operation || []).includes('chat') && p.routing && p.routing.send && p.routing.send.property).map((p) => [p.routing.send.property, p]));
 	assert.deepStrictEqual(Object.keys(sent).sort(), ['max_tokens', 'messages', 'model']);
 	for (const p of Object.values(sent)) assert.strictEqual(p.routing.send.type, 'body');
+	assert.strictEqual(sent.max_tokens.in, 'chatOptions', 'Max Tokens is an Additional Field (the gate holds for 256 without it)');
 	// a model GET /v1/models lists; the 1.0.0 default (llama-3.1-8b) still routes, so saved workflows keep working
 	assert.strictEqual(prop('model').default, 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16');
 	assert.doesNotMatch(JSON.stringify(d), /api\.taifoon\.dev/);
@@ -284,7 +300,8 @@ test('Settle is a plan only: its description says nothing is signed or sent, and
 test('Template → List reads GET /v1/n8n/templates; Class narrows it and is not sent when empty', async () => {
 	assert.deepStrictEqual(route('template', 'list'), { method: 'GET', url: '/n8n/templates' });
 	assert.deepStrictEqual((await buildRequest('template', 'list', {})).qs, {});
-	assert.deepStrictEqual((await buildRequest('template', 'list', { templateClass: 'mcp.digest' })).qs, { class: 'mcp.digest' });
+	assert.deepStrictEqual((await buildRequest('template', 'list', { templateListFilters: { templateClass: 'mcp.digest' } })).qs, { class: 'mcp.digest' });
+	assert.deepStrictEqual((await buildRequest('template', 'list', { templateListFilters: { templateClass: '' } })).qs, {});
 });
 
 test('the credential’s Channel ID rides on every call as X-Taifoon-Channel (empty: n8n, no partner)', async () => {

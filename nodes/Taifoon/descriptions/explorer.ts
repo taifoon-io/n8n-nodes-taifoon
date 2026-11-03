@@ -1,5 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 import { show } from './shared';
+import { returnAllLimit } from './paging';
 
 /**
  * Explorer: every job that went through the layer, with the buyer, the seller that did the work (doer), the seller
@@ -39,6 +40,8 @@ export const explorerOperations: INodeProperties[] = [
 		placeholder: 'dm_… | hs_… | 0x…',
 		displayOptions: show('explorer', ['get']),
 	},
+	// /explorer/jobs pages by ?page= (1..pages), at most 100 rows a page
+	...returnAllLimit('explorer', 'getAll', { root: 'rows', max: 100, by: 'page' }),
 	{
 		displayName: 'Filters',
 		name: 'explorerFilters',
@@ -74,15 +77,6 @@ export const explorerOperations: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				routing: { send: { type: 'query', property: 'class', value: '={{ $value || undefined }}' } },
-			},
-			{
-				displayName: 'Limit',
-				name: 'limit',
-				type: 'number',
-				typeOptions: { minValue: 1 },
-				default: 50,
-				description: 'Max number of results to return',
-				routing: { send: { type: 'query', property: 'limit' } },
 			},
 			{
 				displayName: 'Seller',

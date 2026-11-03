@@ -1,5 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 import { CHAINS, ASSURANCE_CHAINS, show, address } from './shared';
+import { returnAllLimit } from './paging';
 
 export const jobOperations: INodeProperties[] = [
 	{
@@ -46,6 +47,8 @@ export const jobOperations: INodeProperties[] = [
 		displayOptions: show('job', ['getChanged']),
 		routing: { send: { type: 'query', property: 'since' } },
 	},
+	// /jobs and /agents/ledger do not page: Return All reads the list once at its maximum (200)
+	...returnAllLimit('job', 'getChanged', { root: 'jobs', max: 200, by: 'none' }),
 	{
 		displayName: 'Filters',
 		name: 'changedFilters',
@@ -70,15 +73,6 @@ export const jobOperations: INodeProperties[] = [
 				options: CHAINS,
 				default: 8453,
 				routing: { send: { type: 'query', property: 'chain' } },
-			},
-			{
-				displayName: 'Limit',
-				name: 'limit',
-				type: 'number',
-				typeOptions: { minValue: 1 },
-				default: 50,
-				description: 'Max number of results to return',
-				routing: { send: { type: 'query', property: 'limit' } },
 			},
 			{
 				displayName: 'Participant',
@@ -117,6 +111,8 @@ export const jobOperations: INodeProperties[] = [
 	},
 
 	// ── Get Ledger ──
+	// /jobs and /agents/ledger do not page: Return All reads the list once at its maximum (200)
+	...returnAllLimit('job', 'getLedger', { root: 'jobs', max: 200, by: 'none' }),
 	{
 		displayName: 'Filters',
 		name: 'ledgerFilters',
@@ -132,15 +128,6 @@ export const jobOperations: INodeProperties[] = [
 				default: '',
 				placeholder: '0x…',
 				routing: { send: { type: 'query', property: 'client' } },
-			},
-			{
-				displayName: 'Limit',
-				name: 'limit',
-				type: 'number',
-				typeOptions: { minValue: 1 },
-				default: 50,
-				description: 'Max number of results to return',
-				routing: { send: { type: 'query', property: 'limit' } },
 			},
 			{
 				displayName: 'Participant',

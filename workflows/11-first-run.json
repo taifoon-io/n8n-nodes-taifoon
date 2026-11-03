@@ -45,7 +45,9 @@
         "resource": "account",
         "operation": "register",
         "walletAddress": "={{ $json.wallet_address }}",
-        "agentLabel": "n8n:first-run"
+        "registerOptions": {
+          "agentLabel": "n8n:first-run"
+        }
       },
       "id": "register",
       "name": "Register Free Key",

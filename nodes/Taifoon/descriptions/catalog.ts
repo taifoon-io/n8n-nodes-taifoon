@@ -1,5 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 import { show } from './shared';
+import { returnAllLimit } from './paging';
 
 /**
  * Catalog: every hireable agent resold through the layer, with the seller's price, ours (+49 bps) and the cover; and the
@@ -53,6 +54,7 @@ export const catalogOperations: INodeProperties[] = [
 		placeholder: 'cat_…',
 		displayOptions: show('catalog', ['get']),
 	},
+	...returnAllLimit('catalog', 'getAll', { root: 'rows', max: 200, by: 'offset' }),
 	{
 		displayName: 'Filters',
 		name: 'catalogFilters',
@@ -67,15 +69,6 @@ export const catalogOperations: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				routing: { send: { type: 'query', property: 'class', value: '={{ $value || undefined }}' } },
-			},
-			{
-				displayName: 'Limit',
-				name: 'limit',
-				type: 'number',
-				typeOptions: { minValue: 1 },
-				default: 50,
-				description: 'Max number of results to return',
-				routing: { send: { type: 'query', property: 'limit' } },
 			},
 			{
 				displayName: 'Protocol',
@@ -119,6 +112,8 @@ export const catalogOperations: INodeProperties[] = [
 		placeholder: 'ls_…',
 		displayOptions: show('catalog', ['getListing']),
 	},
+	// /listings does not page: Return All reads it once at its maximum (500)
+	...returnAllLimit('catalog', 'getManyListings', { root: 'rows', max: 500, by: 'none' }),
 	{
 		displayName: 'Filters',
 		name: 'listingFilters',
@@ -147,15 +142,6 @@ export const catalogOperations: INodeProperties[] = [
 				],
 				default: 'n8n',
 				routing: { send: { type: 'query', property: 'kind' } },
-			},
-			{
-				displayName: 'Limit',
-				name: 'limit',
-				type: 'number',
-				typeOptions: { minValue: 1 },
-				default: 50,
-				description: 'Max number of results to return',
-				routing: { send: { type: 'query', property: 'limit' } },
 			},
 			{
 				displayName: 'State',

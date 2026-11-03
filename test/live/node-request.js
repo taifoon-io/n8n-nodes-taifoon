@@ -13,7 +13,8 @@
 // What it models (n8n-workflow routing, the subset this node uses): expressions `={{ … }}` over $value / $parameter,
 // displayOptions show/hide over any parameter (resource, operation, a mode switch), defaults for parameters not given,
 // collections (only the options present are sent), hidden constants, dotted body properties, `type: 'query'`,
-// option-level qs/body, preSend hooks (headers), requestDefaults (baseURL + headers), and the credential's X-API-Key.
+// option-level qs/body, preSend hooks (headers), requestDefaults (baseURL + headers), the credential's X-API-Key, and
+// (1.3.0) Return All: `paginate` says the request is paged and `pagination` is the function n8n pages it with.
 'use strict';
 const path = require('node:path');
 
@@ -92,8 +93,12 @@ async function buildRequest(resource, operation, given = {}, opts = {}) {
 	for (const [k, v] of Object.entries(r.qs ?? {})) { const x = evaluate(v, ctx(undefined)); if (x !== undefined) req.qs[k] = x; }
 	for (const [k, v] of Object.entries(r.body ?? {})) { const x = evaluate(v, ctx(undefined)); if (x !== undefined) setPath(req.body, k, x); }
 	const preSends = [];
-	const apply = (send, raw) => {
+	let paginate = false;
+	let pagination = null;
+	const apply = (send, raw, operations) => {
+		if (operations?.pagination) pagination = operations.pagination;
 		if (!send) return;
+		if (send.paginate !== undefined) paginate = Boolean(evaluate(send.paginate, ctx(raw)));
 		if (send.preSend) preSends.push(...send.preSend);
 		if (!send.property) return;
 		const value = send.value !== undefined ? evaluate(send.value, ctx(raw)) : raw;
@@ -108,7 +113,7 @@ async function buildRequest(resource, operation, given = {}, opts = {}) {
 			for (const o of p.options ?? []) if (o.name in chosen) apply(o.routing?.send, chosen[o.name]);
 			continue;
 		}
-		apply(p.routing?.send, params[p.name]);
+		apply(p.routing?.send, params[p.name], p.routing?.operations);
 	}
 	let out = { url: req.url, method: req.method, headers: req.headers };
 	for (const f of preSends) out = await f.call({}, out);
@@ -124,7 +129,7 @@ async function buildRequest(resource, operation, given = {}, opts = {}) {
 		}
 	}
 	const hasBody = Object.keys(req.body).length > 0;
-	return { method: req.method, url: req.url, qs: req.qs, body: hasBody ? req.body : undefined, headers: req.headers, baseURL: req.baseURL };
+	return { method: req.method, url: req.url, qs: req.qs, body: hasBody ? req.body : undefined, headers: req.headers, baseURL: req.baseURL, paginate, pagination: paginate ? pagination : null };
 }
 
 /** The full URL of a built request (baseURL + url + query), as n8n would call it. */

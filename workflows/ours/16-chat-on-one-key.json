@@ -138,7 +138,9 @@
         "operation": "acceptAgreement",
         "agreementDoc": "={{ $json.doc }}",
         "agreementProduct": "inference",
-        "agreementHow": "clickwrap"
+        "agreementAcceptAgreementOptions": {
+          "agreementHow": "clickwrap"
+        }
       },
       "credentials": {
         "taifoonRelayerApi": {
@@ -165,7 +167,9 @@
         "operation": "chat",
         "model": "={{ $('Input').first().json.model }}",
         "messages": "={{ JSON.stringify([{ role: 'user', content: String($('Input').first().json.prompt || '') }]) }}",
-        "maxTokens": "={{ Math.min(Number($('Input').first().json.max_tokens) || 256, 1024) }}"
+        "chatOptions": {
+          "maxTokens": "={{ Math.min(Number($('Input').first().json.max_tokens) || 256, 1024) }}"
+        }
       },
       "credentials": {
         "taifoonRelayerApi": {
@@ -204,7 +208,7 @@
       "parameters": {
         "width": 640,
         "height": 640,
-        "content": "## Taifoon: AI answers on one key, up to 0.001 USDC each (charged per token)\n**For:** n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI account or a card on file.\n**Why:** one Taifoon key pays each answer at our own per-token price (up to 0.001 USDC an answer on our own model, no margin on top), the key accepts the terms once, and every call is one metered line with its sale on the answer.\n\n`Input → Agreements → Terms → [Accept document] → Chat → Answer`\n\n1. Install the Taifoon community node (below) and get a key: `POST https://coord.taifoon.dev/v1/register` (or the node's Account → Register Free Key).\n2. Add a **Taifoon Relayer API** credential with your `tfr_` key (optional: your Channel ID). Select it on the three Taifoon nodes.\n3. Edit **Input** and run. Read TSUL-1.1 and TAT before you set `accept_terms` to true.\n\n**Price:** up to 0.001 USDC per answer on our own model (the default), charged per token used: **Answer** shows what this answer cost (`charged_usdc`) and its sale. Paid from the key's balance into the loop vault (vault:taifoon:loop); Taifoon is the seller of record.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 1.2.1): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon@1.2.1, 2026-10-29, imported from this JSON into a fresh n8n and run against coord.taifoon.dev."
+        "content": "## Taifoon: AI answers on one key, up to 0.001 USDC each (charged per token)\n**For:** n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI account or a card on file.\n**Why:** one Taifoon key pays each answer at our own per-token price (up to 0.001 USDC an answer on our own model, no margin on top), the key accepts the terms once, and every call is one metered line with its sale on the answer.\n\n`Input → Agreements → Terms → [Accept document] → Chat → Answer`\n\n1. Install the Taifoon community node (below) and get a key: `POST https://coord.taifoon.dev/v1/register` (or the node's Account → Register Free Key).\n2. Add a **Taifoon Relayer API** credential with your `tfr_` key (optional: your Channel ID). Select it on the three Taifoon nodes.\n3. Edit **Input** and run. Read TSUL-1.1 and TAT before you set `accept_terms` to true.\n\n**Price:** up to 0.001 USDC per answer on our own model (the default), charged per token used: **Answer** shows what this answer cost (`charged_usdc`) and its sale. Paid from the key's balance into the loop vault (vault:taifoon:loop); Taifoon is the seller of record.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 1.3.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon@1.3.0, 2026-11-03, imported from this JSON into a fresh n8n and run against coord.taifoon.dev."
       }
     },
     {

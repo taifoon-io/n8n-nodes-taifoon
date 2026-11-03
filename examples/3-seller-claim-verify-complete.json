@@ -134,9 +134,9 @@
         "changedFilters": {
           "seller": "={{ $('Seller').first().json.seller_address }}",
           "status": "open",
-          "chain": "={{ $('Seller').first().json.jobs_chain }}",
-          "limit": 50
-        }
+          "chain": "={{ $('Seller').first().json.jobs_chain }}"
+        },
+        "limit": 50
       },
       "id": "tfnexseller00001-04",
       "name": "Get open jobs",

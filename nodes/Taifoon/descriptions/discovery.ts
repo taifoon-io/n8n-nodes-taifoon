@@ -1,4 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
+import { returnAllLimit } from './paging';
 
 export const discoveryOperations: INodeProperties[] = [
 	{
@@ -39,16 +40,7 @@ export const discoveryOperations: INodeProperties[] = [
 		],
 		default: 'getStandards',
 	},
-	{
-		displayName: 'Search Text',
-		name: 'q',
-		type: 'string',
-		default: '',
-		placeholder: 'telegram support triage',
-		description: 'Every word must match the name, skills, categories or description',
-		displayOptions: { show: { resource: ['discovery'], operation: ['searchCapabilities'] } },
-		routing: { send: { type: 'query', property: 'q', value: '={{ $value || undefined }}' } },
-	},
+	...returnAllLimit('discovery', 'searchCapabilities', { root: 'results', max: 100, by: 'offset' }),
 	{
 		displayName: 'Filters',
 		name: 'capabilityFilters',
@@ -69,21 +61,13 @@ export const discoveryOperations: INodeProperties[] = [
 				routing: { send: { type: 'query', property: 'kind' } },
 			},
 			{
-				displayName: 'Limit',
-				name: 'limit',
-				type: 'number',
-				typeOptions: { minValue: 1 },
-				default: 50,
-				description: 'Max number of results to return',
-				routing: { send: { type: 'query', property: 'limit' } },
-			},
-			{
-				displayName: 'Offset',
-				name: 'offset',
-				type: 'number',
-				typeOptions: { minValue: 0 },
-				default: 0,
-				routing: { send: { type: 'query', property: 'offset' } },
+				displayName: 'Search Text',
+				name: 'q',
+				type: 'string',
+				default: '',
+				placeholder: 'telegram support triage',
+				description: 'Every word must match the name, skills, categories or description',
+				routing: { send: { type: 'query', property: 'q', value: '={{ $value || undefined }}' } },
 			},
 			{
 				displayName: 'Skill',

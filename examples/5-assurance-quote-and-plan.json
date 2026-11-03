@@ -95,7 +95,9 @@
         "chainId": "={{ $('Job terms').first().json.chain_id }}",
         "seller": "={{ $json.seller }}",
         "price": "={{ $('Job terms').first().json.price }}",
-        "deposit": "={{ $('Job terms').first().json.deposit }}"
+        "quoteOptions": {
+          "deposit": "={{ $('Job terms').first().json.deposit }}"
+        }
       },
       "id": "tfnexassure00001-04",
       "name": "Quote",

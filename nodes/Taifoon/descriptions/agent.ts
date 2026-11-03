@@ -1,5 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 import { show, address, csvToArray } from './shared';
+import { returnAllLimit } from './paging';
 
 export const agentOperations: INodeProperties[] = [
 	{
@@ -229,6 +230,7 @@ export const agentOperations: INodeProperties[] = [
 		displayOptions: show('agent', ['register']),
 		routing: { send: { type: 'body', property: 'card_url' } },
 	},
+	...returnAllLimit('agent', 'getCards', { root: 'cards', max: 200, by: 'offset' }),
 	{
 		displayName: 'Filters',
 		name: 'cardFilters',
@@ -244,24 +246,6 @@ export const agentOperations: INodeProperties[] = [
 				default: 8453,
 				description: 'Only agents registered on this chain: 8453 Base, 1 Ethereum, 5042 Arc, 4663 Robinhood',
 				routing: { send: { type: 'query', property: 'chain' } },
-			},
-			{
-				displayName: 'Limit',
-				name: 'limit',
-				type: 'number',
-				typeOptions: { minValue: 1 },
-				default: 50,
-				description: 'Max number of results to return',
-				routing: { send: { type: 'query', property: 'limit' } },
-			},
-			{
-				displayName: 'Offset',
-				name: 'offset',
-				type: 'number',
-				typeOptions: { minValue: 0 },
-				default: 0,
-				description: 'Skip this many matching agents, to page through the index',
-				routing: { send: { type: 'query', property: 'offset' } },
 			},
 			{
 				displayName: 'Skill',
@@ -299,13 +283,6 @@ export const agentOperations: INodeProperties[] = [
 		displayOptions: show('agent', ['getWireReady']),
 		routing: { send: { type: 'query', property: 'chain' } },
 	},
-	{
-		displayName: 'Limit',
-		name: 'wireLimit',
-		type: 'number',
-		default: 20,
-		typeOptions: { minValue: 1, maxValue: 200 },
-		displayOptions: show('agent', ['getWireReady']),
-		routing: { send: { type: 'query', property: 'limit' } },
-	},
+	// /registry/agents does not page: Return All reads it once at its maximum (500)
+	...returnAllLimit('agent', 'getWireReady', { root: 'agents', max: 500, by: 'none' }, { limitName: 'wireLimit', defaultLimit: 20 }),
 ];

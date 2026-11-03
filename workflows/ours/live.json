@@ -5,29 +5,30 @@
   "templates": {
     "chat-on-one-key": {
       "verified": true,
-      "at": "2026-10-29T16:05:52Z",
+      "at": "2026-11-03T18:57:00Z",
       "n8n": "2.45.5 (docker n8nio/n8n:2.45.5; CLI: import:workflow + execute, the Taifoon Relayer API key an env expression)",
-      "node_package": "n8n-nodes-taifoon@1.2.1",
-      "against": "https://coord.taifoon.dev (x-taifoon-build 852ae139d26c)",
+      "node_package": "n8n-nodes-taifoon@1.3.0",
+      "against": "https://coord.taifoon.dev (x-taifoon-build e8f66e8bb095)",
       "key": "the sandbox key (keychain taifoon-n8n-reseller-sandbox)",
       "status": 200,
       "ok": true,
       "sale": {
-        "id": "gpu_mvtqjdwg_35dee6e266",
+        "id": "gpu_mw11nstn_1aee979e8a",
         "channel": "n8n",
         "paid_by": "key_balance",
-        "micro": "11",
-        "usdc": "0.000011",
+        "micro": "4",
+        "usdc": "0.000004",
         "price_rule": "OWN_INFERENCE_PRICE_v1",
         "vault": "vault:taifoon:loop"
       },
-      "answer": "17 × 24 = 408. (nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16, 32 tokens in, 53 out), charged 0.000011 USDC",
+      "answer": "17 × 24 = 408. (nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16, 32 tokens in, 53 out), charged 0.000004 USDC",
       "notes": [
         "the chat is the Taifoon node's Inference → Chat (POST /v1/chat/completions) on the Taifoon Relayer API credential; the agreements are Agreement → List / Accept",
         "the debit is 0.000011 USDC under OWN_INFERENCE_PRICE_v1 (our own card's per-token price), so the template says \"up to 0.001 USDC per answer\", never a fixed price",
         "the channel is the credential's Channel ID (n8n when empty): the node sends it on every call, so the sale names n8n, not n8n-template:chat-on-one-key",
         "an invalid key in the same n8n: Chat continues on the failure and Answer returns { ok: false, error: { code, status 401, type, sdk AuthenticationError, … } }, nothing charged",
-        "superseded: the raw HTTP version ran 2026-10-21T08:27:16Z on n8n 2.43.8 (sale gpu_mvhums5y_0e0a9551f3, 0.000006 USDC)"
+        "superseded: the raw HTTP version ran 2026-10-21T08:27:16Z on n8n 2.43.8 (sale gpu_mvhums5y_0e0a9551f3, 0.000006 USDC)",
+        "re-run 2026-11-03T18:57:00Z with n8n-nodes-taifoon@1.3.0 (npm pack of bb0b7582, before the npm publish): reserved 11 micro, settled to usage (SETTLE_ACTUAL_v1), 7 returned; before: 2026-10-30T09:46:33Z with n8n-nodes-taifoon@1.2.2"
       ]
     },
     "text-digest": {

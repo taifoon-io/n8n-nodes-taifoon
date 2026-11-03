@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0 (2026-11-03)
+
+- **Return All + Limit on every list (n8n review of 1.2.2, issue 1):** the 12 list operations with a limit have Return All, with Limit shown only while it is off; the node follows the API's own offset, page or cursor paging itself, and no Offset field remains.
+- **Optional fields in Additional Fields / Filters (n8n review of 1.2.2, issue 2):** every optional top-level field moved into its operation's collection (the generated descriptions too), and a field required in some cases is required under those cases; a saved workflow that set a moved field sets it again in its collection (the shipped workflows are updated).
+
 ## 1.2.2 (2026-10-30)
 
 - **README: use cases and code first.** What you can build (a table of use cases, each with its operations and a tested

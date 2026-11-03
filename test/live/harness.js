@@ -13,7 +13,9 @@ let idsMemo = null;
 /** Sample ids read live from the list operations, so the single-record reads always name a record that exists. */
 async function sampleIds() {
 	if (idsMemo) return idsMemo;
-	const get = async (p) => { try { const r = await fetch(`${BASE}/${p}`, { headers: { accept: 'application/json', ...(PROBE_KEY ? { 'x-taifoon-probe': PROBE_KEY } : {}) }, signal: AbortSignal.timeout(30_000) }); return r.ok ? r.json() : null; } catch { return null; } };
+	// the sample reads are setup, not ops under test: keyed, so the calling address's keyless limit never empties an id the op
+	// then reads (a listing id read past that limit came back null, and Get Listing failed on bad_id, 2026-10-30)
+	const get = async (p) => { try { const r = await fetch(`${BASE}/${p}`, { headers: { accept: 'application/json', ...(PROBE_KEY ? { 'x-api-key': PROBE_KEY, 'x-taifoon-probe': PROBE_KEY } : {}) }, signal: AbortSignal.timeout(30_000) }); return r.ok ? r.json() : null; } catch { return null; } };
 	const [cat, ls, dm, st, rv, lg] = await Promise.all([get('catalog?limit=1'), get('listings?limit=1'), get('demands?limit=5&state=settled'), get('settle'), get('grid/review'), get('agents/ledger?limit=20')]);
 	const demand = dm?.demands?.find((d) => d.handshake_id) ?? dm?.demands?.[0];
 	idsMemo = {

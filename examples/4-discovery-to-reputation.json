@@ -89,9 +89,9 @@
         "resource": "agent",
         "operation": "getCards",
         "cardFilters": {
-          "speaks": "={{ $('Looking for').first().json.speaks }}",
-          "limit": 20
-        }
+          "speaks": "={{ $('Looking for').first().json.speaks }}"
+        },
+        "limit": 20
       },
       "id": "tfnexdiscover001-05",
       "name": "Cards",

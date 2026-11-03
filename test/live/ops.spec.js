@@ -82,7 +82,7 @@ const SPEC = {
 	'account.keyStanding': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 4000 },
 	'account.resellerView': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 4000, gap: 'the probe tenant is a reseller by default; a child key would answer 403' },
 	'account.mintChildKey': {
-		mode: 'refusal-only', key: true, params: () => ({ childLabel: TEST_TAG, childMarkupBps: '{ "*": 1000 }' }),
+		mode: 'refusal-only', key: true, params: () => ({ childOptions: { childLabel: TEST_TAG }, childMarkupBps: '{ "*": 1000 }' }),
 		ok: { status: 201, fields: ['child', 'keys', 'shown_once'] },
 		refusals: [NO_KEY, BAD_KEY, { why: 'a markup that is not an object of bps', params: { childMarkupBps: '[1]' }, status: [400], code: 'bad_param' }],
 		budgetMs: 6000,
@@ -93,10 +93,10 @@ const SPEC = {
 	'inference.chat': {
 		// one short answer on our own GPU, metered on the probe key's free agreement (a few hundred-thousandths of a dollar)
 		openai: true,
-		mode: 'read', key: true, params: () => ({ model: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16', messages: '[{"role":"user","content":"Say hello in five words."}]', maxTokens: 16 }),
+		mode: 'read', key: true, params: () => ({ model: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16', messages: '[{"role":"user","content":"Say hello in five words."}]', chatOptions: { maxTokens: 16 } }),
 		ok: { status: 200, fields: ['id', 'choices', 'usage'], lists: ['choices'], nonEmpty: ['choices'] },
 		// _PROBE_402_v1_ (web 2026-10-22): the chat door is also an x402 door, so a call with no key is offered the price (402), never 401
-		refusals: [{ ...NO_KEY, why: 'no credential: the x402 door answers 402 with the price', status: [402] }, BAD_KEY, { why: 'no messages', params: { model: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16', messages: '[]', maxTokens: 16 }, status: [400] }],
+		refusals: [{ ...NO_KEY, why: 'no credential: the x402 door answers 402 with the price', status: [402] }, BAD_KEY, { why: 'no messages', params: { model: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16', messages: '[]', chatOptions: { maxTokens: 16 } }, status: [400] }],
 		budgetMs: 20000,
 	},
 	'account.registerSeller': {
@@ -118,7 +118,7 @@ const SPEC = {
 	},
 
 	// ── Agent ──
-	'agent.getCards': { mode: 'read', key: false, params: () => ({ cardFilters: { limit: 5 } }), ok: { status: 200, fields: ['cards', 'skills_seen'], lists: ['cards'], nonEmpty: ['cards'] }, refusals: [{ why: 'a negative limit', params: { cardFilters: { limit: -1 } }, status: [400] }], budgetMs: 6000 },
+	'agent.getCards': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['cards', 'skills_seen'], lists: ['cards'], nonEmpty: ['cards'] }, refusals: [{ why: 'a negative limit', params: { limit: -1 }, status: [400] }], budgetMs: 6000 },
 	'agent.getMarket': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
 	'agent.getProviders': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
 	'agent.getRegistered': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
@@ -153,8 +153,8 @@ const SPEC = {
 	// ── Catalog ──
 	'catalog.get': { mode: 'read', key: false, params: (ids) => ({ catalogId: ids.catalog }), ok: { status: 200, fields: [] }, refusals: [{ why: 'unknown id', params: { catalogId: 'cat_0000000000000000' }, status: [404] }], budgetMs: 8000 },
 	'catalog.getListing': { mode: 'read', key: false, params: (ids) => ({ listingId: ids.listing }), ok: { status: 200, fields: [] }, refusals: [{ why: 'unknown id', params: { listingId: 'ls_0000000000000000' }, status: [404] }], budgetMs: 6000 },
-	'catalog.getAll': { mode: 'read', key: false, params: () => ({ catalogFilters: { limit: 5 } }), ok: { status: 200, fields: ['rows'], lists: ['rows'], nonEmpty: ['rows'] }, refusals: [], budgetMs: 8000 },
-	'catalog.getManyListings': { mode: 'read', key: false, params: () => ({ listingFilters: { limit: 5 } }), ok: { status: 200, fields: ['rows'], lists: ['rows'] }, refusals: [{ why: 'an unknown state', params: { listingFilters: { state: 'nope' } }, status: [400] }], budgetMs: 6000 },
+	'catalog.getAll': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['rows'], lists: ['rows'], nonEmpty: ['rows'] }, refusals: [], budgetMs: 8000 },
+	'catalog.getManyListings': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['rows'], lists: ['rows'] }, refusals: [{ why: 'an unknown state', params: { listingFilters: { state: 'nope' } }, status: [400] }], budgetMs: 6000 },
 
 	// ── Completion ──
 	'completion.getStatus': { mode: 'read', key: true, params: (ids) => ({ jobId: ids.completionJob, statusNonce: 'n8n-contract-test' }), ok: { status: [200, 404], fields: [] }, refusals: [NO_KEY, { why: 'not a job id', params: { jobId: 'not-a-job', statusNonce: 'x' }, status: [400] }], budgetMs: 6000 },
@@ -168,7 +168,7 @@ const SPEC = {
 
 	// ── Demand ──
 	'demand.get': { mode: 'read', key: false, params: (ids) => ({ demandId: ids.demand }), ok: { status: 200, fields: ['demand'] }, refusals: [{ why: 'unknown id', params: { demandId: 'dm_000000000000000000000000' }, status: [404] }], budgetMs: 6000 },
-	'demand.getAll': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['demands'], lists: ['demands'] }, refusals: [{ why: 'an unknown state', params: { demandState: 'nope' }, status: [400] }], budgetMs: 6000 },
+	'demand.getAll': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['demands'], lists: ['demands'] }, refusals: [{ why: 'an unknown state', params: { demandFilters: { state: 'nope' } }, status: [400] }], budgetMs: 6000 },
 	'demand.post': {
 		mode: 'dry-run', key: true, params: () => ({ need: 'the sha256 digest of the text "hello"', demandOptions: { dryRun: true, buyerLabel: TEST_TAG } }),
 		ok: { status: 200, fields: [] }, refusals: [BAD_KEY, { why: 'no words', params: { need: '', demandOptions: { dryRun: true } }, status: [400, 422] }], budgetMs: 8000,
@@ -182,11 +182,11 @@ const SPEC = {
 	},
 	'discovery.getCapabilitySkills': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
 	'discovery.getStandards': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['deployments'] }, refusals: [], budgetMs: 6000 },
-	'discovery.searchCapabilities': { mode: 'read', key: false, params: () => ({ q: 'telegram', capabilityFilters: { limit: 5 } }), ok: { status: 200, fields: [] }, refusals: [{ why: 'a negative offset', params: { q: 'x', capabilityFilters: { offset: -1 } }, status: [400] }], budgetMs: 8000 },
+	'discovery.searchCapabilities': { mode: 'read', key: false, params: () => ({ limit: 5, capabilityFilters: { q: 'telegram' } }), ok: { status: 200, fields: [] }, refusals: [{ why: 'a negative limit', params: { limit: -1, capabilityFilters: { q: 'x' } }, status: [400] }], budgetMs: 8000 },
 
 	// ── Explorer ──
 	'explorer.get': { mode: 'read', key: false, params: (ids) => ({ explorerId: ids.demand }), ok: { status: 200, fields: [] }, refusals: [{ why: 'unknown id', params: { explorerId: 'dm_000000000000000000000000' }, status: [404] }], budgetMs: 10000 },
-	'explorer.getAll': { mode: 'read', key: false, params: () => ({ explorerFilters: { limit: 5 } }), ok: { status: 200, fields: ['rows'], lists: ['rows'], nonEmpty: ['rows'] }, refusals: [{ why: 'an unknown buyer class', params: { explorerFilters: { buyer: 'nope' } }, status: [400] }], budgetMs: 10000 },
+	'explorer.getAll': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['rows'], lists: ['rows'], nonEmpty: ['rows'] }, refusals: [{ why: 'an unknown buyer class', params: { explorerFilters: { buyer: 'nope' } }, status: [400] }], budgetMs: 10000 },
 
 	// ── Handshake ──
 	'handshake.attachJob': { operatorKey: true, mode: 'refusal-only', key: true, params: () => ({ handshakeId: 'hs_000000000000000000000000', jobId: '1' }), ok: { status: 200, fields: [] }, refusals: [NO_KEY, { why: 'unknown handshake', params: { handshakeId: 'hs_000000000000000000000000', jobId: '1' }, status: [404] }], gap: 'attaching advances a real handshake; only the refusals are called', budgetMs: 8000 },
@@ -225,16 +225,16 @@ const SPEC = {
 	// ── Job ──
 	'job.createOffer': { mode: 'plan', key: false, params: () => ({ chainId: 8453, seller: ADDR, price: '100000' }), ok: { status: 200, fields: [] }, refusals: [{ why: 'not an integer price', params: { chainId: 8453, seller: ADDR, price: 'abc' }, status: [400, 422] }], budgetMs: 10000 },
 	'job.getChanged': {
-		mode: 'read', key: false, params: () => ({ since: '0', changedFilters: { limit: 5 } }), ok: { status: 200, fields: ['jobs', 'cursor'], lists: ['jobs'] },
+		mode: 'read', key: false, params: () => ({ since: '0', limit: 5 }), ok: { status: 200, fields: ['jobs', 'cursor'], lists: ['jobs'] },
 		refusals: [{ why: 'a cursor that is not one', params: { since: 'yesterday' }, status: [400] }], budgetMs: 8000,
 		extra: [
 			{ why: 'each party names its address and protocol (not under agentId, never null)',
 				check: (j) => (j?.jobs ?? []).flatMap((r) => [r.seller?.address ? null : `${r.id}: seller.address`, r.seller?.protocol ? null : `${r.id}: seller.protocol`, r.buyer?.protocol ? null : `${r.id}: buyer.protocol`, 'genome' in r && r.genome === null ? `${r.id}: genome null` : null, 'skill' in r && r.skill === null ? `${r.id}: skill null` : null]).filter(Boolean).slice(0, 5) },
-			{ why: 'chain 36927 lists the devnet hires a seller follows', params: { since: '0', changedFilters: { chain: 36927, limit: 5 } },
+			{ why: 'chain 36927 lists the devnet hires a seller follows', params: { since: '0', limit: 5, changedFilters: { chain: 36927 } },
 				check: (j) => ((j?.jobs ?? []).length > 0 ? [] : ['no devnet jobs']) },
 		],
 	},
-	'job.getLedger': { mode: 'read', key: false, params: () => ({ ledgerFilters: { limit: 5 } }), ok: { status: 200, fields: ['jobs'], lists: ['jobs'] }, refusals: [{ why: 'a shortened participant', params: { ledgerFilters: { participant: '0x3574…4f5b' } }, status: [400] }], budgetMs: 8000 },
+	'job.getLedger': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['jobs'], lists: ['jobs'] }, refusals: [{ why: 'a shortened participant', params: { ledgerFilters: { participant: '0x3574…4f5b' } }, status: [400] }], budgetMs: 8000 },
 
 	// ── Judge ──
 	// Prepare (the two-step's first half): the facts and the questions, no Jev call, nothing recorded. One call and Answers are
@@ -321,7 +321,7 @@ const SPEC = {
 		budgetMs: 6000,
 		gap: 'mints a real child key (shown once) for an enrolled partner only; the probe tenant is self-serve, so only the refusals are called',
 	},
-	'resellerKey.listChildKeys': { mode: 'read', key: true, params: () => ({ usageWindow: '1d' }), ok: { status: 200, fields: ['children', 'count', 'program'], lists: ['children', 'by_key', 'by_channel'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 6000 },
+	'resellerKey.listChildKeys': { mode: 'read', key: true, params: () => ({ resellerKeyListChildKeysFilters: { usageWindow: '1d' } }), ok: { status: 200, fields: ['children', 'count', 'program'], lists: ['children', 'by_key', 'by_channel'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 6000 },
 	'resellerKey.revokeChildKey': {
 		mode: 'refusal-only', key: true, params: () => ({ childKeyId: 'ck_000000000000000000000000' }),
 		ok: { status: 200, fields: ['key_id', 'revoked'] },
@@ -330,7 +330,7 @@ const SPEC = {
 		gap: 'revokes a real child key; with no child of ours only the refusals are called',
 	},
 	'resellerKey.mintPromo': {
-		mode: 'refusal-only', key: true, params: () => ({ promoKind: 'rebate', rebateBps: 100, maxRedemptions: 1, expiresInDays: 1 }),
+		mode: 'refusal-only', key: true, params: () => ({ promoKind: 'rebate', resellerKeyMintPromoOptions: { rebateBps: 100 }, maxRedemptions: 1, expiresInDays: 1 }),
 		ok: { status: 201, fields: ['promo'] },
 		refusals: [NO_KEY, BAD_KEY, { why: 'a self-serve reseller may not mint a promo', status: [403] }],
 		budgetMs: 6000,
@@ -354,20 +354,20 @@ const SPEC = {
 	'resellerKey.listClientVaults': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: ['vaults', 'may_enrol'], lists: ['vaults'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 6000 },
 	'agreement.listAgreements': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: ['acceptances', 'gaps', 'documents'], lists: ['acceptances', 'documents'], nonEmpty: ['documents'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 6000 },
 	'agreement.acceptAgreement': {
-		mode: 'refusal-only', key: true, params: () => ({ agreementDoc: 'TAT', agreementProduct: 'api-access', agreementHow: 'clickwrap' }),
+		mode: 'refusal-only', key: true, params: () => ({ agreementDoc: 'TAT', agreementProduct: 'api-access', agreementAcceptAgreementOptions: { agreementHow: 'clickwrap' } }),
 		ok: { status: 201, fields: ['acceptance'] },
 		refusals: [NO_KEY, BAD_KEY],
 		budgetMs: 6000,
 		gap: 'records an acceptance for the probe key (an envelope on the stream); the acceptance is the key holder\'s act, so only the refusals are called',
 	},
 	// _N8N_DEMAND_PAID_v1_: the harvest rows answer paid keys only; a free probe key is told the price and the top-up (402)
-	'template.demand': { mode: 'read', key: true, params: () => ({ demandKind: 'template', demandLimit: 1 }), ok: { status: [200, 402], fields: ['rows', 'count', 'total'], lists: ['rows'] }, refusals: [NO_KEY], budgetMs: 8000,
+	'template.demand': { mode: 'read', key: true, params: () => ({ templateDemandFilters: { demandKind: 'template' }, demandLimit: 1 }), ok: { status: [200, 402], fields: ['rows', 'count', 'total'], lists: ['rows'] }, refusals: [NO_KEY], budgetMs: 8000,
 		extra: [{ why: 'a paid key reads the rows; a free key gets 402 paid_key_required with the price and a top-up step', check: (j, status) => (status === 200
 			? (Array.isArray(j?.rows) ? [] : ['rows is not a list'])
 			: [j?.code === 'paid_key_required' ? null : `code ${j?.code}`, j?.price?.per_call_usdc ? null : 'no price', j?.next_step?.action === 'top_up' ? null : 'no top_up step'].filter(Boolean)) }] },
 	'template.list': {
 		mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['templates', 'count'], lists: ['templates'], nonEmpty: ['templates'] },
-		refusals: [{ why: 'a class no template sells', params: { templateClass: 'video.edit' }, status: [404], code: 'not_found' }], budgetMs: 8000,
+		refusals: [{ why: 'a class no template sells', params: { templateListFilters: { templateClass: 'video.edit' } }, status: [404], code: 'not_found' }], budgetMs: 8000,
 		// a template on the Taifoon node sends the credential's Channel ID, n8n when empty (workflows/ours/build.mjs channelOf); one
 		// built on HTTP nodes sends n8n-template:<id>
 		extra: [{ why: 'each template names its class, its channel and a price (the live one, or — with why)', check: (j) => (j?.templates ?? []).flatMap((t) => [t.class ? null : `${t.id}: class`, /^n8n(-template:.+)?$/.test(t.channel) ? null : `${t.id}: channel`, t.price?.usdc ? null : `${t.id}: price`]).filter(Boolean) }],
