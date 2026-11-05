@@ -79,7 +79,6 @@ signer sends it.
 | Resource | Operation | Request |
 |---|---|---|
 | Commerce | Hire | `POST /v1/jobs` (as Job → Create Offer; MCP `taifoon_hire`) |
-| Commerce | Grade | `POST /v1/judge/grade` (as Judge → Grade; MCP `taifoon_grade`) |
 | Commerce | Settle (Plan) | `POST /v1/settle` (as Settlement → Settle; MCP `taifoon_settle_plan`; unsigned calls only) |
 | Template | List | `GET /v1/n8n/templates` |
 | Account | Get My Tenant | `GET /v1/tenant/me` |
@@ -140,16 +139,12 @@ signer sends it.
 | Job | Create Offer | `POST /v1/jobs` |
 | Job | Get Changed | `GET /v1/jobs` |
 | Job | Get Ledger | `GET /v1/agents/ledger` |
-| Judge | Compose Verdict | `POST /v1/judge/compose` |
 | Judge | Get Ready Jobs | `GET /v1/judge/ready` |
 | Judge | Get Reviewable Jobs | `GET /v1/grid/review` |
 | Judge | Get Stages | `GET /v1/hiring/stages` |
 | Judge | Get Trace | `GET /v1/judge/trace/{traceChain}/{traceJobId}` |
 | Judge | Give Feedback (Unsigned) | `POST /v1/assurance/call` |
-| Judge | Grade | `POST /v1/judge/grade` |
-| Judge | Judge One | `POST /v1/judge/ref` |
 | Judge | Post Verdict (Unsigned) | `POST /v1/assurance/call` |
-| Judge | Record Answers | `POST /v1/judge/answers/record` |
 | Judge | Submit Review | `POST /v1/grid/review` |
 | Proof | Get Root | `GET /v1/root/latest` |
 | Proof | Get Transaction Proof | `GET /v1/proof/tx/{chainId}/{txHash}` |

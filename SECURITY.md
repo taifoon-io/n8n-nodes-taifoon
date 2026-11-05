@@ -11,7 +11,7 @@ to infer any of it from the code.
   calldata (`Assurance → Build Call`, `Job → Create Offer`) with the effect in plain words and who must
   sign. The signing happens in your own wallet, enclave or signer, outside this node.
 - **The only secret it handles is one API key** — required by Completion, Handshake → Attach Job, Job → Create Offer
-  with a handshake id and Judge → Submit Review; used when attached by Handshake → Open and the judge calls:
+  with a handshake id and Judge → Submit Review; used when attached by Handshake → Open:
   - a **relayer key** (`tfr_…`), stored in n8n's encrypted credential store as credential type
     `taifoonRelayerApi`, sent as the `X-API-Key` header over TLS to `coord.taifoon.dev` and nowhere else. Its Channel ID is not a secret: a public label sent as `X-Taifoon-Channel` on the same calls.
   - It is never logged, never placed in a URL or query string, never echoed in a node's output, and never

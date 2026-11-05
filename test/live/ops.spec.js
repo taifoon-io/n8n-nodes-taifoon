@@ -148,7 +148,7 @@ const SPEC = {
 	'assurance.getDeployment': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 4000 },
 	'assurance.getPools': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['pools'], lists: ['pools'] }, refusals: [], budgetMs: 10000 },
 	'assurance.getQuote': { mode: 'read', key: false, params: () => ({ chainId: 8453, seller: ADDR, price: '100000' }), ok: { status: 200, fields: [] }, refusals: [{ why: 'not an integer price', params: { chainId: 8453, seller: ADDR, price: '1.5' }, status: [400] }], budgetMs: 10000 },
-	'assurance.stampGrade': { mode: 'plan', key: false, params: () => ({ chainId: 36927, stampSubject: '0x' + '11'.repeat(32), stampDigest: '0x' + '22'.repeat(32) }), ok: { status: 200, fields: [] }, refusals: [{ why: 'a subject that is not bytes32', params: { chainId: 36927, stampSubject: '0x11', stampDigest: '0x' + '22'.repeat(32) }, status: [400] }], budgetMs: 8000 },
+	'assurance.stampGrade': { mode: 'plan', key: false, params: () => ({ chainId: 36927, stampSubject: '0x' + '11'.repeat(32), stampDigest: '0x' + '22'.repeat(32), stampModel: 'model-1' }), ok: { status: 200, fields: [] }, refusals: [{ why: 'a subject that is not bytes32', params: { chainId: 36927, stampSubject: '0x11', stampDigest: '0x' + '22'.repeat(32) }, status: [400] }], budgetMs: 8000 },
 
 	// ── Catalog ──
 	'catalog.get': { mode: 'read', key: false, params: (ids) => ({ catalogId: ids.catalog }), ok: { status: 200, fields: [] }, refusals: [{ why: 'unknown id', params: { catalogId: 'cat_0000000000000000' }, status: [404] }], budgetMs: 8000 },
@@ -237,35 +237,12 @@ const SPEC = {
 	'job.getLedger': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['jobs'], lists: ['jobs'] }, refusals: [{ why: 'a shortened participant', params: { ledgerFilters: { participant: '0x3574…4f5b' } }, status: [400] }], budgetMs: 8000 },
 
 	// ── Judge ──
-	// Prepare (the two-step's first half): the facts and the questions, no Jev call, nothing recorded. One call and Answers are
-	// a Jev grade and a recorded decision: not called live (a gap, listed in docs/api-contract/N8N-OPS.md).
-	'judge.compose': {
-		mode: 'plan', key: false, params: (ids) => ({ composeHandshakeId: ids.handshake, composeMode: 'prepare' }),
-		ok: { status: 200, fields: ['facts', 'jev', 'prepare_digest'] },
-		refusals: [{ why: 'no subject', params: { composeHandshakeId: '', composeMode: 'prepare' }, status: [400], code: 'no_subject' }, { why: 'unknown handshake', params: { composeHandshakeId: 'hs_000000000000000000000000', composeMode: 'prepare' }, status: [404] }],
-		budgetMs: 15000,
-	},
 	'judge.getReady': { mode: 'read', key: false, params: () => ({ readyLimit: 5 }), ok: { status: 200, fields: ['jobs'], lists: ['jobs'] }, refusals: [], budgetMs: 15000 },
 	'judge.getReviewable': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['jobs'], lists: ['jobs'] }, refusals: [], budgetMs: 10000 },
 	'judge.getStages': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 4000 },
 	'judge.getTrace': { mode: 'read', key: false, params: (ids) => ({ traceChain: 8453, traceJobId: ids.traceJob }), ok: { status: 200, fields: [] }, refusals: [{ why: 'not a job id', params: { traceChain: 8453, traceJobId: 'abc' }, status: [400] }], budgetMs: 15000 },
 	'judge.giveFeedback': { mode: 'plan', key: false, params: () => ({ chainId: 36927, agentId: '1', digest: '0x' + '22'.repeat(32) }), ok: { status: 200, fields: [] }, refusals: [{ why: 'a digest that is not bytes32', params: { chainId: 36927, agentId: '1', digest: '0x22' }, status: [400] }], budgetMs: 8000 },
-	'judge.grade': {
-		mode: 'refusal-only', key: true, params: () => ({ items: '[{"id":"1","state":"delivered"}]' }), ok: { status: 200, fields: [] },
-		refusals: [{ why: 'no items', params: { items: '[]' }, status: [400] }],
-		gap: 'a grade is a Jev call (free quota or paid); only the refusal is called', budgetMs: 30000,
-	},
-	'judge.judgeRef': {
-		mode: 'refusal-only', key: true, params: () => ({ state: 'delivered' }), ok: { status: 200, fields: [] },
-		refusals: [{ why: 'no state', params: { state: '' }, status: [400] }],
-		gap: 'a Jev call; only the refusal is called', budgetMs: 30000,
-	},
 	'judge.postVerdict': { mode: 'plan', key: false, params: () => ({ chainId: 36927, jobId: ZERO32, digest: '0x' + '22'.repeat(32) }), ok: { status: 200, fields: [] }, refusals: [{ why: 'a digest that is not bytes32', params: { chainId: 36927, jobId: ZERO32, digest: '0x22' }, status: [400] }], budgetMs: 8000 },
-	'judge.recordAnswers': { operatorKey: true,
-		mode: 'refusal-only', key: true, params: () => ({ recordSubject: TEST_TAG, recordReply: '{"answers":[]}' }), ok: { status: 201, fields: ['digest'] },
-		refusals: [NO_KEY, { why: 'a record with no answers', params: { recordSubject: TEST_TAG, recordReply: '{"answers":[]}' }, status: [400] }],
-		gap: 'a record is stored and served publicly; only the refusals are called', budgetMs: 10000,
-	},
 	'judge.submitReview': {
 		mode: 'refusal-only', key: true, params: () => ({ reviewJobId: '1', reviewEvidence: '[]' }), ok: { status: 200, fields: [] },
 		refusals: [NO_KEY, { why: 'no evidence', params: { reviewJobId: '1', reviewEvidence: '[]' }, status: [400, 403] }],
@@ -299,11 +276,6 @@ const SPEC = {
 	'commerce.hire': { mode: 'plan', key: true, params: () => ({ chainId: 8453, seller: ADDR, price: '100000' }), ok: { status: 200, fields: ['calls'], lists: ['calls'] },
 		refusals: [{ why: 'not an integer price', params: { chainId: 8453, seller: ADDR, price: 'abc' }, status: [400, 422] }], budgetMs: 10000,
 		extra: [{ why: 'an offer is unsigned: no call carries a signature and nothing was sent', check: (j) => (JSON.stringify(j ?? {}).match(/"(signature|signedTx|raw_tx)"\s*:\s*"0x[0-9a-f]{20,}/i) ? ['a signed call'] : []) }] },
-	'commerce.grade': {
-		mode: 'refusal-only', key: true, params: () => ({ items: '[{"id":"1","state":"delivered"}]' }), ok: { status: 200, fields: [] },
-		refusals: [{ why: 'no items', params: { items: '[]' }, status: [400] }, { why: 'no TypeSafe key of your own', params: { items: '[{"id":"1","state":"delivered"}]' }, status: [402, 403] }],
-		gap: 'a grade is a Jev call on the caller\'s own TypeSafe key; only the refusals are called', budgetMs: 30000,
-	},
 	'commerce.settle': {
 		mode: 'plan', key: true, params: () => ({ kind: 'agent', chainId: 36927, buyer: '0x1111111111111111111111111111111111111111', seller: ADDR, price: '100000', evidence: '0x' + 'ab'.repeat(32), refId: TEST_TAG }),
 		ok: { status: 200, fields: ['calls'], lists: ['calls'] },

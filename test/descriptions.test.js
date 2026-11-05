@@ -35,7 +35,7 @@ test('Settle sends exactly the body POST /v1/settle reads: kind, chainId, buyer,
 });
 
 test('the three kinds are the layer’s three, and the devnet (free gas) is the default chain', () => {
-	assert.deepStrictEqual(prop('kind').options.map((o) => o.value).sort(), ['agent', 'jev', 'resource']);
+	assert.deepStrictEqual(prop('kind').options.map((o) => o.value).sort(), ['agent', 'resource']);
 	assert.strictEqual(prop('kind').default, 'agent');
 	const chain = d.properties.find((p) => p.name === 'chainId' && p.displayOptions.show.resource[0] === 'settlement');
 	assert.strictEqual(chain.default, 36927);
@@ -54,24 +54,11 @@ test('the relayer credential is offered on every resource (1.1.0: it carries the
 });
 
 test('Judge → Submit Review: the owner is optional once bound, and the binding signature rides as owner_signature', () => {
-	for (const n of ['reviewOwner', 'reviewOwnerSignature', 'reviewJev']) assert.strictEqual(field(n).in, 'reviewOptions', `${n} is an Additional Field`);
+	for (const n of ['reviewOwner', 'reviewOwnerSignature']) assert.strictEqual(field(n).in, 'reviewOptions', `${n} is an Additional Field`);
 	assert.strictEqual(prop('reviewOwner'), undefined, 'not top-level');
 	assert.strictEqual(field('reviewOwner').routing.send.property, 'owner');
 	assert.strictEqual(field('reviewOwnerSignature').routing.send.property, 'owner_signature');
 	assert.deepStrictEqual(field('reviewOwnerSignature').displayOptions.show.operation, ['submitReview']);
-});
-
-test('Judge → Compose Verdict posts /judge/compose with one subject: handshake_id or jobId + chainId', () => {
-	assert.deepStrictEqual(route('judge', 'compose'), { method: 'POST', url: '/judge/compose' });
-	assert.deepStrictEqual(prop('composeHandshakeId').displayOptions.show.composeSubject, ['handshake']);
-	assert.strictEqual(prop('composeHandshakeId').routing.send.property, 'handshake_id');
-	assert.deepStrictEqual(prop('composeJobId').displayOptions.show.composeSubject, ['job']);
-	assert.strictEqual(prop('composeJobId').routing.send.property, 'jobId');
-	assert.strictEqual(prop('composeChainId').routing.send.property, 'chainId');
-	const keys = flat(d.properties).filter((p) => p.name === 'key' && p.displayOptions.show.resource[0] === 'judge');
-	assert.ok(keys.some((k) => k.in === 'composeOptions' && k.displayOptions.show.operation.includes('compose')), 'a bring-your-own key applies to compose too');
-	assert.strictEqual(field('priceUsdc').in, 'composeOptions', 'the price is an Additional Field');
-	assert.strictEqual(ops('judge')[0].value, 'compose', 'alphabetical, as the linter demands');
 });
 
 test('Handshake → Open can address an MCP server or an A2A agent and dispatch a tool call', () => {
@@ -83,38 +70,6 @@ test('Handshake → Open can address an MCP server or an A2A agent and dispatch 
 	assert.strictEqual(by('args').routing.send.property, 'args');
 	assert.strictEqual(by('args').type, 'json');
 	assert.deepStrictEqual(opts.map((o) => o.displayName), [...opts.map((o) => o.displayName)].sort((a, b) => a.localeCompare(b)), 'options stay alphabetical');
-});
-
-test('Compose Verdict two-step: Prepare → your TypeSafe node → Answers, on your own credential', () => {
-	const mode = prop('composeMode');
-	assert.deepStrictEqual(mode.options.map((o) => o.value), ['answers', 'single', 'prepare']);
-	assert.strictEqual(mode.default, 'single', 'the one-call path stays the default');
-	assert.strictEqual(mode.routing.send.property, 'mode');
-	assert.match(mode.routing.send.value, /"single" \? undefined/, 'single sends no mode (the old body, byte for byte)');
-	const answersOnly = ['composeAnswers', 'composeModel', 'composePrepareDigest', 'composeAnsweredBy', 'composeExecutionId'];
-	const sent = Object.fromEntries(answersOnly.map((n) => [n, prop(n).routing.send.property]));
-	assert.deepStrictEqual(sent, { composeAnswers: 'answers', composeModel: 'model', composePrepareDigest: 'prepare_digest', composeAnsweredBy: 'answered_by', composeExecutionId: 'execution_id' });
-	for (const n of answersOnly) assert.deepStrictEqual(prop(n).displayOptions.show.composeMode, ['answers'], `${n} shows only in Answers mode`);
-	for (const n of answersOnly) assert.ok(prop(n).required, `${n} is required`);
-	const answersExtra = prop('composeAnswersOptions');
-	assert.deepStrictEqual(answersExtra.displayOptions.show.composeMode, ['answers']);
-	assert.deepStrictEqual(Object.fromEntries(answersExtra.options.map((o) => [o.name, o.routing.send.property])), { latencyMs: 'latency_ms', priceUsdc: 'price_usdc' });
-	assert.deepStrictEqual(prop('composeAnsweredBy').options.map((o) => o.value), ['n8n-typesafe']);
-	assert.match(prop('composeAnswers').routing.send.value, /JSON\.parse/, 'a JSON string is sent as an object');
-	assert.deepStrictEqual(prop('composeOptions').displayOptions.show.composeMode, ['single'], 'the key rides in One Call mode only');
-	for (const n of ['composePrepareOptions', 'composeAnswersOptions']) assert.ok(!prop(n).options.some((o) => o.name === 'key'), `no key travels in the two-step mode (${n})`);
-});
-
-test('Judge → Record Answers posts /judge/answers/record with the constants on hidden fields (_JEV_RECORD_v1_)', () => {
-	assert.deepStrictEqual(route('judge', 'recordAnswers'), { method: 'POST', url: '/judge/answers/record' });
-	const props = flat(d.properties).filter((p) => p.displayOptions?.show?.operation?.includes('recordAnswers'));
-	const sent = Object.fromEntries(props.map((p) => [p.routing?.send?.property, p]));
-	for (const k of ['use_case', 'subject', 'input', 'questions', 'jev', 'model', 'upstream_model', 'latency_ms', 'decision_digest', 'credential_path', 'caller']) assert.ok(sent[k], `sends ${k}`);
-	assert.strictEqual(sent.credential_path.type, 'hidden');
-	assert.strictEqual(sent.credential_path.default, 'caller-credential');
-	assert.strictEqual(sent.caller.default, 'n8n');
-	for (const k of ['upstream_model', 'latency_ms', 'decision_digest']) assert.strictEqual(sent[k].in, 'recordOptions', `${k} is an Additional Field`);
-	assert.strictEqual(d.credentials[0].displayOptions, undefined, 'the relayer key (X-API-Key) rides on judge ops');
 });
 
 test('Demand: Post / Get / Get Many hit /v1/demands, and each way of asking sends only its own fields', () => {
@@ -154,7 +109,7 @@ const onOp = (resource, op) =>
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '1.3.0');
+	assert.strictEqual(pkg.version, '2.0.0');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
@@ -272,21 +227,19 @@ test('README: the operation and resource counts are the built node’s', () => {
 	assert.doesNotMatch(readme, /Every read works without a key/, 'Chat and the key reads need the credential');
 });
 
-// ── 1.1.0: Commerce (hire, grade, settle as a plan), Template → List, and the channel on every call (_CHANNEL_SHARE_v1_) ──
+// ── 1.1.0: Commerce (hire, settle as a plan), Template → List, and the channel on every call (_CHANNEL_SHARE_v1_) ──
 const { buildRequest } = require('./live/node-request');
 const { TaifoonRelayerApi } = require('../dist/credentials/TaifoonRelayerApi.credentials.js');
 
-test('Commerce: Hire, Grade and Settle are the same requests as Job → Create Offer, Judge → Grade and Settlement → Settle (the MCP tools taifoon_hire, taifoon_grade, taifoon_settle_plan)', async () => {
-	assert.deepStrictEqual(ops('commerce').map((o) => o.value), ['grade', 'hire', 'settle'], 'alphabetical, as the linter demands');
+test('Commerce: Hire and Settle are the same requests as Job → Create Offer and Settlement → Settle (the MCP tools taifoon_hire, taifoon_settle_plan)', async () => {
+	assert.deepStrictEqual(ops('commerce').map((o) => o.value), ['hire', 'settle'], 'alphabetical, as the linter demands');
 	assert.deepStrictEqual(route('commerce', 'hire'), route('job', 'createOffer'));
-	assert.deepStrictEqual(route('commerce', 'grade'), route('judge', 'grade'));
 	assert.deepStrictEqual(route('commerce', 'settle'), route('settlement', 'settle'));
 	const same = async (a, b, params) => {
 		const x = await buildRequest(a[0], a[1], params); const y = await buildRequest(b[0], b[1], params);
 		assert.deepStrictEqual({ ...x, headers: undefined }, { ...y, headers: undefined }, `${a.join('.')} sends what ${b.join('.')} sends`);
 	};
 	await same(['commerce', 'hire'], ['job', 'createOffer'], { chainId: 8453, seller: '0x' + '11'.repeat(20), price: '100000', offerOptions: { deadline_hours: 48 } });
-	await same(['commerce', 'grade'], ['judge', 'grade'], { items: '[{"id":"1","state":"delivered"}]', question: 'Was it delivered?', key: 'ts_x' });
 	await same(['commerce', 'settle'], ['settlement', 'settle'], { kind: 'agent', chainId: 36927, buyer: '0x' + '11'.repeat(20), seller: '0x' + '22'.repeat(20), price: '100000', evidence: '0x' + 'ab'.repeat(32), refId: 'r1' });
 });
 
@@ -314,4 +267,14 @@ test('the credential’s Channel ID rides on every call as X-Taifoon-Channel (em
 		assert.strictEqual((await buildRequest(r, o, {}, { apiKey: 'tfr_x', channel: 'acme-agency' })).headers['X-Taifoon-Channel'], 'acme-agency', `${r}.${o}`);
 	}
 	assert.strictEqual((await buildRequest('commerce', 'hire', {}, { apiKey: 'tfr_x' })).headers['X-Taifoon-Channel'], 'n8n');
+});
+
+// ── 2.0.0: n8n review of 1.3.0: grading stays with the grader's own verified node; this node covers Taifoon's own services ──
+test('no operation or field calls a grading model, takes its key, or depends on another node\'s answers', () => {
+	assert.deepStrictEqual(ops('judge').map((o) => o.value), ['getReady', 'getReviewable', 'getStages', 'getTrace', 'giveFeedback', 'postVerdict', 'submitReview']);
+	assert.deepStrictEqual(ops('commerce').map((o) => o.value), ['hire', 'settle']);
+	for (const url of ['/judge/grade', '/judge/ref', '/judge/compose', '/judge/answers/record']) assert.ok(!JSON.stringify(d.properties).includes(`"${url}"`), `${url} is gone`);
+	for (const name of ['composeMode', 'composeAnsweredBy', 'recordReply', 'items', 'question', 'state', 'reviewJev', 'key']) assert.ok(!flat(d.properties).some((p) => p.name === name && ['judge', 'commerce'].includes(p.displayOptions?.show?.resource?.[0])), `${name} is gone`);
+	assert.doesNotMatch(JSON.stringify(d), /typesafe/i);
+	assert.strictEqual(d.credentials[0].displayOptions, undefined, 'the relayer key (X-API-Key) rides on every resource');
 });

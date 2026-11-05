@@ -1,10 +1,10 @@
 {
  "schema": "taifoon.n8n.workflow-runs.v1",
  "rule": "_N8N_RUNS_v1_",
- "at": "2026-11-03T18:52:35.870Z",
+ "at": "2026-11-05T16:06:11.576Z",
  "against": "https://coord.taifoon.dev",
  "n8n": "2.45.5",
- "node_package": "n8n-nodes-taifoon@1.3.0",
+ "node_package": "n8n-nodes-taifoon@2.0.0",
  "files": {
   "examples/1a-free-key-and-tenant.json": {
    "sha256": "eadaf6a3c98ed74d74ea1fe1e3a30784d3848010395bfafaa127447ad56a687a",
@@ -880,7 +880,7 @@
    "node_package": "n8n-nodes-taifoon@1.0.3"
   },
   "workflows/21-near-route-check.json": {
-   "sha256": "f3f1737ea4df3782493c2cf3b1234912aae0a9b8767fefdf486049ec11954728",
+   "sha256": "3dc7eede2c4bfc8b4283931b8e9213dbb9ba0a5cd0f06ec316f596732f8cf5c2",
    "name": "Taifoon × NEAR AI Cloud — one routed call, as NEAR's router makes it, and its settlement line",
    "paths": [
     {
@@ -927,21 +927,21 @@
        "node": "Settlement line",
        "path": "metered.step",
        "want": "~/^st_[0-9a-f]{16}$/",
-       "got": "st_4d1017e3f7599cca",
+       "got": "st_d7b0678c4e887af0",
        "ok": true
       },
       {
        "node": "Settlement line",
        "path": "settled.charge_matches_usage",
-       "want": "~/^(true|false)$/",
-       "got": false,
+       "want": true,
+       "got": true,
        "ok": true
       },
       {
        "node": "Settlement line",
        "path": "settled.usage_micro",
        "want": "~/^[0-9]+$/",
-       "got": 1,
+       "got": 4,
        "ok": true
       },
       {
@@ -954,7 +954,7 @@
      ]
     }
    ],
-   "at": "2026-11-03T18:41:02.973Z",
+   "at": "2026-11-03T19:12:51.505Z",
    "n8n": "2.45.5",
    "node_package": "n8n-nodes-taifoon@1.3.0"
   },
@@ -1376,7 +1376,7 @@
    "node_package": "n8n-nodes-taifoon@1.0.3"
   },
   "workflows/ours/16-chat-on-one-key.json": {
-   "sha256": "01851457f23c8e0a5a7cd6ab36dea80a25bc7bd05254b9dcd457fde59943a9d2",
+   "sha256": "e65f84d61cebf8117ab2004608a4ea6ebf361d57e06ed98517bc449d08a257c8",
    "name": "Taifoon: AI answers on one key, up to 0.001 USDC each (charged per token)",
    "paths": [
     {
@@ -1425,9 +1425,9 @@
      ]
     }
    ],
-   "at": "2026-11-03T18:52:35.870Z",
+   "at": "2026-11-05T16:06:11.576Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.3.0"
+   "node_package": "n8n-nodes-taifoon@2.0.0"
   },
   "workflows/ours/17-text-digest.json": {
    "sha256": "9c9f7ece1d7573a52d0e14396abe849ff4b4acea1490e88bc848fb9404ea2a7b",
@@ -2149,6 +2149,5 @@
    "n8n": "2.45.5",
    "node_package": "n8n-nodes-taifoon@1.0.3"
   }
- },
- "installed_from": "npm pack of the 1.3.0 source, before the npm publish"
+ }
 }

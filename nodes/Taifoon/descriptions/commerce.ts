@@ -1,13 +1,12 @@
 import type { INodeProperties } from 'n8n-workflow';
 import { jobOperations } from './job';
-import { judgeOperations } from './judge';
 import { settlementOperations } from './settlement';
 
 /**
- * Commerce: the three steps of one sale in one place, for n8n integrators and agencies. Hire (POST /v1/jobs), Grade
- * (POST /v1/judge/grade), Settle (POST /v1/settle) are the same requests as the MCP tools taifoon_hire, taifoon_grade and
- * taifoon_settle_plan, with the same fields as Job → Create Offer, Judge → Grade and Settlement → Settle (shown again here,
- * not copied: the fields below are those operations' own, re-bound to this resource).
+ * Commerce: the two steps of one sale in one place, for n8n integrators and agencies. Hire (POST /v1/jobs) and Settle
+ * (POST /v1/settle) are the same requests as the MCP tools taifoon_hire and taifoon_settle_plan, with the same fields as
+ * Job → Create Offer and Settlement → Settle (shown again here, not copied: the fields below are those operations' own,
+ * re-bound to this resource).
  *
  * Settle is a plan only: it answers the unsigned calls in order and who signs each. Nothing is signed or sent by the node;
  * the act happens in the signer's own wallet, never here.
@@ -17,7 +16,6 @@ import { settlementOperations } from './settlement';
  */
 const STEPS = [
 	{ from: ['job', 'createOffer'], to: 'hire' },
-	{ from: ['judge', 'grade'], to: 'grade' },
 	{ from: ['settlement', 'settle'], to: 'settle' },
 ] as const;
 
@@ -45,13 +43,6 @@ export const commerceOperations: INodeProperties[] = [
 		displayOptions: { show: { resource: ['commerce'] } },
 		options: [
 			{
-				name: 'Grade',
-				value: 'grade',
-				action: 'Grade delivered work',
-				description: 'Grade up to 4 items with one calibrated judge call on your own TypeSafe key (POST /v1/judge/grade). Same as the MCP tool taifoon_grade.',
-				routing: { request: { method: 'POST', url: '/judge/grade' } },
-			},
-			{
 				name: 'Hire',
 				value: 'hire',
 				action: 'Hire a seller',
@@ -69,7 +60,7 @@ export const commerceOperations: INodeProperties[] = [
 		default: 'hire',
 	},
 	...STEPS.flatMap(({ from: [resource, operation], to }) => {
-		const all = { job: jobOperations, judge: judgeOperations, settlement: settlementOperations }[resource];
+		const all = { job: jobOperations, settlement: settlementOperations }[resource];
 		return rebind(all, resource, operation, to);
 	}),
 ];

@@ -15,6 +15,7 @@ const { writeFileSync } = require('node:fs');
 const { operations } = require('./node-request');
 const { SPEC } = require('./ops.spec');
 const { BASE, PROBE_KEY, sampleIds, callOp } = require('./harness');
+const { timingOf, budgetNote } = require('./budget-note');
 
 const LIVE = Boolean(PROBE_KEY) || process.env.OPS_LIVE === '1';
 const results = [];
@@ -94,7 +95,7 @@ for (const op of operations()) {
 				let r = await callOp(op.resource, op.operation, params, { key: s.key });
 				// one retry for a blink of the upstream (a timeout or 5xx), never for a 4xx
 				if (r.status === 0 || r.status >= 500) { await new Promise((ok) => setTimeout(ok, 2000)); r = await callOp(op.resource, op.operation, params, { key: s.key }); }
-				record({ op: id, kind: 'success', status: r.status, ms: Math.round(r.ms), bytes: r.bytes, budgetMs: s.budgetMs, ok: statusIn(r.status, s.ok.status) });
+				record({ op: id, kind: 'success', status: r.status, ms: Math.round(r.ms), bytes: r.bytes, budgetMs: s.budgetMs, timing: timingOf(r), ok: statusIn(r.status, s.ok.status) });
 				assert.ok(statusIn(r.status, s.ok.status), `status ${r.status}, want ${s.ok.status}: ${r.text?.slice(0, 300)}`);
 				assert.match(r.type, /application\/json/, 'Content-Type is JSON');
 				assert.ok(r.json && typeof r.json === 'object', 'a JSON body');
@@ -105,7 +106,7 @@ for (const op of operations()) {
 				for (const f of s.ok.nonEmpty ?? []) assert.ok(r.json[f].length > 0, `list ${f} is empty`);
 				const problems = validate(r.json, d.schema);
 				assert.deepEqual(problems, [], `the answer does not match the declared schema of ${d.path}`);
-				assert.ok(r.ms <= s.budgetMs, `took ${Math.round(r.ms)} ms, budget ${s.budgetMs} ms`);
+				assert.ok(r.ms <= s.budgetMs, budgetNote(r, s.budgetMs));
 			});
 			if (s.mode === 'idempotent' || s.mode === 'dry-run') {
 				await t.test(`${s.mode}: a repeat answers the same and keeps nothing`, async () => {

@@ -6,7 +6,7 @@
   <a href="https://www.npmjs.com/package/n8n-nodes-taifoon"><img src="https://img.shields.io/npm/v/n8n-nodes-taifoon?style=flat-square&labelColor=000000&color=3DA5FF&label=npm" alt="npm"></a>
   <img src="https://img.shields.io/badge/provenance-signed-00B5B8?style=flat-square&labelColor=000000" alt="provenance">
   <img src="https://img.shields.io/badge/dependencies-0-E6F0F7?style=flat-square&labelColor=000000" alt="no dependencies">
-  <img src="https://img.shields.io/badge/operations-90-3DA5FF?style=flat-square&labelColor=000000" alt="90 operations">
+  <img src="https://img.shields.io/badge/operations-85-3DA5FF?style=flat-square&labelColor=000000" alt="85 operations">
 </p>
 
 Hire AI agents and call paid APIs from an n8n workflow. Every paid call states its price before it runs, the answer is
@@ -16,7 +16,7 @@ wallet to sign. The node holds no key that can move money.
 ## Install
 
 Self-hosted n8n → **Settings → Community Nodes → Install** → `n8n-nodes-taifoon`. Two nodes come with it:
-**Taifoon** (90 operations, 19 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
+**Taifoon** (85 operations, 19 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
 [`/v1/openapi.json`](https://coord.taifoon.dev/v1/openapi.json)) and **Taifoon Trigger** (a job changed). Tested on n8n
 2.45.5; Node.js 20.15 or later.
 
@@ -34,7 +34,7 @@ Leave the optional Channel ID empty.
 | Get an AI answer without an OpenAI account or a card on file | Inference → Chat (OpenAI-compatible), List Models | [`16-chat-on-one-key.json`](workflows/ours/16-chat-on-one-key.json) |
 | Check a wallet address before you pay it | built-in HTTP Request nodes on `POST /v1/x402/class/risk.address` | [`18-address-risk.json`](workflows/ours/18-address-risk.json), [`19-safe-payout-desk.json`](workflows/ours/19-safe-payout-desk.json) |
 | Have work done from a sentence, without choosing who does it | Demand → Post, Demand → Get, Proof → Verify Hire Claim | [`10-buy-through-taifoon.json`](workflows/10-buy-through-taifoon.json), [example 2](examples/2-buyer-need-to-verified.json) |
-| Hire a specific agent, with its price and cover quoted first | Agent → Match, Assurance → Get Quote, Handshake → Open, Job → Create Offer; or Commerce → Hire, Grade, Settle (Plan) | [`1-n8n-hires-on-chain.json`](workflows/1-n8n-hires-on-chain.json) |
+| Hire a specific agent, with its price and cover quoted first | Agent → Match, Assurance → Get Quote, Handshake → Open, Job → Create Offer; or Commerce → Hire, Settle (Plan) | [`1-n8n-hires-on-chain.json`](workflows/1-n8n-hires-on-chain.json) |
 | Offer a workflow as a service other agents can hire | a Webhook that answers each job; Account → Register Seller, Verify Seller to list it | [`12`](workflows/12-sell-digest.json), [`13`](workflows/13-sell-json-normalize.json), [`14`](workflows/14-sell-word-count.json), [`24`](workflows/24-n8n-sells-through-taifoon.json), [example 3](examples/3-seller-claim-verify-complete.json) |
 | Prove that a transaction happened on a chain | Proof → Get Root, Get Transaction Proof, Verify Hire Claim | [example 6](examples/6-proof-root-and-tx.json) |
 | Run a step when a job completes | Taifoon Trigger, Proof → Verify Hire Claim | [`3-watch-the-chain.json`](workflows/3-watch-the-chain.json) |
@@ -99,7 +99,7 @@ Sign them with the wallet you already use. The node never sends a transaction.
 | Agreement | List Agreements, Accept Agreement |
 | Assurance | Get Pools, Get Quote, Build Call, Stamp Grade, Get Deployment |
 | Catalog | Get Many, Get, Get Many Listings, Get Listing |
-| Commerce | Hire, Grade, Settle (Plan) |
+| Commerce | Hire, Settle (Plan) |
 | Completion | Submit, Get Status |
 | Demand | Post, Get, Get Many |
 | Discovery | Get Capabilities, Search Capabilities, Get Capability Skills, Get Standards |
@@ -108,7 +108,7 @@ Sign them with the wallet you already use. The node never sends a transaction.
 | Helpdesk | Ask, Get Graph, Get Weakest, Answer Case, Grade Case, Tune Loop, Nominate Expert, Accept Nomination, Revoke Nomination |
 | Inference | Chat, List Models |
 | Job | Create Offer, Get Changed, Get Ledger |
-| Judge | Grade, Judge One, Compose Verdict, Record Answers, Get Ready Jobs, Get Reviewable Jobs, Get Stages, Get Trace, Submit Review, Post Verdict (Unsigned), Give Feedback (Unsigned) |
+| Judge | Get Ready Jobs, Get Reviewable Jobs, Get Stages, Get Trace, Submit Review, Post Verdict (Unsigned), Give Feedback (Unsigned) |
 | Proof | Get Root, Get Transaction Proof, Verify Hire Claim |
 | Reseller Key | Mint Child Key, List Child Keys, Revoke Child Key, Mint Promo, List Promos, Redeem Promo, Enrol Client Vault, List Client Vaults |
 | Settlement | Settle, Get, Get Many |
@@ -144,7 +144,7 @@ it: [taifoon.io/docs/n8n](https://www.taifoon.io/docs/n8n#workflows); the listin
 [`workflows/TEMPLATES.md`](workflows/TEMPLATES.md).
 
 <!-- workflow-runs -->
-Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.3.0, n8n-nodes-taifoon@1.2.2, n8n-nodes-taifoon@1.0.3 against `coord.taifoon.dev` (2026-10-28, 2026-10-30, 2026-11-03): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
+Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.3.0, n8n-nodes-taifoon@1.2.2, n8n-nodes-taifoon@1.0.3, n8n-nodes-taifoon@2.0.0 against `coord.taifoon.dev` (2026-10-28, 2026-10-30, 2026-11-03, 2026-11-05): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
 
 | Workflow | Trigger → result |
 |---|---|

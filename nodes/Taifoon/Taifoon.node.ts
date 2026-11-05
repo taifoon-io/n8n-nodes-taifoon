@@ -39,7 +39,7 @@ export class Taifoon implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Hire on-chain agents and be hired by them: match, quote, fund, judge, settle, and verify against the chain',
+		description: 'Hire on-chain agents and be hired by them: match, quote, fund, settle, and verify against the chain',
 		defaults: { name: 'Taifoon' },
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
@@ -54,8 +54,7 @@ export class Taifoon implements INodeType {
 				// the node in n8n; the linter does not see it. Without a key, Completion is answered
 				// 401 "X-API-Key header required" by the relayer itself.
 				required: false,
-				// Judge calls count against the key's own quota when it is present; Settlement plans need none
-				// but a hire workflow carries one credential for all its keyed steps. Handshake: a key opens it on
+				// Settlement plans need no key but a hire workflow carries one credential for all its keyed steps. Handshake: a key opens it on
 				// the key's own budget (else the n8n host is a visitor, 5 a minute) and only that key may attach
 				// its job; Job → Create Offer with a handshake id needs the key that opened it; Judge → Submit
 				// Review needs it (the reviewer IS the key, bound to one owner wallet). Demand: a key posts on its own
@@ -68,7 +67,7 @@ export class Taifoon implements INodeType {
 		requestDefaults: {
 			baseURL: 'https://coord.taifoon.dev/v1',
 			// X-Taifoon-Client lets the layer attribute node traffic; kept equal to package.json's version (a test checks it)
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/1.3.0' },
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/2.0.0' },
 		},
 		properties: [
 			{
@@ -82,7 +81,7 @@ export class Taifoon implements INodeType {
 					{ name: 'Agreement', value: 'agreement', description: 'What your key accepted (TSUL-1.1, TAT, TEL, VAULT-GRANT, CLA) and record an acceptance' },
 					{ name: 'Assurance', value: 'assurance', description: 'Price the guarantee and build unsigned calls' },
 					{ name: 'Catalog', value: 'catalog', description: 'Every agent you can hire, with its price, and the listings' },
-					{ name: 'Commerce', value: 'commerce', description: 'Hire an agent, grade its answer, and plan the settlement for your own wallet to sign' },
+					{ name: 'Commerce', value: 'commerce', description: 'Hire an agent and plan the settlement for your own wallet to sign' },
 					{ name: 'Completion', value: 'completion', description: 'Hand finished work to the relayer (needs an API key)' },
 					{ name: 'Demand', value: 'demand', description: 'Say what you need; the layer matches, hires, grades and settles it' },
 					{ name: 'Discovery', value: 'discovery', description: 'Verified standards deployments and the n8n capability index' },
@@ -91,7 +90,7 @@ export class Taifoon implements INodeType {
 					{ name: 'Helpdesk', value: 'helpdesk', description: 'Show Me Around ++: ask one question about a product, answer and grade cases, nominate experts, read the graph' },
 					{ name: 'Inference', value: 'inference', description: 'List the models and run one OpenAI-compatible chat completion, metered on your key' },
 					{ name: 'Job', value: 'job', description: 'Poll jobs, read the ledger, create an offer' },
-					{ name: 'Judge', value: 'judge', description: 'Grade work with the calibrated judge and leave the trail on chain (unsigned calls)' },
+					{ name: 'Judge', value: 'judge', description: 'Read the jobs ready for a grade, review deliveries, and leave a grade on chain (unsigned calls)' },
 					{ name: 'Proof', value: 'proof', description: 'Prove a transaction, or check a claim against the chain' },
 					{ name: 'Reseller Key', value: 'resellerKey', description: 'A key with its own spending cap for each client you build workflows for' },
 					{ name: 'Settlement', value: 'settlement', description: 'Settle one paid call on the assurance hook (unsigned calls, in order)' },

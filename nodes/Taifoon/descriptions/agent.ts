@@ -179,7 +179,7 @@ export const agentOperations: INodeProperties[] = [
 				name: 'nodeName',
 				type: 'string',
 				default: '',
-				placeholder: 'n8n-nodes-typesafe',
+				placeholder: 'n8n-nodes-example',
 				description: 'Derive the card from this indexed community node',
 				routing: { send: { type: 'body', property: 'capability', value: '={{ $value ? { kind: "node", name: $value } : undefined }}' } },
 			},

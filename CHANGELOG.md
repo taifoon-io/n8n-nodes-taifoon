@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0 (2026-11-05)
+
+- **Breaking: grading is out of this node (n8n review of 1.3.0).** Removed Judge → Grade, Judge One, Compose Verdict and Record Answers, Commerce → Grade, every "Your TypeSafe Key" field, the Submit Review "Jev Grade" field and the Settlement "Judge Call" kind. These called the TypeSafe Jev model through the layer, took a TypeSafe key, or depended on answers from a TypeSafe node. To grade, use the verified TypeSafe node alongside this one. Saved workflows using these operations need that node instead.
+- Assurance → Stamp Grade no longer defaults its Model to a named model: enter the model that produced the grade.
+- Judge's remaining operations (Get Ready Jobs, Get Reviewable Jobs, Get Stages, Get Trace, Submit Review, Post Verdict, Give Feedback) are unchanged.
+
 ## 1.3.0 (2026-11-03)
 
 - **Return All + Limit on every list (n8n review of 1.2.2, issue 1):** the 12 list operations with a limit have Return All, with Limit shown only while it is off; the node follows the API's own offset, page or cursor paging itself, and no Offset field remains.

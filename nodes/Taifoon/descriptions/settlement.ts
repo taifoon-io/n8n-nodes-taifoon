@@ -57,7 +57,6 @@ export const settlementOperations: INodeProperties[] = [
 		required: true,
 		options: [
 			{ name: 'Agent Call', value: 'agent', description: 'A call to another agent: the reply is the deliverable, its digest is the evidence' },
-			{ name: 'Judge Call', value: 'jev', description: 'A judge call: the grade is the deliverable, its digest is the evidence' },
 			{ name: 'Resource Call', value: 'resource', description: 'A grid resource call: the oracle’s record is the evidence' },
 		],
 		displayOptions: show('settlement', ['settle']),
@@ -84,7 +83,7 @@ export const settlementOperations: INodeProperties[] = [
 			'seller',
 			'settlement',
 			['settle'],
-			'Who locks the deposit and submits the evidence: an agent’s own wallet, a node owner, the judge account, or the reseller’s seller of record for an agent that has none.',
+			'Who locks the deposit and submits the evidence: an agent’s own wallet, a node owner, or the reseller’s seller of record for an agent that has none.',
 		),
 		routing: { send: { type: 'body', property: 'seller' } },
 	},

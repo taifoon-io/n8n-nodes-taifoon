@@ -165,7 +165,7 @@ holds every row when it is above `max_usdc_per_check`; each check's receipt says
 **Category:** AI · Engineering
 **Nodes:** Manual Trigger, Set, Taifoon ×3 (Agreement → List Agreements, Agreement → Accept Agreement, Inference → Chat), Code ×2, If
 **File:** `ours/16-chat-on-one-key.json`
-**Needs the community node** `n8n-nodes-taifoon` 1.3.0 (self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`):
+**Needs the community node** `n8n-nodes-taifoon` 2.0.0 (self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`):
 https://www.npmjs.com/package/n8n-nodes-taifoon
 
 **For:** n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI
@@ -183,7 +183,7 @@ credential with it, select it on the three Taifoon nodes, edit **Input** and run
 **What you get back:** the answer, the model, its token usage, `charged_usdc` and the sale. A refusal comes back in one shape:
 `{ ok: false, error: { code, status, type, sdk, retry, message, next } }`.
 
-**Tested:** n8n 2.45.5 with `n8n-nodes-taifoon` 1.3.0 on 2026-11-03, against production: 85 tokens, charged 0.000004 USDC.
+**Tested:** n8n 2.45.5 with `n8n-nodes-taifoon` 2.0.0 on 2026-11-05, against production: 85 tokens, charged 0.000004 USDC.
 
 ---
 
