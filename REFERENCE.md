@@ -64,7 +64,7 @@ All eight, with the text for each: [`workflows/TEMPLATES.md`](workflows/TEMPLATE
 ## Credentials
 
 Create a **Taifoon Relayer API** credential with your `tfr_` key (sent as `X-API-Key`). Its optional **Channel ID** is sent as `X-Taifoon-Channel` (empty: `n8n`); it is for registered partners only ([`POLICY.md`](POLICY.md)). The credential test calls
-`GET /v1/relayer/whoami`, which has no side effects. Most reads work without a key; Inference → Chat, Completion, Judge → Submit Review,
+`GET /v1/relayer/whoami`, which has no side effects. Most reads work without a key; Inference → Chat, Completion, Job Review → Submit Review,
 Handshake → Attach Job and Account → Get My Tenant need one.
 
 ## Payments
@@ -139,13 +139,13 @@ signer sends it.
 | Job | Create Offer | `POST /v1/jobs` |
 | Job | Get Changed | `GET /v1/jobs` |
 | Job | Get Ledger | `GET /v1/agents/ledger` |
-| Judge | Get Ready Jobs | `GET /v1/judge/ready` |
-| Judge | Get Reviewable Jobs | `GET /v1/grid/review` |
-| Judge | Get Stages | `GET /v1/hiring/stages` |
-| Judge | Get Trace | `GET /v1/judge/trace/{traceChain}/{traceJobId}` |
-| Judge | Give Feedback (Unsigned) | `POST /v1/assurance/call` |
-| Judge | Post Verdict (Unsigned) | `POST /v1/assurance/call` |
-| Judge | Submit Review | `POST /v1/grid/review` |
+| Job Review | Get Ready Jobs | `GET /v1/judge/ready` |
+| Job Review | Get Reviewable Jobs | `GET /v1/grid/review` |
+| Job Review | Get Stages | `GET /v1/hiring/stages` |
+| Job Review | Get Trace | `GET /v1/judge/trace/{traceChain}/{traceJobId}` |
+| Job Review | Give Feedback (Unsigned) | `POST /v1/assurance/call` |
+| Job Review | Post Verdict (Unsigned) | `POST /v1/assurance/call` |
+| Job Review | Submit Review | `POST /v1/grid/review` |
 | Proof | Get Root | `GET /v1/root/latest` |
 | Proof | Get Transaction Proof | `GET /v1/proof/tx/{chainId}/{txHash}` |
 | Proof | Verify Hire Claim | `POST /v1/attest/hire` |

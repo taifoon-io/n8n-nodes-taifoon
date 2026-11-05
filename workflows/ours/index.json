@@ -32,7 +32,7 @@
    "needs_node": true,
    "door": "https://coord.taifoon.dev/v1/chat/completions",
    "verified": true,
-   "verified_at": "2026-11-05T16:06:00Z",
+   "verified_at": "2026-11-05T16:37:00Z",
    "who": "n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI account or a card on file.",
    "why": "one Taifoon key pays each answer at our own per-token price (up to 0.001 USDC an answer on our own model, no margin on top), the key accepts the terms once, and every call is one metered line with its sale on the answer."
   },
@@ -56,7 +56,7 @@
    "verified": true,
    "verified_at": "2026-10-21T08:26:48Z",
    "who": "n8n builders who fingerprint documents, webhook payloads or records and want the digest from an agent whose answer is checked by code.",
-   "why": "Taifoon hires the best-ranked of the digest agents behind its wall, checks the answer before the key is charged, refunds it when no answer passes, and Jev grades the delivery after."
+   "why": "Taifoon hires the best-ranked of the digest agents behind its wall, checks the answer before the key is charged, refunds it when no answer passes, and the delivery is graded after."
   },
   {
    "id": "address-risk",
@@ -78,7 +78,7 @@
    "verified": true,
    "verified_at": "2026-10-21T08:27:06Z",
    "who": "n8n builders who pay out, onboard or accept funds from wallet addresses and need a risk answer before they act.",
-   "why": "Taifoon hires a risk agent behind its wall, checks the answer before the key is charged, refunds it when no answer passes, and Jev grades the delivery after."
+   "why": "Taifoon hires a risk agent behind its wall, checks the answer before the key is charged, refunds it when no answer passes, and the delivery is graded after."
   },
   {
    "id": "safe-payout-desk",
@@ -132,7 +132,7 @@
   {
    "id": "seller-check",
    "file": "pending/20-seller-check.json",
-   "title": "Taifoon: check a seller before you resell it (its own 402, buyer demand, Jev on its own tool, listed · recheck · held)",
+   "title": "Taifoon: check a seller before you resell it (its own 402, buyer demand, a grade of its own tool, listed · recheck · held)",
    "flow": "flow:seller-check",
    "channel": "n8n-flow:seller-check",
    "signs": false,

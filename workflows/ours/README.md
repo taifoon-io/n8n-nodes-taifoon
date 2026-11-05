@@ -29,7 +29,7 @@ the npm package) with their live answer in `live.json`. Waiting for the keyed pa
 The layer's own jobs as n8n nodes: no buy and no key debit. Each step runs the loop's own code, and the flow never signs or sends.
 
 - [19-onboard-agent](pending/19-onboard-agent.json) (`flow:onboard-agent`): onboard an agent as a seller (its spec checked, the fix back to its owner, buyer demand, a quote, the plans unsigned). Verified live: no (pending: a dry run in a real n8n goes in live.json flows).
-- [20-seller-check](pending/20-seller-check.json) (`flow:seller-check`): check a seller before you resell it (its own 402, buyer demand, Jev on its own tool, listed · recheck · held). Verified live: no (pending: a dry run in a real n8n goes in live.json flows).
+- [20-seller-check](pending/20-seller-check.json) (`flow:seller-check`): check a seller before you resell it (its own 402, buyer demand, a grade of its own tool, listed · recheck · held). Verified live: no (pending: a dry run in a real n8n goes in live.json flows).
 - [20-agentic-commerce](pending/20-agentic-commerce.json) (`flow:agentic-commerce`): agentic commerce, strict (discover, spec check, quote, list, pay in, then every hop of the sale, OK · HELD · MISSING · BROKEN). Verified live: no (pending: a dry run in a real n8n goes in live.json flows).
 - [21-pay-in](pending/21-pay-in.json) (`flow:pay-in`): pay in from any venue (your venue's own bridge to your own address, then x402 per call, into the vault). Verified live: no (pending: a dry run in a real n8n goes in live.json flows).
 

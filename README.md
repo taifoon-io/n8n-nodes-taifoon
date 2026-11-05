@@ -72,7 +72,7 @@ The answer is OpenAI's shape (`choices[0].message.content`, `usage`), plus `taif
 
 ### Settle with your own wallet
 
-**Commerce → Settle (Plan)** and the Assurance and Judge writes return the calls to make, in order, each naming who signs.
+**Commerce → Settle (Plan)** and the Assurance and Job Review writes return the calls to make, in order, each naming who signs.
 The first of the calls Settle (Plan) answers on the Taifoon devnet:
 
 ```json
@@ -108,7 +108,7 @@ Sign them with the wallet you already use. The node never sends a transaction.
 | Helpdesk | Ask, Get Graph, Get Weakest, Answer Case, Grade Case, Tune Loop, Nominate Expert, Accept Nomination, Revoke Nomination |
 | Inference | Chat, List Models |
 | Job | Create Offer, Get Changed, Get Ledger |
-| Judge | Get Ready Jobs, Get Reviewable Jobs, Get Stages, Get Trace, Submit Review, Post Verdict (Unsigned), Give Feedback (Unsigned) |
+| Job Review | Get Ready Jobs, Get Reviewable Jobs, Get Stages, Get Trace, Submit Review, Post Verdict (Unsigned), Give Feedback (Unsigned) |
 | Proof | Get Root, Get Transaction Proof, Verify Hire Claim |
 | Reseller Key | Mint Child Key, List Child Keys, Revoke Child Key, Mint Promo, List Promos, Redeem Promo, Enrol Client Vault, List Client Vaults |
 | Settlement | Settle, Get, Get Many |
@@ -137,6 +137,8 @@ settled job and its receipts):
 
 The full take, 3 minutes, including the node as an AI agent's tool: [`assets/review-1.2.0.mp4`](https://github.com/taifoon-io/n8n-nodes-taifoon/raw/main/assets/review-1.2.0.mp4).
 
+These recordings were made on 1.2.0, when the node had 90 operations. Five grading operations have been removed since (see the [changelog](CHANGELOG.md)); nothing the recordings show has changed.
+
 ## Workflows, tested
 
 Import any of these by URL or from the file (n8n → Workflows → Import). Who each one is for, what it needs and how to test
@@ -144,7 +146,7 @@ it: [taifoon.io/docs/n8n](https://www.taifoon.io/docs/n8n#workflows); the listin
 [`workflows/TEMPLATES.md`](workflows/TEMPLATES.md).
 
 <!-- workflow-runs -->
-Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.3.0, n8n-nodes-taifoon@1.2.2, n8n-nodes-taifoon@1.0.3, n8n-nodes-taifoon@2.0.0 against `coord.taifoon.dev` (2026-10-28, 2026-10-30, 2026-11-03, 2026-11-05): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
+Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@1.3.0, n8n-nodes-taifoon@1.2.2, n8n-nodes-taifoon@1.0.3, n8n-nodes-taifoon@2.0.1 against `coord.taifoon.dev` (2026-10-28, 2026-10-30, 2026-11-03, 2026-11-05): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
 
 | Workflow | Trigger → result |
 |---|---|

@@ -2,7 +2,7 @@ import type { INodeProperties } from 'n8n-workflow';
 import { show, address, ASSURANCE_CHAINS } from './shared';
 
 /**
- * Settlement — the last step of a hire. One paid call (a judge call, a call to another agent, a grid
+ * Settlement — the last step of a hire. One paid call (a call to another agent, a grid
  * resource call) becomes one insured job on the assurance hook: the seller of record locks its deposit,
  * the buyer funds price + premium, the seller submits the evidence digest, the buyer completes, and the
  * x402 capture binds the payment to the job. `Settle` answers with the UNSIGNED calls in that order,
@@ -165,7 +165,7 @@ export const settlementOperations: INodeProperties[] = [
 				name: 'note',
 				type: 'string',
 				default: '',
-				description: 'Kept for the record — the judge decision ID, the agent that did the work, anything the settlement should remember',
+				description: 'Kept for the record — the decision ID, the agent that did the work, anything the settlement should remember',
 				routing: { send: { type: 'body', property: 'ref.note', value: '={{ $value || undefined }}' } },
 			},
 			{

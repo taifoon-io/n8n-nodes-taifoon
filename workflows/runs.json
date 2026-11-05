@@ -1,10 +1,10 @@
 {
  "schema": "taifoon.n8n.workflow-runs.v1",
  "rule": "_N8N_RUNS_v1_",
- "at": "2026-11-05T16:06:11.576Z",
+ "at": "2026-11-05T16:38:07.724Z",
  "against": "https://coord.taifoon.dev",
  "n8n": "2.45.5",
- "node_package": "n8n-nodes-taifoon@2.0.0",
+ "node_package": "n8n-nodes-taifoon@2.0.1",
  "files": {
   "examples/1a-free-key-and-tenant.json": {
    "sha256": "eadaf6a3c98ed74d74ea1fe1e3a30784d3848010395bfafaa127447ad56a687a",
@@ -1376,7 +1376,7 @@
    "node_package": "n8n-nodes-taifoon@1.0.3"
   },
   "workflows/ours/16-chat-on-one-key.json": {
-   "sha256": "e65f84d61cebf8117ab2004608a4ea6ebf361d57e06ed98517bc449d08a257c8",
+   "sha256": "5d5e799eb541d8ac5d72361f74262d749f32c22701c57d25f7a449bc4154061f",
    "name": "Taifoon: AI answers on one key, up to 0.001 USDC each (charged per token)",
    "paths": [
     {
@@ -1425,12 +1425,12 @@
      ]
     }
    ],
-   "at": "2026-11-05T16:06:11.576Z",
+   "at": "2026-11-05T16:37:34.334Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@2.0.0"
+   "node_package": "n8n-nodes-taifoon@2.0.1"
   },
   "workflows/ours/17-text-digest.json": {
-   "sha256": "9c9f7ece1d7573a52d0e14396abe849ff4b4acea1490e88bc848fb9404ea2a7b",
+   "sha256": "0014694afef9d91fe41323b1cb8b425b872209478063580042982c78919efbcf",
    "name": "Taifoon: the sha256 digest of a text, from a checked agent",
    "paths": [
     {
@@ -1479,12 +1479,12 @@
      ]
     }
    ],
-   "at": "2026-10-30T09:48:28.588Z",
+   "at": "2026-11-05T16:31:16.623Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.2.2"
+   "node_package": "n8n-nodes-taifoon@2.0.1"
   },
   "workflows/ours/18-address-risk.json": {
-   "sha256": "6c7b64700cec7a0691df8c2ca8437769a1a8878c6bf29306f696770098cfdd21",
+   "sha256": "6003290927c0403276d9a973a436471e4120cb963cd8a574d709116dbf161ec9",
    "name": "Taifoon: is this wallet address risky? A checked answer before you pay out",
    "paths": [
     {
@@ -1533,9 +1533,9 @@
      ]
     }
    ],
-   "at": "2026-10-30T09:48:28.588Z",
+   "at": "2026-11-05T16:31:16.623Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.2.2"
+   "node_package": "n8n-nodes-taifoon@2.0.1"
   },
   "workflows/ours/19-safe-payout-desk.json": {
    "sha256": "74093ce1edb07a51f970ea4b847da514a41c8568006f3730aaaf4aebd137ae03",
@@ -1940,8 +1940,8 @@
    "node_package": "n8n-nodes-taifoon@1.0.3"
   },
   "workflows/ours/pending/20-seller-check.json": {
-   "sha256": "3bb7a7a0597216cffd511e65ba8ecf88cd0d1964d72d809960d8a4fe11091ecb",
-   "name": "Taifoon: check a seller before you resell it (its own 402, buyer demand, Jev on its own tool, listed · recheck · held)",
+   "sha256": "7973ceb5ed9e5067a5e11dcf77b1cc24f087feb849f6201ff968d349a90ea25d",
+   "name": "Taifoon: check a seller before you resell it (its own 402, buyer demand, a grade of its own tool, listed · recheck · held)",
    "paths": [
     {
      "trigger": "Daily",
@@ -2086,9 +2086,9 @@
      ]
     }
    ],
-   "at": "2026-11-03T18:41:02.973Z",
+   "at": "2026-11-05T16:38:07.724Z",
    "n8n": "2.45.5",
-   "node_package": "n8n-nodes-taifoon@1.3.0"
+   "node_package": "n8n-nodes-taifoon@2.0.1"
   },
   "workflows/ours/pending/21-pay-in.json": {
    "sha256": "93ec2334c19aaf54849c59f9806d531841ff94e8cfb17298f01bafce21a55c2d",

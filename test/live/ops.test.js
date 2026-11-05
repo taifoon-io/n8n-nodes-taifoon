@@ -15,6 +15,7 @@ const { writeFileSync } = require('node:fs');
 const { operations } = require('./node-request');
 const { SPEC } = require('./ops.spec');
 const { BASE, PROBE_KEY, sampleIds, callOp } = require('./harness');
+const { refusalWants } = require('./refusal');
 const { timingOf, budgetNote } = require('./budget-note');
 
 const LIVE = Boolean(PROBE_KEY) || process.env.OPS_LIVE === '1';
@@ -139,10 +140,11 @@ for (const op of operations()) {
 				const params = rf.params ?? s.params(await ids());
 				const r = await callOp(op.resource, op.operation, params, { key: s.key, as: rf.noKey ? 'noKey' : rf.badKey ? 'badKey' : 'ok' });
 				const undone = s.cleanup ? await s.cleanup(r.json) : 0;
-				record({ op: id, kind: 'refusal', why: rf.why, status: r.status, ms: Math.round(r.ms), ok: statusIn(r.status, rf.status) && !undone });
+				const wantCode = refusalWants(rf, r.status);
+				record({ op: id, kind: 'refusal', why: rf.why, status: r.status, ms: Math.round(r.ms), ok: wantCode !== false && !undone });
 				assert.equal(undone, 0, `the refusal created ${undone} thing(s), revoked again`);
 				assert.ok(r.status < 500, `a refusal must never be a 5xx (got ${r.status}): ${r.text?.slice(0, 200)}`);
-				assert.ok(statusIn(r.status, rf.status), `status ${r.status}, want ${rf.status}: ${r.text?.slice(0, 300)}`);
+				assert.ok(wantCode !== false, `status ${r.status}, want ${rf.status}${rf.cap ? ` or the cap's ${rf.cap.status}` : ''}: ${r.text?.slice(0, 300)}`);
 				assert.match(r.type, /application\/json/, 'Content-Type is JSON');
 				assert.equal(r.json?.ok, false, 'ok:false');
 				assert.equal(typeof r.json?.code, 'string', 'a code');
@@ -150,7 +152,7 @@ for (const op of operations()) {
 				if (s.openai) for (const f of ['message', 'type', 'code']) assert.ok(typeof r.json?.error?.[f] === 'string' && r.json.error[f].length > 0, `the OpenAI error object carries ${f}`);
 				else assert.ok(typeof r.json?.error === 'string' && r.json.error.length > 0, 'an error message');
 				assert.ok(r.json?.next_step && typeof r.json.next_step === 'object', 'a next_step');
-				if (rf.code) assert.equal(r.json.code, rf.code);
+				if (wantCode) assert.equal(r.json.code, wantCode);
 				noSecrets(r.text, `${id} refusal`);
 			});
 		}

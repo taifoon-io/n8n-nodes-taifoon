@@ -58,7 +58,7 @@ export const helpdeskOperations: INodeProperties[] = [
 				name: 'Grade Case',
 				value: 'grade',
 				action: 'Grade the answer of a case',
-				description: 'Say whether the answer stood (POST /v1/sma/learn { case, grade }): the buyer’s key says whether it helped, an admin’s key grades for the tenant, Jev grades by record. The case settles only once a grade stands (the grade-gate loop).',
+				description: 'Say whether the answer stood (POST /v1/sma/learn { case, grade }): the buyer’s key says whether it helped, an admin’s key grades for the tenant. The case settles only once a grade stands (the grade-gate loop).',
 				routing: { request: { method: 'POST', url: '/sma/learn' } },
 			},
 			{
@@ -237,7 +237,6 @@ export const helpdeskOperations: INodeProperties[] = [
 		options: [
 			{ name: 'Admin', value: 'admin', description: 'The tenant’s admin key grades for the tenant' },
 			{ name: 'Buyer', value: 'buyer', description: 'The key that asked says whether the answer helped' },
-			{ name: 'Jev', value: 'jev', description: 'The calibrated judge grades by record' },
 		],
 		default: 'buyer',
 		required: true,

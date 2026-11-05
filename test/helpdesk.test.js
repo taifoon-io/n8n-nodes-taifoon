@@ -72,7 +72,7 @@ test('Learn: Answer, Grade and Tune each POST /sma/learn with { case } and exact
 	assert.deepEqual(grade.body, { case: 'case_0123456789abcdef', grade: { score: 0.8, by: 'buyer' } }, 'SmaLearn.grade: score and by, no answer or tuning beside it');
 	assert.equal(grade.headers['X-API-Key'], KEY);
 	assert.equal(grade.headers['X-Taifoon-Channel'], 'n8n', 'the channel rides on every call (empty Channel ID: n8n)');
-	assert.deepEqual(d.properties.find((p) => p.name === 'smaGradeBy').options.map((o) => o.value).sort(), ['admin', 'buyer', 'jev'], 'the grade.by enum');
+	assert.deepEqual(d.properties.find((p) => p.name === 'smaGradeBy').options.map((o) => o.value).sort(), ['admin', 'buyer'], 'the grade.by values this node offers');
 	const score = d.properties.find((p) => p.name === 'smaGradeScore');
 	assert.deepEqual([score.typeOptions.minValue, score.typeOptions.maxValue], [0, 1]);
 

@@ -53,7 +53,7 @@ test('the relayer credential is offered on every resource (1.1.0: it carries the
 	assert.strictEqual(d.credentials[0].displayOptions, undefined, 'no resource hides it: the Channel ID rides on every call');
 });
 
-test('Judge → Submit Review: the owner is optional once bound, and the binding signature rides as owner_signature', () => {
+test('Job Review → Submit Review: the owner is optional once bound, and the binding signature rides as owner_signature', () => {
 	for (const n of ['reviewOwner', 'reviewOwnerSignature']) assert.strictEqual(field(n).in, 'reviewOptions', `${n} is an Additional Field`);
 	assert.strictEqual(prop('reviewOwner'), undefined, 'not top-level');
 	assert.strictEqual(field('reviewOwner').routing.send.property, 'owner');
@@ -109,7 +109,7 @@ const onOp = (resource, op) =>
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '2.0.0');
+	assert.strictEqual(pkg.version, '2.0.1');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
@@ -275,6 +275,6 @@ test('no operation or field calls a grading model, takes its key, or depends on 
 	assert.deepStrictEqual(ops('commerce').map((o) => o.value), ['hire', 'settle']);
 	for (const url of ['/judge/grade', '/judge/ref', '/judge/compose', '/judge/answers/record']) assert.ok(!JSON.stringify(d.properties).includes(`"${url}"`), `${url} is gone`);
 	for (const name of ['composeMode', 'composeAnsweredBy', 'recordReply', 'items', 'question', 'state', 'reviewJev', 'key']) assert.ok(!flat(d.properties).some((p) => p.name === name && ['judge', 'commerce'].includes(p.displayOptions?.show?.resource?.[0])), `${name} is gone`);
-	assert.doesNotMatch(JSON.stringify(d), /typesafe/i);
+	assert.doesNotMatch(JSON.stringify(d), /typesafe|\bjev\b/i);
 	assert.strictEqual(d.credentials[0].displayOptions, undefined, 'the relayer key (X-API-Key) rides on every resource');
 });

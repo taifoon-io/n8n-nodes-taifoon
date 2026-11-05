@@ -236,7 +236,7 @@ const SPEC = {
 	},
 	'job.getLedger': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['jobs'], lists: ['jobs'] }, refusals: [{ why: 'a shortened participant', params: { ledgerFilters: { participant: '0x3574…4f5b' } }, status: [400] }], budgetMs: 8000 },
 
-	// ── Judge ──
+	// ── Job Review ──
 	'judge.getReady': { mode: 'read', key: false, params: () => ({ readyLimit: 5 }), ok: { status: 200, fields: ['jobs'], lists: ['jobs'] }, refusals: [], budgetMs: 15000 },
 	'judge.getReviewable': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['jobs'], lists: ['jobs'] }, refusals: [], budgetMs: 10000 },
 	'judge.getStages': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 4000 },
@@ -270,7 +270,7 @@ const SPEC = {
 		ok: { status: 200, fields: [] }, refusals: [{ why: 'an evidence that is not bytes32', params: { kind: 'agent', chainId: 36927, buyer: '0x1111111111111111111111111111111111111111', seller: ADDR, price: '100000', evidence: '0xab', refId: TEST_TAG }, status: [400] }], budgetMs: 10000,
 	},
 
-	// ── Commerce (1.1.0): hire, grade, settle as one resource, the same requests as Job → Create Offer, Judge → Grade, Settlement →
+	// ── Commerce (1.1.0): hire and settle as one resource, the same requests as Job → Create Offer and the settlement plan
 	// Settle (and the MCP tools taifoon_hire, taifoon_grade, taifoon_settle_plan). Settle is a plan only. `key: true`: the probe
 	// key rides with its channel (X-Taifoon-Channel), as an integrator's credential would.
 	'commerce.hire': { mode: 'plan', key: true, params: () => ({ chainId: 8453, seller: ADDR, price: '100000' }), ok: { status: 200, fields: ['calls'], lists: ['calls'] },
@@ -309,10 +309,11 @@ const SPEC = {
 		gap: 'mints a code (shown once) for an enrolled partner only; only the refusals are called',
 	},
 	'resellerKey.listPromos': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: ['promos', 'may_mint'], lists: ['promos'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 6000 },
+	// the hourly run tries 24 unknown codes a day, over the tenant's cap of 20: after that the cap refuses first (_PROMO_TRY_CAP_v1_)
 	'resellerKey.redeemPromo': {
 		mode: 'refusal-only', key: true, params: () => ({ promoCode: 'NOT-A-REAL-CODE' }),
 		ok: { status: 200, fields: ['promo', 'kind'] },
-		refusals: [NO_KEY, BAD_KEY, { why: 'a code that does not exist', params: { promoCode: 'NOT-A-REAL-CODE' }, status: [400, 404, 422] }],
+		refusals: [NO_KEY, BAD_KEY, { why: 'a code that does not exist', params: { promoCode: 'NOT-A-REAL-CODE' }, status: [400, 404, 422], cap: { status: 429, code: 'rate_limited' } }],
 		budgetMs: 6000,
 		gap: 'a redemption binds a promo to the key; with no real code only the refusals are called',
 	},

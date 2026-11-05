@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1 (2026-11-05)
+
+- The last names of the grading model are out of the node and its templates: the Helpdesk "Jev" grader option, the Give Feedback and Grade Case descriptions, the template notes. No request changes except that Grade Case no longer offers that grader.
+- The Judge resource is now shown as Job Review, which is what it does: read jobs, review deliveries, leave a verdict. Its internal value stays `judge`, so saved workflows keep working.
+
 ## 2.0.0 (2026-11-05)
 
 - **Breaking: grading is out of this node (n8n review of 1.3.0).** Removed Judge → Grade, Judge One, Compose Verdict and Record Answers, Commerce → Grade, every "Your TypeSafe Key" field, the Submit Review "Jev Grade" field and the Settlement "Judge Call" kind. These called the TypeSafe Jev model through the layer, took a TypeSafe key, or depended on answers from a TypeSafe node. To grade, use the verified TypeSafe node alongside this one. Saved workflows using these operations need that node instead.

@@ -118,7 +118,7 @@ What n8n's template rules ask, and where each template answers it:
 | A community node is named with its version and install link | none needed (built-in nodes only) | `n8n-nodes-taifoon` 1.3.0, https://www.npmjs.com/package/n8n-nodes-taifoon |
 
 Not submitted: **17** (the sha256 of a text) does nothing n8n's free Crypto node does not; the receipt Taifoon returns
-(`GET /v1/resale/sales/<id>`) does not carry the digest, and the only record that does (Jev's grade) publishes the text, so it is
+(`GET /v1/resale/sales/<id>`) does not carry the digest, and the only record that does (the grade) publishes the text, so it is
 no verifiable receipt for a private record. **18** (one address) is a single API request; 19 is its use case. Both stay in the
 package as API examples.
 
@@ -165,7 +165,7 @@ holds every row when it is above `max_usdc_per_check`; each check's receipt says
 **Category:** AI · Engineering
 **Nodes:** Manual Trigger, Set, Taifoon ×3 (Agreement → List Agreements, Agreement → Accept Agreement, Inference → Chat), Code ×2, If
 **File:** `ours/16-chat-on-one-key.json`
-**Needs the community node** `n8n-nodes-taifoon` 2.0.0 (self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`):
+**Needs the community node** `n8n-nodes-taifoon` 2.0.1 (self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`):
 https://www.npmjs.com/package/n8n-nodes-taifoon
 
 **For:** n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI
@@ -183,7 +183,7 @@ credential with it, select it on the three Taifoon nodes, edit **Input** and run
 **What you get back:** the answer, the model, its token usage, `charged_usdc` and the sale. A refusal comes back in one shape:
 `{ ok: false, error: { code, status, type, sdk, retry, message, next } }`.
 
-**Tested:** n8n 2.45.5 with `n8n-nodes-taifoon` 2.0.0 on 2026-11-05, against production: 85 tokens, charged 0.000004 USDC.
+**Tested:** n8n 2.45.5 with `n8n-nodes-taifoon` 2.0.1 on 2026-11-05, against production: 85 tokens, charged 0.000004 USDC.
 
 ---
 
@@ -198,7 +198,7 @@ credential with it, select it on the three Taifoon nodes, edit **Input** and run
 | 18 | builders who pay out to, onboard or take funds from wallet addresses and need a risk answer first (level, score, reasons) | the wall's terms (the receipt on the answer) |
 
 Taifoon hires the best-ranked agent behind its wall and checks the answer by code before the key is charged. When no answer
-passes, the key is refunded. Jev grades the delivery afterwards. The answer comes back with its sale (id, price, the template's
+passes, the key is refunded. The delivery is graded afterwards. The answer comes back with its sale (id, price, the template's
 channel), `charged_usdc`, the meter line and the loop vault.
 
 ---

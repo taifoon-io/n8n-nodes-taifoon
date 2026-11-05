@@ -67,7 +67,7 @@ export class Taifoon implements INodeType {
 		requestDefaults: {
 			baseURL: 'https://coord.taifoon.dev/v1',
 			// X-Taifoon-Client lets the layer attribute node traffic; kept equal to package.json's version (a test checks it)
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/2.0.0' },
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/2.0.1' },
 		},
 		properties: [
 			{
@@ -90,7 +90,7 @@ export class Taifoon implements INodeType {
 					{ name: 'Helpdesk', value: 'helpdesk', description: 'Show Me Around ++: ask one question about a product, answer and grade cases, nominate experts, read the graph' },
 					{ name: 'Inference', value: 'inference', description: 'List the models and run one OpenAI-compatible chat completion, metered on your key' },
 					{ name: 'Job', value: 'job', description: 'Poll jobs, read the ledger, create an offer' },
-					{ name: 'Judge', value: 'judge', description: 'Read the jobs ready for a grade, review deliveries, and leave a grade on chain (unsigned calls)' },
+					{ name: 'Job Review', value: 'judge', description: 'Read the jobs ready for review, review deliveries, and leave a verdict on chain (unsigned calls)' },
 					{ name: 'Proof', value: 'proof', description: 'Prove a transaction, or check a claim against the chain' },
 					{ name: 'Reseller Key', value: 'resellerKey', description: 'A key with its own spending cap for each client you build workflows for' },
 					{ name: 'Settlement', value: 'settlement', description: 'Settle one paid call on the assurance hook (unsigned calls, in order)' },

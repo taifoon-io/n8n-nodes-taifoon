@@ -52,7 +52,7 @@ export const judgeOperations: INodeProperties[] = [
 				name: 'Give Feedback (Unsigned)',
 				value: 'giveFeedback',
 				action: 'Build the unsigned ERC-8004 feedback call',
-				description: 'The grade as reputation feedback about an agent: tag1 jev-grade, tag2 the verdict, value the confidence in hundredths, feedbackHash the digest. Stage: record.',
+				description: 'The grade as reputation feedback about an agent: tag1 marks it as a grade, tag2 the verdict, value the confidence in hundredths, feedbackHash the digest. Stage: record.',
 				routing: { request: { method: 'POST', url: '/assurance/call' } },
 			},
 			{
