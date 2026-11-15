@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.1 (2026-11-15)
+
+Contact fix only. No operation, field value or request changed; saved workflows keep working.
+
+- **Security reports** (`SECURITY.md`) go to `info@taifoon.io`, the one Taifoon contact used across the package.
+- The client header reads `n8n-nodes-taifoon/2.1.1`.
+- Template 16 (*AI answers on one key*) re-ran in n8n 2.45.5 on the packed 2.1.1 source against production: 85 tokens,
+  charged 0.000004 USDC (`workflows/ours/live.json`, `workflows/runs.json`).
+- The changelog no longer prints the maintainer's address (it stays in `package.json`, where npm needs it).
+
 ## 2.1.0 (2026-11-15)
 
 Files and policies for n8n's verification and template rules. No operation, field value or request changed; saved workflows keep working.
@@ -149,7 +159,7 @@ workflows keep working.
 - **Published from GitHub Actions with npm provenance** (`.github/workflows/publish.yml`, on a GitHub release
   `vX.Y.Z`). The workflow runs lint, build, tests and n8n's scanner before publishing, and the scanner again on the
   published version (blocking). `.github/workflows/ci.yml` runs the same gates on every push.
-- **author** is the npm publisher and GitHub maintainer (`yawning.monsoon@proton.me`).
+- **author** is the npm publisher and GitHub maintainer.
 - `scripts/scan.mjs` runs `@n8n/scan-community-package` 0.39.0.
 - README rewritten: one API, credential setup, payments from inside n8n are `key_balance` only (the node never signs;
   x402 and escrow are handled on the server side), the operations table, example workflows.

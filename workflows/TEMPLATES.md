@@ -165,8 +165,8 @@ What n8n's template rules ask, and where each template answers it:
 | Solves a real problem, more than one API request | a whole payout list, one check per row, an IF that fails closed, a list to pay and a list held with reasons | the agreement step, the chat, the receipt; the answer reads the charge | an AI Agent with its chat model and a tool, the terms once, the key's next step in the chat |
 | One overview sticky note + section notes | **Start here** + 4 sections | **Start here** + 3 sections | **Start here** + 3 sections |
 | No secrets, no pinned data | one credential, selected by the user; `pinData` empty (`test/templates-ours.test.js` checks both) | the same | two credentials (OpenAI, Header Auth), both selected by the user; the same |
-| Tested from the exported JSON in a fresh n8n, the version named | n8n 2.45.5, 2026-10-29 (`ours/live.json`) | n8n 2.45.5 with `n8n-nodes-taifoon` 2.1.0, 2026-11-15 | n8n 2.45.5, 2026-11-11 (both trigger paths, `workflows/runs.json`) |
-| A community node is named with its version and install link | none needed (built-in nodes only) | `n8n-nodes-taifoon` 2.1.0, https://www.npmjs.com/package/n8n-nodes-taifoon | none needed (built-in nodes only) |
+| Tested from the exported JSON in a fresh n8n, the version named | n8n 2.45.5, 2026-10-29 (`ours/live.json`) | n8n 2.45.5 with `n8n-nodes-taifoon` 2.1.1, 2026-11-15 | n8n 2.45.5, 2026-11-11 (both trigger paths, `workflows/runs.json`) |
+| A community node is named with its version and install link | none needed (built-in nodes only) | `n8n-nodes-taifoon` 2.1.1, https://www.npmjs.com/package/n8n-nodes-taifoon | none needed (built-in nodes only) |
 
 Not submitted: **17** (the sha256 of a text) does nothing n8n's free Crypto node does not; the receipt Taifoon returns
 (`GET /v1/resale/sales/<id>`) does not carry the digest, and the only record that does (the grade) publishes the text, so it is
@@ -228,7 +228,7 @@ check: a key without balance is answered `402` with the price, and nothing is ch
 **Category:** AI · Engineering
 **Nodes:** Manual Trigger, Set, Taifoon ×3 (Agreement → List Agreements, Agreement → Accept Agreement, Inference → Chat), Code ×2, If
 **File:** `ours/16-chat-on-one-key.json`
-**Needs the community node** `n8n-nodes-taifoon` 2.1.0 (self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`):
+**Needs the community node** `n8n-nodes-taifoon` 2.1.1 (self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`):
 https://www.npmjs.com/package/n8n-nodes-taifoon
 
 **For:** n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI
@@ -249,7 +249,7 @@ credential with it, select it on the three Taifoon nodes, edit **Input** and run
 **Test it:** run with the sample question: **Answer** shows the text and `charged_usdc`. Without n8n:
 `curl -s https://coord.taifoon.dev/v1/chat/completions -H 'Content-Type: application/json' -H "X-API-Key: $TAIFOON_KEY" -d '{"messages":[{"role":"user","content":"What is 17 times 24?"}],"max_tokens":64}'`.
 
-**Tested:** n8n 2.45.5 with `n8n-nodes-taifoon` 2.1.0 on 2026-11-15, against production: 85 tokens, charged 0.000004 USDC.
+**Tested:** n8n 2.45.5 with `n8n-nodes-taifoon` 2.1.1 on 2026-11-15, against production: 85 tokens, charged 0.000004 USDC.
 
 ---
 

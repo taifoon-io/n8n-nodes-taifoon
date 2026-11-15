@@ -64,4 +64,4 @@ to infer any of it from the code.
 
 ## Reporting a vulnerability
 
-Email `security@t3rn.io` with the details. Please do not open a public issue for a security report.
+Email `info@taifoon.io` with the details (subject line starting "Security:"). Please do not open a public issue for a security report.
