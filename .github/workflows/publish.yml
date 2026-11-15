@@ -1,19 +1,49 @@
 # Publishes to npm WITH a provenance statement, from GitHub Actions, as n8n requires for nodes submitted for
 # verification (from 2026-05-01). Triggered by publishing a GitHub release vX.Y.Z whose tag matches package.json.
 # Works with an npm Trusted Publisher (OIDC, no token) or with the NPM_TOKEN secret; provenance comes from OIDC either way.
+# _NPM_KEEP_LIVE_v1_: every hour (and on a dispatch) the probe reads npm for the newest release; a release npm never had (its publish
+# run failed, npm was down) is published again from its tag by this same workflow. A present release publishes nothing, and a
+# version npm unpublished is never retried (npm does not reuse one): scripts/npm-keep.mjs decides, test/npm-keep.test.js checks it.
 name: publish
 on:
   release:
     types: [published]
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
 permissions:
   contents: read
   id-token: write          # lets npm sign the provenance statement (and authenticate a Trusted Publisher) through GitHub's OIDC
+concurrency:
+  group: npm-publish       # a release run and a keep run never publish at once; the later one reads npm after the first
+  cancel-in-progress: false
 jobs:
-  publish:
-    if: startsWith(github.event.release.tag_name, 'v')
+  probe:
+    if: github.event_name != 'release'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.keep.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
+      - name: Is the newest release on npm? (read without a key)
+        id: keep
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)"
+          node scripts/npm-keep.mjs "$(node -p "require('./package.json').name")" "$tag"
+  publish:
+    needs: probe
+    if: always() && ((github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v')) || (needs.probe.result == 'success' && needs.probe.outputs.tag != ''))
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || needs.probe.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -25,7 +55,7 @@ jobs:
       - run: npm run build
       - run: npm test
       - name: The tag must match package.json
-        run: test "v$(node -p "require('./package.json').version")" = "${{ github.event.release.tag_name }}"
+        run: test "v$(node -p "require('./package.json').version")" = "$TAG"
       - name: No run-time dependencies, strict mode on
         run: node -e "const p=require('./package.json'); if(Object.keys(p.dependencies||{}).length||p.n8n.strict!==true){console.error('dependencies or strict'); process.exit(1)}"
       - name: n8n's submission scanner before publishing (source and packed tarball)
