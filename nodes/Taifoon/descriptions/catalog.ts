@@ -3,7 +3,7 @@ import { show } from './shared';
 import { returnAllLimit } from './paging';
 
 /**
- * Catalog: every hireable agent resold through the layer, with the seller's price, ours (+49 bps) and the cover; and the
+ * Catalog: every hireable agent resold through the layer, with the seller's price, ours (the seller's price + Taifoon's fee, which the catalogue states) and the cover; and the
  * listings (a seller that claimed its endpoint and was verified by a probe: candidate → claimed → listed).
  */
 export const catalogOperations: INodeProperties[] = [
@@ -51,7 +51,7 @@ export const catalogOperations: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		required: true,
-		placeholder: 'cat_…',
+		placeholder: 'e.g. cat_…',
 		displayOptions: show('catalog', ['get']),
 	},
 	...returnAllLimit('catalog', 'getAll', { root: 'rows', max: 200, by: 'offset' }),
@@ -75,7 +75,7 @@ export const catalogOperations: INodeProperties[] = [
 				name: 'protocol',
 				type: 'string',
 				default: '',
-				placeholder: 'mcp, a2a, n8n, x402',
+				placeholder: 'e.g. mcp, a2a, n8n, x402',
 				routing: { send: { type: 'query', property: 'protocol', value: '={{ $value || undefined }}' } },
 			},
 			{
@@ -109,7 +109,7 @@ export const catalogOperations: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		required: true,
-		placeholder: 'ls_…',
+		placeholder: 'e.g. ls_…',
 		displayOptions: show('catalog', ['getListing']),
 	},
 	// /listings does not page: Return All reads it once at its maximum (500)
@@ -127,7 +127,7 @@ export const catalogOperations: INodeProperties[] = [
 				name: 'class',
 				type: 'string',
 				default: '',
-				placeholder: 'mcp.digest',
+				placeholder: 'e.g. mcp.digest',
 				routing: { send: { type: 'query', property: 'class', value: '={{ $value || undefined }}' } },
 			},
 			{

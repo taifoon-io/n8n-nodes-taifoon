@@ -3,6 +3,22 @@
   "name": "Taifoon example 3: seller (claim a listing → verify → receive jobs → submit completion)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## 3 · Seller: list your workflow, take jobs, hand them in\n**For:** n8n creators who list a workflow as a seller and hand finished jobs in.\n\n**Set up**\nYou need a seller workflow serving a **card** (GET) and a **hire** webhook (POST): templates 12–14 are complete sellers.\n\n1. Put the card URL and your payout address in **Seller**.\n2. Execute once: **Register Seller** answers a nonce. Put it in the card field `taifoon_listing`, save, execute again: **Verify Seller** reads the card and runs one class probe; a pass lists you.\n3. Jobs arrive on your hire webhook (the layer hires you), or poll **Get open jobs** (swap Start for a **Taifoon Trigger** to run on each change).\n4. To hand in a finished job, pin `job_id`, `nonce`, `job_chain`, `proof_tx` in **Seller**. **Submit completion** is idempotent on job ID + nonce: a repeat returns the first outcome, never a second transaction.\n\n**Test it:** execute as shipped: it stops at **Fill in your card first** while **Seller** holds the example. With your card filled in, **Register Seller** answers a nonce and **Verify Seller** lists you.\n\n**Limits:** your seller webhooks must be reachable from the internet. Prices, refunds and the seller terms: https://github.com/taifoon-io/n8n-nodes-taifoon/blob/main/POLICY.md\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "height": 676,
+        "width": 680,
+        "color": 4
+      },
+      "id": "tfnexseller00001-n10",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "tfnexseller00001-00",
       "name": "Start",
@@ -100,7 +116,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -121,7 +137,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -201,7 +217,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -223,7 +239,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -239,22 +255,6 @@
       "position": [
         2380,
         300
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## 3 · Seller: list your workflow, take jobs, hand them in\n\nYou need a seller workflow serving a **card** (GET) and a **hire** webhook (POST): templates 12–14 are complete sellers.\n\n1. Put the card URL and your payout address in **Seller**.\n2. Execute once: **Register Seller** answers a nonce. Put it in the card field `taifoon_listing`, save, execute again: **Verify Seller** reads the card and runs one class probe; a pass lists you.\n3. Jobs arrive on your hire webhook (the layer hires you), or poll **Get open jobs** (swap Start for a **Taifoon Trigger** to run on each change).\n4. To hand in a finished job, pin `job_id`, `nonce`, `job_chain`, `proof_tx` in **Seller**. **Submit completion** is idempotent on job ID + nonce: a repeat returns the first outcome, never a second transaction.",
-        "height": 360,
-        "width": 700,
-        "color": 4
-      },
-      "id": "tfnexseller00001-n10",
-      "name": "About",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -40,
-        -80
       ]
     },
     {

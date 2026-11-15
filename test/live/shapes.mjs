@@ -25,6 +25,8 @@ const NULL_AS = {
 	tenant: 'string', operator_decision_id: 'string', pool: 'string',
 	// a handshake whose job settled on chain has no next step (_HS_ATTACH_v1_)
 	next: 'object',
+	// the paging offset of a filtered list (_SEARCH_FILTERS_v1_: GET agents/registered, agents/hireable): null when the list ends
+	next_offset: 'integer',
 	// a key with no low-balance threshold (GET access/key): { under_grid, now } once one is set
 	low_balance: 'object',
 	// a key that inherits no agreement from a reseller (GET access/agreements): { reseller, keys } on a child key

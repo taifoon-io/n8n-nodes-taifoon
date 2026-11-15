@@ -1,0 +1,555 @@
+{
+  "name": "AI Agent on Taifoon: chat model and agent search on one key, paid per token",
+  "nodes": [
+    {
+      "id": "ai-agent-on-taifoon-1",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "webhookId": "taifoon-ai-agent",
+      "notes": "Open the chat and ask",
+      "notesInFlow": true
+    },
+    {
+      "id": "ai-agent-on-taifoon-2",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        300
+      ],
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant. Your answers are paid per token from a Taifoon key. When the user needs a job done by a checked agent (a sha256 digest, a wallet address risk check, market data, a plan), call find_taifoon_agent with the job in a few plain words, then answer with the agents it found: name, price in USDC and the one call that buys it. Otherwise answer briefly and directly.",
+          "maxIterations": 4
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "Error output: the key needs the terms or a top-up",
+      "notesInFlow": true
+    },
+    {
+      "id": "ai-agent-on-taifoon-3",
+      "name": "Taifoon chat model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        560
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "llama-3.3-70b-instruct"
+        },
+        "options": {
+          "maxTokens": 512,
+          "temperature": 0.2,
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "Taifoon (OpenAI API, Base URL https://coord.taifoon.dev/v1)"
+        }
+      },
+      "notes": "OpenAI credential, Base URL https://coord.taifoon.dev/v1",
+      "notesInFlow": true
+    },
+    {
+      "id": "ai-agent-on-taifoon-4",
+      "name": "Find a Taifoon agent",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        560
+      ],
+      "parameters": {
+        "toolDescription": "find_taifoon_agent: find checked AI agents on Taifoon for a job described in plain words. Returns up to 5 agents, each with its name, job classes, status, our price in USDC (price.our_usdc) and the one HTTP call that buys it (buy).",
+        "url": "https://coord.taifoon.dev/v1/catalog",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $fromAI('need', 'the job in a few plain words, e.g. sha256 digest or wallet address risk', 'string') }}"
+            },
+            {
+              "name": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Taifoon-Channel",
+              "value": "n8n-template:ai-agent-on-taifoon"
+            }
+          ]
+        },
+        "optimizeResponse": true,
+        "responseType": "json",
+        "dataField": "rows",
+        "fieldsToInclude": "selected",
+        "fields": "id,name,classes,status,price.our_usdc,buy",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
+        }
+      },
+      "notes": "GET /v1/catalog?q=… (Header Auth: X-API-Key)",
+      "notesInFlow": true
+    },
+    {
+      "id": "ai-agent-on-taifoon-5",
+      "name": "What to do next",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        420
+      ],
+      "parameters": {
+        "jsCode": "// the agent stopped on the Taifoon door: name the one step that unblocks this key (coord gate-errors.cue codes), in the chat\nconst e = $json.error ?? $json; const msg = String((e && (e.description || e.message)) || e || '');\nconst terms = /agreement_required|\\b403\\b/i.test(msg);\nconst dry = /free_agreement_spent|insufficient|balance|payment_required|\\b402\\b/i.test(msg);\nconst keyless = /\\b401\\b|invalid_api_key|unauthori[sz]ed/i.test(msg);\nconst next = terms ? 'This key has not accepted the terms yet. Read TSUL-1.1 and TAT, set accept_terms to true in \"Terms input\" and run \"Accept the terms once\".'\n  : dry ? 'This key has used its balance. Top it up at https://www.taifoon.io/pricing (Buy GRID: paste the key, pay from any chain listed there), then ask again.'\n  : keyless ? 'The key was refused. Get a free key with POST https://coord.taifoon.dev/v1/register and put it in the OpenAI credential (API Key) and the Header Auth credential.'\n  : 'The Taifoon door did not answer this time. Ask again in a minute.';\nreturn [{ json: { output: next, ok: false, terms, top_up: dry ? 'https://www.taifoon.io/pricing' : null, error: msg.slice(0, 500) } }];"
+      }
+    },
+    {
+      "id": "ai-agent-on-taifoon-6",
+      "name": "Accept the terms once",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        900
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "ai-agent-on-taifoon-7",
+      "name": "Terms input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        900
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ia",
+              "name": "accept_terms",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "ib",
+              "name": "base",
+              "value": "https://coord.taifoon.dev",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ai-agent-on-taifoon-8",
+      "name": "Agreements",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        900
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Terms input').first().json.base || 'https://coord.taifoon.dev' }}/v1/access/agreements",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Taifoon-Channel",
+              "value": "n8n-template:ai-agent-on-taifoon"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "ai-agent-on-taifoon-9",
+      "name": "Terms",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        900
+      ],
+      "parameters": {
+        "jsCode": "// _GATE_ERRORS_v1_ (coord lang/cue/gate-errors.cue): every answer read into { ok: true, data } or the OpenAI-style error of the table.\nconst TABLE = {\"invalid_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_input\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_json\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"context_length_exceeded\":[\"context_length_exceeded\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"shorten the messages or lower max_tokens\"],\"invalid_api_key\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"unauthorized\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"expired\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"insufficient_balance\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"budget\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_allowance_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_budget_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"key_spend_limit_exceeded\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"cap_reached\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"agreement_required\":[\"agreement_required\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"POST https://coord.taifoon.dev/v1/access/agreements {doc, product}; GET it lists the gaps\"],\"scope_not_allowed\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"free_scope\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"child_managed_by_reseller\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"forbidden\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"model_not_found\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"not_resold\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"conflict\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"already_registered\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"duplicate\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"payload_too_large\":[\"payload_too_large\",413,\"invalid_request_error\",\"APIError\",\"no\",\"send fewer or shorter messages\"],\"content_policy_violation\":[\"content_policy_violation\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"change the request; nothing was charged\"],\"card_unreadable\":[\"card_unreadable\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"serve your card as JSON at an https URL (an A2A agent card, an MCP server card or an ERC-8004 registration) and claim again\"],\"rate_limit_exceeded\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"rate_limited\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"upstream_failed\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"provider_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"gate_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"no_answer\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"model_unavailable\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"waits_on_funding\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"walls_not_open\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"model_at_capacity\":[\"model_at_capacity\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"retry after Retry-After seconds, or name another model\"],\"request_timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"],\"timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"]};\nconst SDK = (s) => s === 400 ? 'BadRequestError' : s === 401 ? 'AuthenticationError' : s === 403 ? 'PermissionDeniedError' : s === 404 ? 'NotFoundError' : s === 409 ? 'ConflictError' : s === 422 ? 'UnprocessableEntityError' : s === 429 ? 'RateLimitError' : s >= 500 ? 'InternalServerError' : 'APIError';\nfunction norm(res, step) {\n  const status = Number(res?.statusCode ?? 0); const body = res?.body ?? null;\n  if (status >= 200 && status < 300 && !(body && body.ok === false)) return { ok: true, step, status, data: body };\n  const layer = typeof body?.error === 'object' && body.error ? body.error.code : body?.code;\n  const message = typeof body?.error === 'object' && body?.error ? body.error.message : (body?.error ?? body?.message ?? (status ? 'HTTP ' + status : 'no answer'));\n  const row = TABLE[String(layer ?? '')] ?? TABLE[String(body?.taifoon?.layer_code ?? '')];\n  const s = row ? row[1] : status || 503;\n  const retryAfter = Number(res?.headers?.['retry-after'] ?? body?.retry_after_seconds ?? body?.taifoon?.retry_after_seconds) || null;\n  return { ok: false, step, status: s, error: { code: row ? row[0] : String(layer ?? (status ? 'http_' + status : 'no_answer')), status: s, type: row ? row[2] : (s >= 500 ? 'api_error' : 'invalid_request_error'),\n    sdk: row ? row[3] : SDK(s), retry: row ? row[4] : (s === 429 ? 'after' : s >= 500 ? 'backoff' : 'no'), message: String(message).slice(0, 300), next: (body?.taifoon?.next_step) || (row ? row[5] : null) },\n    retry_after: retryAfter, layer: body?.taifoon ?? null };\n}\n// the documents the key still lacks for inference; accepted here only when you consented (accept_terms: true, a click-through acceptance)\nconst i = $('Terms input').first().json; const agr = norm($('Agreements').first().json, 'agreements');\nconst gaps = agr.ok ? (agr.data.gaps?.['inference'] ?? []) : [];\nif (!i.accept_terms || !gaps.length) return [{ json: { accept: false, still_missing: gaps } }];\nreturn gaps.map((doc) => ({ json: { accept: true, doc, product: 'inference' } }));"
+      }
+    },
+    {
+      "id": "ai-agent-on-taifoon-10",
+      "name": "Accept?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        900
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.accept }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ai-agent-on-taifoon-11",
+      "name": "Accept document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        820
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Terms input').first().json.base || 'https://coord.taifoon.dev' }}/v1/access/agreements",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Taifoon-Channel",
+              "value": "n8n-template:ai-agent-on-taifoon"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ doc: $json.doc, product: $json.product, how: \"clickwrap\" }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "ai-agent-on-taifoon-12",
+      "name": "Terms state",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        900
+      ],
+      "parameters": {
+        "jsCode": "// _GATE_ERRORS_v1_ (coord lang/cue/gate-errors.cue): every answer read into { ok: true, data } or the OpenAI-style error of the table.\nconst TABLE = {\"invalid_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_request\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_input\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"bad_json\":[\"invalid_request\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"fix the request; the message names the field\"],\"context_length_exceeded\":[\"context_length_exceeded\",400,\"invalid_request_error\",\"BadRequestError\",\"no\",\"shorten the messages or lower max_tokens\"],\"invalid_api_key\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"unauthorized\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"expired\":[\"invalid_api_key\",401,\"authentication_error\",\"AuthenticationError\",\"no\",\"send Authorization: Bearer tfr_…; get a key with POST https://coord.taifoon.dev/v1/register\"],\"insufficient_balance\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"budget\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_allowance_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"free_budget_spent\":[\"insufficient_balance\",402,\"insufficient_quota\",\"APIError\",\"no\",\"top up: GET https://coord.taifoon.dev/v1/access/quote, then POST /v1/access/topup\"],\"key_spend_limit_exceeded\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"cap_reached\":[\"key_spend_limit_exceeded\",402,\"insufficient_quota\",\"APIError\",\"no\",\"the key's owner (or its reseller) raises the cap: POST /v1/tenant/keys {action: update}\"],\"agreement_required\":[\"agreement_required\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"POST https://coord.taifoon.dev/v1/access/agreements {doc, product}; GET it lists the gaps\"],\"scope_not_allowed\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"free_scope\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"child_managed_by_reseller\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"forbidden\":[\"scope_not_allowed\",403,\"permission_error\",\"PermissionDeniedError\",\"no\",\"use a key with the scope; GET /v1/access/key shows the key's scopes\"],\"model_not_found\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"not_resold\":[\"model_not_found\",404,\"not_found_error\",\"NotFoundError\",\"no\",\"pick a model from GET https://coord.taifoon.dev/v1/models data[]\"],\"conflict\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"already_registered\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"duplicate\":[\"conflict\",409,\"invalid_request_error\",\"ConflictError\",\"no\",\"read the existing record instead of sending again\"],\"payload_too_large\":[\"payload_too_large\",413,\"invalid_request_error\",\"APIError\",\"no\",\"send fewer or shorter messages\"],\"content_policy_violation\":[\"content_policy_violation\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"change the request; nothing was charged\"],\"card_unreadable\":[\"card_unreadable\",422,\"invalid_request_error\",\"UnprocessableEntityError\",\"no\",\"serve your card as JSON at an https URL (an A2A agent card, an MCP server card or an ERC-8004 registration) and claim again\"],\"rate_limit_exceeded\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"rate_limited\":[\"rate_limit_exceeded\",429,\"rate_limit_error\",\"RateLimitError\",\"after\",\"wait Retry-After seconds and send the same request again\"],\"upstream_failed\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"provider_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"gate_refused\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"no_answer\":[\"upstream_failed\",502,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or name another model of GET /v1/models\"],\"model_unavailable\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"waits_on_funding\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"walls_not_open\":[\"model_unavailable\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"name a model whose taifoon.available is true in GET /v1/models, or retry later\"],\"model_at_capacity\":[\"model_at_capacity\",503,\"api_error\",\"InternalServerError\",\"backoff\",\"retry after Retry-After seconds, or name another model\"],\"request_timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"],\"timeout\":[\"request_timeout\",504,\"api_error\",\"InternalServerError\",\"backoff\",\"retry with backoff, or lower max_tokens\"]};\nconst SDK = (s) => s === 400 ? 'BadRequestError' : s === 401 ? 'AuthenticationError' : s === 403 ? 'PermissionDeniedError' : s === 404 ? 'NotFoundError' : s === 409 ? 'ConflictError' : s === 422 ? 'UnprocessableEntityError' : s === 429 ? 'RateLimitError' : s >= 500 ? 'InternalServerError' : 'APIError';\nfunction norm(res, step) {\n  const status = Number(res?.statusCode ?? 0); const body = res?.body ?? null;\n  if (status >= 200 && status < 300 && !(body && body.ok === false)) return { ok: true, step, status, data: body };\n  const layer = typeof body?.error === 'object' && body.error ? body.error.code : body?.code;\n  const message = typeof body?.error === 'object' && body?.error ? body.error.message : (body?.error ?? body?.message ?? (status ? 'HTTP ' + status : 'no answer'));\n  const row = TABLE[String(layer ?? '')] ?? TABLE[String(body?.taifoon?.layer_code ?? '')];\n  const s = row ? row[1] : status || 503;\n  const retryAfter = Number(res?.headers?.['retry-after'] ?? body?.retry_after_seconds ?? body?.taifoon?.retry_after_seconds) || null;\n  return { ok: false, step, status: s, error: { code: row ? row[0] : String(layer ?? (status ? 'http_' + status : 'no_answer')), status: s, type: row ? row[2] : (s >= 500 ? 'api_error' : 'invalid_request_error'),\n    sdk: row ? row[3] : SDK(s), retry: row ? row[4] : (s === 429 ? 'after' : s >= 500 ? 'backoff' : 'no'), message: String(message).slice(0, 300), next: (body?.taifoon?.next_step) || (row ? row[5] : null) },\n    retry_after: retryAfter, layer: body?.taifoon ?? null };\n}\n// what the key now holds for inference: ready when nothing is missing (the chat can run), else the documents still to accept\nconst agr = norm($('Agreements').first().json, 'agreements');\nlet accepted = [];\ntry { accepted = $('Accept document').all().map((x) => norm(x.json, 'accept')).filter((x) => x.ok).map((x) => x.data.acceptance?.doc); } catch (e) { accepted = []; }\nif (!agr.ok) return [{ json: { ready: false, error: agr.error } }];\nconst missing = (agr.data.gaps?.['inference'] ?? []).filter((d) => !accepted.includes(d));\nreturn [{ json: { ready: missing.length === 0, product: 'inference', accepted, still_missing: missing, next: missing.length ? 'set accept_terms to true in Terms input after reading ' + missing.join(' and ') + ', and run again' : 'open the chat and ask' } }];"
+      }
+    },
+    {
+      "id": "ai-agent-on-taifoon-13",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        40
+      ],
+      "parameters": {
+        "width": 700,
+        "height": 900,
+        "content": "## AI Agent on Taifoon: chat model and agent search on one key, paid per token\n**For:** n8n builders who run an AI Agent and want its chat model and its tools paid from one key, per token, without an OpenAI account or a card on file.\n**Why:** n8n's own OpenAI Chat Model points at Taifoon's OpenAI-compatible door, so the agent runs on open-weight models resold at the provider's price + 20 %; a built-in HTTP tool finds checked agents to hire; one key pays every answer, and when its balance is spent the chat names the top-up.\n\n`Chat → AI Agent (Taifoon chat model · Find a Taifoon agent) → answer | top-up step`\n\n1. Get a key: `POST https://coord.taifoon.dev/v1/register` (free, no card).\n2. Add an **OpenAI** credential: API Key = your `tfr_` key, Base URL = `https://coord.taifoon.dev/v1` (optional custom header `X-Taifoon-Channel: n8n-template:ai-agent-on-taifoon`). Select it on **Taifoon chat model**.\n3. Add a **Header Auth** credential: name `X-API-Key`, value the same key. Select it on **Find a Taifoon agent**, **Agreements** and **Accept document**.\n4. Read TSUL-1.1 and TAT, set `accept_terms` to true in **Terms input** and run **Accept the terms once** (once per key).\n5. Open the chat and ask. Pick any model `GET https://coord.taifoon.dev/v1/models` lists.\n\nAdding your own **OpenAI Chat Model** node instead? Turn **Use Responses API** off: Taifoon serves Chat Completions (`/v1/chat/completions`).\n\n**Price:** per token, at the price `GET /v1/models` lists for the model (`taifoon.usd_per_1m`: the provider's price + 20 %), debited from the key's balance into the loop vault (vault:taifoon:loop); Taifoon is the seller of record. When the balance is spent the chat says so and names the top-up: https://www.taifoon.io/pricing (Buy GRID, pay from any chain listed there).\n\n**Built-in nodes only**: no community node needed. Taifoon's node for n8n is `n8n-nodes-taifoon` (https://www.npmjs.com/package/n8n-nodes-taifoon); this template does not need it.\n**Tested:** n8n 2.45.5, 2026-11-11, imported from this JSON into a fresh n8n and run against coord.taifoon.dev."
+      }
+    },
+    {
+      "id": "ai-agent-on-taifoon-14",
+      "name": "1 · Chat with an agent on Taifoon",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        120
+      ],
+      "parameters": {
+        "width": 940,
+        "height": 640,
+        "color": 7,
+        "content": "### 1 · Chat with an agent on Taifoon\nThe AI Agent thinks on **Taifoon chat model** (n8n's OpenAI Chat Model at Taifoon's base URL) and can call **Find a Taifoon agent** to hire checked work. If the key needs the terms or a top-up, **What to do next** answers the chat with the step."
+      }
+    },
+    {
+      "id": "ai-agent-on-taifoon-15",
+      "name": "2 · Terms, once per key",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        780
+      ],
+      "parameters": {
+        "width": 1700,
+        "height": 300,
+        "color": 7,
+        "content": "### 2 · Terms, once per key\nWhat the key still lacks for inference (`GET /v1/access/agreements`); accepted only when `accept_terms` is true, a click-through acceptance. **Terms state** says when the chat is ready."
+      }
+    },
+    {
+      "id": "ai-agent-on-taifoon-16",
+      "name": "3 · Paid per answer",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        920,
+        120
+      ],
+      "parameters": {
+        "width": 480,
+        "height": 640,
+        "color": 7,
+        "content": "### 3 · Paid per answer\nEvery answer is one metered line on your key (`GET https://coord.taifoon.dev/v1/access/usage` lists them, per channel). Top up at https://www.taifoon.io/pricing."
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "What to do next",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accept the terms once": {
+      "main": [
+        [
+          {
+            "node": "Terms input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terms input": {
+      "main": [
+        [
+          {
+            "node": "Agreements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agreements": {
+      "main": [
+        [
+          {
+            "node": "Terms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terms": {
+      "main": [
+        [
+          {
+            "node": "Accept?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accept?": {
+      "main": [
+        [
+          {
+            "node": "Accept document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Terms state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accept document": {
+      "main": [
+        [
+          {
+            "node": "Terms state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Taifoon chat model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find a Taifoon agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "taifoon": {
+      "rule": "N8N_TEMPLATES_OURS_v1",
+      "template": "ai-agent-on-taifoon",
+      "class": "inference.metered",
+      "kinds": [
+        "chat.converse",
+        "reason.general",
+        "text.generate"
+      ],
+      "channel": "n8n-template:ai-agent-on-taifoon",
+      "price": {
+        "rule": "resold",
+        "per": "answer, charged per token",
+        "label": "per token, the model's price in GET /v1/models",
+        "source": "GET /v1/models (taifoon.usd_per_1m: the provider's price + 20 %); the key's meter line (GET /v1/access/usage) is what it paid"
+      },
+      "seller_of_record": "taifoon",
+      "vault": "vault:taifoon:loop",
+      "pool": "vault:assurance:pools",
+      "agreement": [
+        "TSUL-1.1",
+        "TAT"
+      ],
+      "door": "https://coord.taifoon.dev/v1/chat/completions",
+      "hub": true,
+      "signs": false,
+      "sends": false,
+      "model": "llama-3.3-70b-instruct",
+      "chat_model": "openai-compatible",
+      "responses_api": false,
+      "verified": true
+    }
+  },
+  "tags": [
+    {
+      "name": "Taifoon"
+    },
+    {
+      "name": "AI"
+    },
+    {
+      "name": "AI Agent"
+    }
+  ]
+}

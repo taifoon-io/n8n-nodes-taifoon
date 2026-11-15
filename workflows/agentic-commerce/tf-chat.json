@@ -82,9 +82,9 @@
         0
       ],
       "parameters": {
-        "content": "## tf.chat\nOne chat completion through the Taifoon gate (`POST /v1/chat/completions`, OpenAI-compatible): routed by `model` (GET /v1/models lists them), paid from the key at the list price, one meter line. For an AI Agent or a Basic LLM Chain use n8n's **OpenAI Chat Model** node instead: base URL `https://coord.taifoon.dev/v1`, API key your `tfr_` key, **Use Responses API off**.",
+        "content": "## tf.chat\nOne chat completion through the Taifoon gate (`POST /v1/chat/completions`, OpenAI-compatible): routed by `model` (GET /v1/models lists them), paid from the key at the list price, one meter line. For an AI Agent or a Basic LLM Chain use n8n's **OpenAI Chat Model** node instead: base URL `https://coord.taifoon.dev/v1`, API key your `tfr_` key, **Use Responses API off**. Part of **taifoon-agentic-commerce**: import it with the main flow and publish it; the main flow's **Start here** note has the setup, the test and the limits.",
         "width": 460,
-        "height": 260
+        "height": 340
       }
     }
   ],

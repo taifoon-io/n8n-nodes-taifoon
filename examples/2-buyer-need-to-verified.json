@@ -3,6 +3,22 @@
   "name": "Taifoon example 2: buyer (a need in words → matched → hired → graded → settled → verified)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## 2 · Buyer: say what you need, get it done and verified\n**For:** builders who want work done from a sentence, end to end, and checked against the chain.\n\n**Set up**\n1. Attach your **Taifoon Relayer API** credential to the Demand and Handshake nodes.\n2. Edit **Need** (quote exact inputs inside the sentence). `preview_only: true` stops after the preview.\n3. Execute. **Preview the match** is a dry run (class, input, cover preview; nothing kept). **Post demand** posts it; the auto-match loop (every 2 min) picks a seller, opens the handshake, grades by code and settles.\n\nSettlement runs on the **Taifoon devnet 36927** (test tokens, no value). Nothing is signed by this workflow. Polls ≤ 20 × 20 s.\n\n**Test it:** execute with `preview_only: true` first: **Preview the match** shows the class, the input and the guarantee, and nothing is kept. Then set it to false: **Result** shows the hire, the checks and the chain's verdict.\n\n**Limits:** settles on the Taifoon devnet (36927, test tokens). Polls up to 20 times, 20 s apart.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "height": 632,
+        "width": 680,
+        "color": 4
+      },
+      "id": "tfnexbuyer000001-n13",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "tfnexbuyer000001-00",
       "name": "Start",
@@ -69,7 +85,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -114,7 +130,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -150,7 +166,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -211,7 +227,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -264,22 +280,6 @@
       "position": [
         2880,
         300
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## 2 · Buyer: say what you need, get it done and verified\n\n1. Attach your **Taifoon Relayer API** credential to the Demand and Handshake nodes.\n2. Edit **Need** (quote exact inputs inside the sentence). `preview_only: true` stops after the preview.\n3. Execute. **Preview the match** is a dry run (class, input, cover preview; nothing kept). **Post demand** posts it; the auto-match loop (every 2 min) picks a seller, opens the handshake, grades by code and settles.\n\nSettlement runs on the **Taifoon devnet 36927** (test tokens, no value). Nothing is signed by this workflow. Polls ≤ 20 × 20 s.",
-        "height": 320,
-        "width": 620,
-        "color": 4
-      },
-      "id": "tfnexbuyer000001-n13",
-      "name": "About",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -40,
-        -60
       ]
     }
   ],

@@ -204,9 +204,9 @@
         0
       ],
       "parameters": {
-        "content": "## tf.sell\nYour n8n workflow sells a job through the layer: serve a card (GET webhook) and a hire webhook, then `step: claim` with the card URL (the layer answers a nonce for the card), then `step: verify` (the layer reads the nonce and probes the hire webhook per class). The seller signs TSUL-1.1 and TAT (tf.handshake, product sell).",
+        "content": "## tf.sell\nYour n8n workflow sells a job through the layer: serve a card (GET webhook) and a hire webhook, then `step: claim` with the card URL (the layer answers a nonce for the card), then `step: verify` (the layer reads the nonce and probes the hire webhook per class). The seller signs TSUL-1.1 and TAT (tf.handshake, product sell). Part of **taifoon-agentic-commerce**: import it with the main flow and publish it; the main flow's **Start here** note has the setup, the test and the limits.",
         "width": 460,
-        "height": 260
+        "height": 340
       }
     }
   ],

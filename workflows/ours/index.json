@@ -32,7 +32,7 @@
    "needs_node": true,
    "door": "https://coord.taifoon.dev/v1/chat/completions",
    "verified": true,
-   "verified_at": "2026-11-05T16:37:00Z",
+   "verified_at": "2026-11-15T00:00:22Z",
    "who": "n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI account or a card on file.",
    "why": "one Taifoon key pays each answer at our own per-token price (up to 0.001 USDC an answer on our own model, no margin on top), the key accepts the terms once, and every call is one metered line with its sale on the answer."
   },
@@ -101,6 +101,31 @@
    "verified_at": "2026-10-29T18:51:00Z",
    "who": "teams that pay many wallet addresses from a list (affiliates, bounties, refunds, creator and contractor payouts) and must not send money to a risky address or to a contract.",
    "why": "every row of the list gets a risk check through Taifoon whose answer code checks before the key is charged; the desk fails closed: only a \"low\" answer with every check passed lands in Ready to pay, everything else is held with its reasons; it signs and sends nothing, so your own payout tool pays the ready list."
+  },
+  {
+   "id": "ai-agent-on-taifoon",
+   "file": "26-ai-agent-on-taifoon.json",
+   "title": "AI Agent on Taifoon: chat model and agent search on one key, paid per token",
+   "class": "inference.metered",
+   "kinds": [
+    "chat.converse",
+    "reason.general",
+    "text.generate"
+   ],
+   "channel": "n8n-template:ai-agent-on-taifoon",
+   "price": {
+    "rule": "resold",
+    "per": "answer, charged per token",
+    "label": "per token, the model's price in GET /v1/models",
+    "source": "GET /v1/models (taifoon.usd_per_1m: the provider's price + 20 %); the key's meter line (GET /v1/access/usage) is what it paid"
+   },
+   "hub": true,
+   "needs_node": false,
+   "door": "https://coord.taifoon.dev/v1/chat/completions",
+   "verified": true,
+   "verified_at": "2026-11-11T21:24:43Z",
+   "who": "n8n builders who run an AI Agent and want its chat model and its tools paid from one key, per token, without an OpenAI account or a card on file.",
+   "why": "n8n's own OpenAI Chat Model points at Taifoon's OpenAI-compatible door, so the agent runs on open-weight models resold at the provider's price + 20 %; a built-in HTTP tool finds checked agents to hire; one key pays every answer, and when its balance is spent the chat names the top-up."
   }
  ],
  "waiting": [

@@ -3,6 +3,21 @@
   "name": "Taifoon × NEAR AI Cloud — one routed call, as NEAR's router makes it, and its settlement line",
   "nodes": [
     {
+      "parameters": {
+        "content": "## Taifoon as a provider of an inference cloud: one routed call\n**For:** either side of an inference cloud integration that wants to see one routed call and its settlement line.\n**Why:** it lists Taifoon's models, makes one chat completion as the cloud's router would, and writes the settlement line: cost = prompt tokens × input price + completion tokens × output price, with the completion ID as evidence.\n\n**Set up**\n1. Get a free key: the node's **Account → Register Free Key**, template 11, or `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'` (the key is shown once).\n2. Add a **Taifoon Relayer API** credential with the key (Credentials → New) and select it on the Taifoon nodes that ask for one. Select it on **List models** and **One call**.\n\n**Test it:** execute the workflow. **Settlement line** shows the model, the token counts, the cost in micro-USD and the evidence. Without n8n: `curl -s https://coord.taifoon.dev/v1/chat/completions -H 'Content-Type: application/json' -H \"X-API-Key: $TAIFOON_KEY\" -d '{\"messages\":[{\"role\":\"user\",\"content\":\"Say hi\"}],\"max_tokens\":16}'`.\n\n**Limits:** a free key answers about 10 chats a UTC day from one calling address; past that a key with a balance pays per token.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 654
+      },
+      "id": "near-route-check-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "start",
       "name": "Start",
@@ -30,7 +45,7 @@
       "notesInFlow": true,
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "taifoon-relayer",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -57,7 +72,7 @@
       "notesInFlow": true,
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "taifoon-relayer",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -120,7 +135,6 @@
     "saveManualExecutions": true
   },
   "meta": {
-    "templateCredsSetupCompleted": false,
-    "instanceId": "taifoon-coordination"
+    "templateCredsSetupCompleted": false
   }
 }

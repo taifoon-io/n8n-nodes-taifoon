@@ -1,8 +1,10 @@
 import type { IAuthenticateGeneric, ICredentialTestRequest, ICredentialType, Icon, INodeProperties } from 'n8n-workflow';
 
 /**
- * The relayer key. Required by: Completion (submit, poll), Handshake → Attach Job, Job → Create Offer with a
- * handshake id, Judge → Submit Review. Used when present by: Handshake → Open (else a visitor budget). The reads work with no credential at all. GET /v1/relayer/whoami lists the ops.
+ * The Taifoon key (tfr_…). Needed by the operations that act on your account: Inference → Chat, Completion, Account → Get My
+ * Tenant, Register Seller and Verify Seller, Handshake → Attach Job, Job → Create Offer with a handshake ID, Job Review →
+ * Submit Review, Helpdesk → Ask and its writes, Reseller Key and Template → Get Demand. Used when present by Demand and Handshake → Open (else the
+ * calling address's visitor budget). Public reads work without it. How to get one and what it sends: README.md#credentials.
  */
 export class TaifoonRelayerApi implements ICredentialType {
 	// NOT 'taifoonApi': another community package declares a credential type by that name with different
@@ -13,7 +15,7 @@ export class TaifoonRelayerApi implements ICredentialType {
 
 	icon: Icon = { light: 'file:taifoon.svg', dark: 'file:taifoon.dark.svg' };
 
-	documentationUrl = 'https://coord.taifoon.dev/v1/openapi.json';
+	documentationUrl = 'https://github.com/taifoon-io/n8n-nodes-taifoon#credentials';
 
 	properties: INodeProperties[] = [
 		{
@@ -24,14 +26,14 @@ export class TaifoonRelayerApi implements ICredentialType {
 			default: '',
 			required: true,
 			description:
-				'A relayer key (starts with tfr_). Required for Completion, Handshake → Attach Job, Job → Create Offer with a handshake, and Judge → Submit Review; used by Handshake → Open when present.',
+				'Your Taifoon key (starts with tfr_). Get one free with Account → Register Free Key or POST https://coord.taifoon.dev/v1/register. Needed for Inference → Chat, Completion, Account → Get My Tenant / Register Seller / Verify Seller and Job Review → Submit Review; public reads work without it.',
 		},
 		{
 			displayName: 'Channel ID',
 			name: 'channelId',
 			type: 'string',
 			default: '',
-			placeholder: 'your-agency',
+			placeholder: 'e.g. your-agency',
 			description:
 				'Optional; leave it empty. Sent as X-Taifoon-Channel, only for a channel registered with Taifoon (POLICY.md). Lower-case letters, digits and : . _ - (at most 64).',
 		},

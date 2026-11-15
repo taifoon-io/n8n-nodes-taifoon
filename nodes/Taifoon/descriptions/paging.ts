@@ -30,7 +30,9 @@ export function pageAll(p: Paging) {
 			const [item] = await this.makeRoutingRequest({ ...req, options: { ...req.options, qs: { ...req.options.qs, limit: p.max, ...at } } });
 			const body = (item?.json ?? {}) as IDataObject;
 			const page = body[p.root];
-			if (!Array.isArray(page)) throw new NodeOperationError(this.getNode(), `The answer has no "${p.root}" list to page through`);
+			if (!Array.isArray(page)) throw new NodeOperationError(this.getNode(), `The answer has no "${p.root}" list to page through`, {
+				description: 'Turn Return All off and set a Limit to read one page as the API answers it.',
+			});
 			first ??= body;
 			for (const row of page) {
 				const id = row && typeof row === 'object' ? (row as IDataObject).id : undefined;

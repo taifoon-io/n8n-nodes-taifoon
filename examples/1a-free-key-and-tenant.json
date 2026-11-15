@@ -3,6 +3,22 @@
   "name": "Taifoon example 1a: get a free key and check its tenant",
   "nodes": [
     {
+      "parameters": {
+        "content": "## 1a · Get a free key, check the tenant\n**For:** anyone starting with the node.\n\n**Set up**\nNo credential needed.\n\n1. Put **your** wallet address in **Wallet** (a label only; nothing is signed).\n2. Execute. **Register Free Key** answers `api_key` + `keys { live, sandbox }` **once**.\n3. Save `api_key` as a **Taifoon Relayer API** credential, then use example **1b**.\n\nSuccessful executions of this workflow are not saved (settings), so the keys do not stay in execution data.\n\n**Test it:** execute: **Summary** shows your new tenant ID and its key prefixes. The keys appear once, in **Register Free Key** only.\n\n**Limits:** one free key per calling address a UTC day.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "height": 544,
+        "width": 680,
+        "color": 4
+      },
+      "id": "tfnexfreekey0001-n05",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "tfnexfreekey0001-00",
       "name": "Start",
@@ -100,22 +116,6 @@
       "position": [
         960,
         300
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## 1a · Get a free key, check the tenant\n\nNo credential needed.\n\n1. Put **your** wallet address in **Wallet** (a label only; nothing is signed).\n2. Execute. **Register Free Key** answers `api_key` + `keys { live, sandbox }` **once**.\n3. Save `api_key` as a **Taifoon Relayer API** credential, then use example **1b**.\n\nFree keys: 3 a day per IP. Successful executions of this workflow are not saved (settings), so the keys do not stay in execution data.",
-        "height": 300,
-        "width": 520,
-        "color": 4
-      },
-      "id": "tfnexfreekey0001-n05",
-      "name": "About",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -40,
-        -40
       ]
     }
   ],

@@ -48,7 +48,7 @@ export const proofOperations: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		required: true,
-		placeholder: '0x… (66 characters)',
+		placeholder: 'e.g. 0x… (66 characters)',
 		displayOptions: show('proof', ['getTxProof']),
 	},
 	{

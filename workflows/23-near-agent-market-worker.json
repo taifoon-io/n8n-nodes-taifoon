@@ -8,10 +8,24 @@
     "saveManualExecutions": true
   },
   "meta": {
-    "templateCredsSetupCompleted": false,
-    "instanceId": "taifoon-coordination"
+    "templateCredsSetupCompleted": false
   },
   "nodes": [
+    {
+      "parameters": {
+        "content": "## An agent on the NEAR AI Agent Market answers each brief through Taifoon\n**For:** the owner of an agent registered on the NEAR AI Agent Market who wants n8n to work its briefs.\n**Why:** every minute it reads the agent's assignments, answers each open brief through Taifoon's OpenAI-compatible chat (the brief as the prompt, nothing else) and submits the answer as the deliverable.\n\n**Set up**\n1. Get a free key: the node's **Account → Register Free Key**, template 11, or `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'` (the key is shown once).\n2. Add two **Header Auth** credentials: `Authorization` = `Bearer tfr_…` (your Taifoon key, on **Taifoon — chat completions**) and `Authorization` = `Bearer aat_…` (the agent's market token, on **My assignments** and **Submit the deliverable**).\n3. The agent's owner runs **POST /v1/agents/register** once (enable it, run it, switch it off again): it creates the market account and accepts the market's terms.\n4. Enable **Submit the deliverable**, then activate the workflow.\n\n**Test it:** run **Try one brief (no NEAR key)**: a sample brief is answered through Taifoon and shown as **The deliverable (sample, not submitted)**. Nothing reaches the market.\n\n**Limits:** **POST /v1/agents/register** and **Submit the deliverable** ship switched off: they act on the market under the agent's own account. A free key answers about 10 briefs a UTC day from one calling address.\n\n**Built-in nodes only:** no community node needed.\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 676
+      },
+      "id": "near-agent-market-worker-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        -40
+      ]
+    },
     {
       "parameters": {
         "method": "POST",
@@ -71,8 +85,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "near-market-aat",
-          "name": "NEAR Agent Market — Authorization: Bearer aat_…"
+          "id": "",
+          "name": "NEAR Agent Market (Header Auth: Authorization: Bearer aat_…)"
         }
       },
       "notes": "The pull side of the worker loop: every row carries the job brief and the latest buyer message, so one read is enough to act. The aat_ token pins one agent, cannot act as the owner and cannot move funds.",
@@ -114,8 +128,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "taifoon-key",
-          "name": "Taifoon — Authorization: Bearer tfr_…"
+          "id": "",
+          "name": "Taifoon key (Header Auth: Authorization: Bearer tfr_…)"
         }
       },
       "notes": "Our OpenAI-compatible door: the cheapest proven source per model behind one base URL, the quote read at /models. A paid call here is one sale of ours: its legs land in the one ledger (api.taifoon.dev/coordination/sale-run.json).",
@@ -142,12 +156,13 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "near-market-aat",
-          "name": "NEAR Agent Market — Authorization: Bearer aat_…"
+          "id": "",
+          "name": "NEAR Agent Market (Header Auth: Authorization: Bearer aat_…)"
         }
       },
       "notes": "Markdown up to 256 KiB. The buyer accepts (the escrow releases to the marketplace account) or requests changes (hire.changes_requested → the same loop answers again); silence accepts after the acceptance window.",
-      "notesInFlow": true
+      "notesInFlow": true,
+      "disabled": true
     },
     {
       "id": "12584b69-f526-4c2d-affc-b83b5654ee62",

@@ -303,13 +303,13 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
+        -760,
         -60
       ],
       "parameters": {
-        "content": "## Taifoon agentic commerce in n8n\nBuy work from AI agents, sell your own workflows to them, and run chat completions, all on **one Taifoon key** under the agentic-commerce agreements.\n\n1. Get a key: `POST https://coord.taifoon.dev/v1/register` (or template 11).\n2. Create a **Header Auth** credential: name `X-API-Key`, value your `tfr_` key. Select it on every HTTP node of the four sub-workflows.\n3. Import the four sub-workflows (`tf.*`), **publish** each (n8n 2.x calls only a published sub-workflow), and select each in its Execute Workflow node here.\n4. Set **What to do** (`mode`: chat · buy · sell) and run. Read the terms before you set `accept_terms` to true.\n\nEvery answer and every refusal has one shape: `{ ok, … }` or `{ ok: false, error: { code, status, type, sdk, retry, message, next } }`, the OpenAI error contract.",
-        "width": 560,
-        "height": 320
+        "content": "## Taifoon agentic commerce in n8n\nBuy work from AI agents, sell your own workflows to them, and run chat completions, all on **one Taifoon key** under the agentic-commerce agreements.\n\n1. Get a key: `POST https://coord.taifoon.dev/v1/register` (or template 11).\n2. Create a **Header Auth** credential: name `X-API-Key`, value your `tfr_` key. Select it on every HTTP node of the four sub-workflows.\n3. Import the four sub-workflows (`tf.*`), **publish** each (n8n 2.x calls only a published sub-workflow), and select each in its Execute Workflow node here.\n4. Set **What to do** (`mode`: chat · buy · sell) and run. Read the terms before you set `accept_terms` to true.\n\nEvery answer and every refusal has one shape: `{ ok, … }` or `{ ok: false, error: { code, status, type, sdk, retry, message, next } }`, the OpenAI error contract.\n\n**For:** n8n builders who want to buy, sell and chat through Taifoon with n8n's own nodes only.\n\n**Test it:** set `mode` to `chat` and run: **Report** shows `ok: true` and `result`: the answer text, the model, the token usage and the sale. A key that still lacks the terms or a balance answers `ok: false` with the `next` step.\n\n**Limits:** `buy` settles on the Taifoon devnet (36927, test tokens) and polls until the demand ends. `sell` needs a seller card served from your own webhooks (templates 12 to 14). A free key answers about 10 chats a UTC day from one calling address.\n\n**Built-in nodes only:** no community node needed.\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from these files into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 900
       }
     }
   ],

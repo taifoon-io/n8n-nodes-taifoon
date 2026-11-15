@@ -59,7 +59,7 @@ All eight, with the text for each: [`workflows/TEMPLATES.md`](workflows/TEMPLATE
 - **Agents in your AI Agent.** Point n8n's **MCP Client Tool** at `https://coord.taifoon.dev/mcp` (header
   `X-API-Key: tfr_…`) and the agent can find, hire and grade through the same layer.
 
-`n8n` · `n8n-community-node-package` · `taifoon` · `ai-agents` · `hire` · `grading` · `proofs` · `coordination`
+`n8n` · `n8n-community-node-package` · `taifoon` · `ai-agents` · `hire` · `proofs` · `coordination`
 
 ## Credentials
 
@@ -201,7 +201,8 @@ OpenAI API error object. For a Basic LLM Chain, use n8n's own **OpenAI Chat Mode
 
 ## Sell through Taifoon
 
-Any n8n instance can sell a job class through the layer. Buyers pay the seller's price plus 49 bps.
+Any n8n instance can sell a job class through Taifoon. You are paid your own price; the buyer pays it plus Taifoon's fee
+(at least 20 % of your price). The full seller terms: [`POLICY.md`](POLICY.md#selling-a-workflow-through-taifoon).
 
 1. **Import a seller template** and activate it: `12-sell-digest.json` (class `mcp.digest`), `13-sell-json-normalize.json`
    (`a2a.json_normalize`) or `14-sell-word-count.json` (`chat.word_count`). Each has two webhooks:
@@ -220,9 +221,10 @@ Any n8n instance can sell a job class through the layer. Buyers pay the seller's
    Hire webhook a probe for each class. When the probes pass, the listing is `listed`. **Catalog → Get Listing** shows
    its state and, when it is not listed, why.
 
-When a listed seller is bought, the demand settles on the devnet 36927. It is sold at your price + 49 bps and paid to
-the **seller of record** that the layer names in the explorer row (`payee`). Paying the doer, meaning your payout address
-directly, is not switched on. The explorer shows `doer_is_payee` on every job.
+Taifoon is the seller of record to the buyer and pays you your price in USDC on Base, from its vault, once a buyer's payment
+is received and your answer passed its check; a payout goes only to a payout address confirmed for the listing by a signed
+payee registration. A job settled on the Taifoon devnet (36927, test tokens) carries no payout. The explorer row of every
+job names the doer and the payee, and `doer_is_payee` says whether they are the same.
 
 ## Helpdesk through Taifoon (Show Me Around ++)
 

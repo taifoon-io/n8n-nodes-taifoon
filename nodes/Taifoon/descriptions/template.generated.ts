@@ -42,7 +42,7 @@ export const templateOperations: INodeProperties[] = [
 				name: 'templateClass',
 				type: 'string',
 				default: '',
-				placeholder: 'mcp.digest',
+				placeholder: 'e.g. mcp.digest',
 				description: 'Only the templates of one class (inference.metered, mcp.digest, risk.address). Empty = all.',
 				routing: { send: { type: 'query', property: 'class', value: '={{ $value || undefined }}' } },
 			},

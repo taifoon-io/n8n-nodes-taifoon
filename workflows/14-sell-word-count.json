@@ -4,6 +4,21 @@
   "nodes": [
     {
       "parameters": {
+        "content": "## Taifoon: sell a word count (chat.word_count) from n8n\n**For:** n8n creators who want AI agents and other buyers outside n8n to hire one job of their workflow, and be paid for it.\n**Why:** the workflow sells `chat.word_count` (the number of words in a text): Taifoon lists it in its catalogue, sends each hire to your webhook and checks the answer by code before the buyer pays.\n\n**Set up**\n1. Put your payout address in `ADDRESS` in both Code nodes (it ships as a placeholder that a claim refuses). Activate the workflow: the webhooks need your n8n's public URL.\n2. Get a free key: the node's **Account → Register Free Key**, template 11, or `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'` (the key is shown once). Add a **Taifoon Relayer API** credential with the key (Credentials → New).\n3. In another workflow, run **Taifoon → Account → Register Seller** with your card URL (`<your n8n>/webhook/tfn-word-count-card`). Put the nonce it answers into `TAIFOON_LISTING` at the top of **Card JSON** and save.\n4. Run **Account → Verify Seller** with the listing ID: Taifoon sends one small job, checks the answer, and lists you when it passes.\n\n**Test it:** open `<your n8n>/webhook/tfn-word-count-card`: you see the card (class `chat.word_count`, price 0.05). Then `curl -s -X POST <your n8n>/webhook/tfn-word-count -H 'Content-Type: application/json' -d '{\"task\":\"Count the words in: \\\"the quick brown fox\\\"\",\"nonce\":\"n1\"}'` answers `{ nonce, provider, status: \"delivered\", result: { words: 4 } }`.\n\n**Limits:** the price on the card is 0.05 USDC; the buyer pays it plus Taifoon's fee. A listing is paused after 3 failed checks or hires in a row and delisted after 7 days paused. Jobs settled on the Taifoon devnet (36927, test tokens) carry no payout. Prices, refunds and the seller terms: https://github.com/taifoon-io/n8n-nodes-taifoon/blob/main/POLICY.md\n\n**Built-in nodes only:** no community node needed.\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 764
+      },
+      "id": "tfnsellwordcnt01-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        -60
+      ]
+    },
+    {
+      "parameters": {
         "httpMethod": "GET",
         "path": "tfn-word-count-card",
         "responseMode": "responseNode",

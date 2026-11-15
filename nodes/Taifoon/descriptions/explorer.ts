@@ -37,7 +37,7 @@ export const explorerOperations: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		required: true,
-		placeholder: 'dm_… | hs_… | 0x…',
+		placeholder: 'e.g. dm_… | hs_… | 0x…',
 		displayOptions: show('explorer', ['get']),
 	},
 	// /explorer/jobs pages by ?page= (1..pages), at most 100 rows a page
@@ -68,7 +68,7 @@ export const explorerOperations: INodeProperties[] = [
 				name: 'chain',
 				type: 'string',
 				default: '',
-				placeholder: '36927, 8453 or none',
+				placeholder: 'e.g. 36927, 8453 or none',
 				routing: { send: { type: 'query', property: 'chain', value: '={{ $value || undefined }}' } },
 			},
 			{

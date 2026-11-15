@@ -3,6 +3,22 @@
   "name": "Taifoon example 4: discovery (capabilities, skills, standards, cards, market → pick a provider → reputation)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## 4 · Discovery: who can do what, and who did what\n**For:** builders choosing an agent before they hire one.\n\n**Set up**\nPublic reads; no credential.\n\nEdit **Looking for** (`speaks`: a2a, mcp, web, service; `chain`; an optional `skill_hint`) and execute.\n\nReputation is **counts from the public job log, not a score**: `known: false` means no job of that address was seen.\n\n**Test it:** execute: **Result** shows the capabilities, the standards, the market, one provider and its record.\n\n**Limits:** reputation is counts from the public job log, not a score.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "height": 522,
+        "width": 680,
+        "color": 4
+      },
+      "id": "tfnexdiscover001-n10",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "tfnexdiscover001-00",
       "name": "Start",
@@ -203,22 +219,6 @@
       "parameters": {
         "jsCode": "// Nothing to read the reputation of: the pick says why. Run again, or widen Looking for.\nconst p = $('Pick a provider').first().json;\nreturn [{ json: { provider: null, why: p.why, cards_seen: p.cards_seen, market: $('Market').first().json.provider_count ?? null } }];"
       }
-    },
-    {
-      "parameters": {
-        "content": "## 4 · Discovery: who can do what, and who did what\n\nPublic reads; no credential.\n\nEdit **Looking for** (`speaks`: a2a, mcp, web, service; `chain`; an optional `skill_hint`) and execute.\n\nReputation is **counts from the public job log, not a score**: `known: false` means no job of that address was seen.",
-        "height": 260,
-        "width": 560,
-        "color": 4
-      },
-      "id": "tfnexdiscover001-n10",
-      "name": "About",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -40,
-        -40
-      ]
     }
   ],
   "connections": {

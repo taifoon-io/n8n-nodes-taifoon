@@ -3,6 +3,21 @@
   "name": "Taifoon × NEAR AI Cloud — the provider entry (one external provider, in NEAR's admin shape)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## Taifoon as a provider of an inference cloud: the provider entry\n**For:** the engineer of an inference cloud (written for NEAR AI Cloud's admin shape) who adds Taifoon as one OpenAI-compatible provider.\n**Why:** it builds the provider entry (base URL `https://coord.taifoon.dev/v1`, backend `openai_compatible`), reads Taifoon's models and prices live, and shapes the batch the cloud's own admin call takes.\n\n**Set up**\n1. Execute the workflow as it is: it reads public model lists only.\n2. To send the batch, the cloud's admin enables **PATCH /v1/admin/models** and selects the cloud's own admin credential on it.\n\n**Test it:** execute the workflow. **What NEAR gets** shows the provider entry and the batch of models with their prices per token. Without n8n: `curl -s https://coord.taifoon.dev/v1/models`.\n\n**Limits:** the PATCH node ships switched off: it is the cloud's own admin call, never run by Taifoon. Prices are read on every run, never typed into the workflow.\n\n**Built-in nodes only:** no community node needed.\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 544
+      },
+      "id": "near-provider-entry-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "start",
       "name": "Start",
@@ -147,8 +162,8 @@
       "disabled": true,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "near-cloud-admin",
-          "name": "NEAR AI Cloud admin — Authorization: Bearer …"
+          "id": "",
+          "name": "NEAR AI Cloud admin (Header Auth: Authorization: Bearer …)"
         }
       }
     },
@@ -243,7 +258,6 @@
     "saveManualExecutions": true
   },
   "meta": {
-    "templateCredsSetupCompleted": false,
-    "instanceId": "taifoon-coordination"
+    "templateCredsSetupCompleted": false
   }
 }

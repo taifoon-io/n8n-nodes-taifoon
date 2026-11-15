@@ -4,6 +4,12 @@ The text to submit with each template on n8n.io. The workflows are the JSON file
 `n8n-nodes-taifoon`. Every claim below is a call you can make yourself. Settlement runs on the Taifoon devnet (test tokens with
 no value) until you choose a mainnet flow.
 
+Every template opens with a **Start here** note: who it is for, why, the setup steps, a test (what to run and what you see), its
+limits and the n8n version it was tested on. The exported JSON carries no credential IDs, no pinned data and no instance ID; each
+credential reference keeps its type and a descriptive name, so n8n asks for your own credential on import. Every file was run in
+n8n 2.45.5 against production (the record, node by node: [`runs.json`](runs.json)). Prices, refunds and the terms for sellers:
+[`POLICY.md`](../POLICY.md). Privacy: [`PRIVACY.md`](../PRIVACY.md).
+
 ---
 
 ## 10 · Buy work from AI agents through Taifoon (one click)
@@ -26,6 +32,16 @@ work, who was paid, every transaction), and asks the chain to confirm the settle
 **What you get back:** the demand id, the seller, the grade (each check by name), the settlement transaction and its link, and
 an attestation (verdict `REAL` when the chain confirms the settlement).
 
+**Test it:** execute the workflow; **Receipt** fills in within a few minutes. The same demand without n8n:
+
+```
+curl -s -X POST https://coord.taifoon.dev/v1/demands -H 'Content-Type: application/json' -H "X-API-Key: $TAIFOON_KEY" \
+  -d '{"need":"the sha256 digest of the text \"hello\""}'
+curl -s https://coord.taifoon.dev/v1/demands/<id> -H "X-API-Key: $TAIFOON_KEY"
+```
+
+**Limits:** polls up to 30 times, 20 s apart. A need no seller can do ends `unmatched` and the receipt reads `UNVERIFIED`.
+
 ---
 
 ## 11 · First run: get a Taifoon key and post a sample demand
@@ -36,6 +52,11 @@ This needs no credential. It registers a free key for a wallet label, then uses 
 demand (a sha256 digest, settled on the devnet). It returns the demand id, where to follow it, and the next step: save the key
 as a Taifoon Relayer API credential and use template 10. The keys are shown once, in the Register Free Key node's output only,
 and successful executions of this workflow are not saved.
+
+**Test it:** execute the workflow. **Next steps** shows the demand id and `https://coord.taifoon.dev/v1/demands/<id>`. Without
+n8n: `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'`.
+
+**Limits:** one free key per calling address a UTC day.
 
 ---
 
@@ -60,15 +81,30 @@ nonce and is always a JSON 200.
 2. Run **Taifoon → Account → Register Seller** with the card URL. It answers a nonce.
 3. Put the nonce in the Card's `TAIFOON_LISTING` and save.
 4. Run **Account → Verify Seller** with the listing id. Taifoon reads the nonce from your card and sends one small job of the
-   class, which it grades with the class's own check. When the check passes, the workflow is listed in `GET /v1/catalog` at your
-   price + 49 bps.
+   class, which it grades with the class's own check. When the check passes, the workflow is listed in `GET /v1/catalog`: the
+   buyer pays your price plus Taifoon's fee (at least 20 % of your price), and you are paid your price.
 5. From then on, a buyer's demand for the class can hire it through the auto-match loop.
 
 A listed workflow is paused after 3 failed checks or 3 failed hires in a row, or at once when a hire attestation contradicts it.
 It is delisted after 7 days paused, or when the nonce leaves its card.
 
-**Who is paid, today:** on the devnet the job pays Taifoon's seller of record, not your address. Paying the seller directly is not
-switched on yet. The listing, each hire and each grade are recorded, and your record in the catalogue builds from them.
+**Who is paid:** Taifoon is the seller of record to the buyer and pays you your price in USDC on Base, once a buyer's payment is
+received and your answer passed its check, to a payout address confirmed for the listing by a signed payee registration. Jobs
+settled on the Taifoon devnet (test tokens) carry no payout. The full seller terms: [`POLICY.md`](../POLICY.md#selling-a-workflow-through-taifoon).
+
+**Test it** (activate the workflow first; `<n8n>` is your n8n's public URL):
+
+```
+curl -s <n8n>/webhook/tfn-word-count-card
+curl -s -X POST <n8n>/webhook/tfn-word-count -H 'Content-Type: application/json' \
+  -d '{"task":"Count the words in: \"the quick brown fox\"","nonce":"n1"}'
+```
+
+The first answers the card (class `chat.word_count`, price 0.05); the second answers `{ nonce: "n1", provider, status: "delivered",
+result: { words: 4 } }`. Templates 12 and 13 answer the same way on `tfn-digest` and `tfn-json-normalize`.
+
+**Limits:** your n8n must be reachable from the internet. The listing nodes in another workflow need your key; the seller
+workflow itself needs none.
 
 ---
 
@@ -82,6 +118,11 @@ job; nothing is signed or sent from n8n.
 
 **Set up:** a Taifoon Relayer API credential on the four Taifoon nodes, then edit **What you need** (skill, price, task).
 
+**Test it:** execute the workflow. **What to sign** lists the unsigned calls in order, each with its signer and effect; when no
+agent publishes the skill, **Pick one, or stop** says so.
+
+**Limits:** the default chain is the Taifoon devnet. Without a key the calls use the visitor budget of the calling address.
+
 ---
 
 ## 3 · Watch the chain for completed jobs
@@ -90,6 +131,12 @@ job; nothing is signed or sent from n8n.
 
 Starts whenever a job changes, asks the chain to confirm each completed job's settlement and its payee, and reports the verdict
 (REAL · FABRICATED · UNVERIFIED) beside the job. No key is needed to watch; activate the workflow.
+
+**Test it:** open the trigger and click **Fetch Test Event**: it reads the current window without moving the cursor, and **Report**
+shows each job with its verdict. Without n8n: `curl -s 'https://coord.taifoon.dev/v1/jobs?status=done&limit=5'`.
+
+**Limits:** at least once per change, so a job can be emitted once per status. Without a key the chain check uses the visitor
+budget of the calling address.
 
 ---
 
@@ -101,6 +148,10 @@ Quotes a plan for your key (the exact transfer and the message your wallet signs
 margin each customer key earns you. Enable **Mint Child Key** to mint a capped key for a customer: it is shown once, and its
 calls are paid from your balance at your markup.
 
+**Test it:** execute the workflow with **Mint Child Key** left off. **Next steps** shows the plan quote and your reseller view.
+
+**Limits:** **Mint Child Key** ships switched off because it creates a real key. A free allowance never applies to a child key.
+
 
 ---
 
@@ -109,13 +160,13 @@ calls are paid from your balance at your markup.
 The files are `ours/<name>.json`, generated by `ours/build.mjs` (all of them and their live runs: `ours/README.md`, `ours/live.json`).
 What n8n's template rules ask, and where each template answers it:
 
-| Rule | 19 · Safe Payout Desk | 16 · AI answers on one key |
-|---|---|---|
-| Solves a real problem, more than one API request | a whole payout list, one check per row, an IF that fails closed, a list to pay and a list held with reasons | the agreement step, the chat, the receipt; the answer reads the charge |
-| One overview sticky note + section notes | **Start here** + 4 sections | **Start here** + 3 sections |
-| No secrets, no pinned data | one credential, selected by the user; `pinData` empty (`test/templates-ours.test.js` checks both) | the same |
-| Tested from the exported JSON in a fresh n8n, the version named | n8n 2.45.5, 2026-10-29 (`ours/live.json`) | n8n 2.45.5 with `n8n-nodes-taifoon` 1.3.0, 2026-11-03 |
-| A community node is named with its version and install link | none needed (built-in nodes only) | `n8n-nodes-taifoon` 1.3.0, https://www.npmjs.com/package/n8n-nodes-taifoon |
+| Rule | 19 · Safe Payout Desk | 16 · AI answers on one key | 26 · AI Agent on Taifoon |
+|---|---|---|---|
+| Solves a real problem, more than one API request | a whole payout list, one check per row, an IF that fails closed, a list to pay and a list held with reasons | the agreement step, the chat, the receipt; the answer reads the charge | an AI Agent with its chat model and a tool, the terms once, the key's next step in the chat |
+| One overview sticky note + section notes | **Start here** + 4 sections | **Start here** + 3 sections | **Start here** + 3 sections |
+| No secrets, no pinned data | one credential, selected by the user; `pinData` empty (`test/templates-ours.test.js` checks both) | the same | two credentials (OpenAI, Header Auth), both selected by the user; the same |
+| Tested from the exported JSON in a fresh n8n, the version named | n8n 2.45.5, 2026-10-29 (`ours/live.json`) | n8n 2.45.5 with `n8n-nodes-taifoon` 2.1.0, 2026-11-15 | n8n 2.45.5, 2026-11-11 (both trigger paths, `workflows/runs.json`) |
+| A community node is named with its version and install link | none needed (built-in nodes only) | `n8n-nodes-taifoon` 2.1.0, https://www.npmjs.com/package/n8n-nodes-taifoon | none needed (built-in nodes only) |
 
 Not submitted: **17** (the sha256 of a text) does nothing n8n's free Crypto node does not; the receipt Taifoon returns
 (`GET /v1/resale/sales/<id>`) does not carry the digest, and the only record that does (the grade) publishes the text, so it is
@@ -150,6 +201,18 @@ holds every row when it is above `max_usdc_per_check`; each check's receipt says
 3. Put your list in **Payout list**, or activate the webhook (set its Authentication first: anyone with its URL spends your key's checks).
 4. Run. **Desk summary** has the ready list, the held list with reasons, the price per check and what the run spent.
 
+**Test it:** run **Run by hand** with the sample list: one row goes to **Ready to pay** and two are held, each with its reason. To
+test the webhook, activate it and POST the same list:
+
+```
+curl -s -X POST <n8n>/webhook/safe-payout-desk -H 'Content-Type: application/json' \
+  -d '{"payouts":[{"address":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","amount":"1","chain":"base"}]}'
+```
+
+That row is USDC's token contract, so it is held (code at the address). One risk check without n8n (a paid
+check: a key without balance is answered `402` with the price, and nothing is charged):
+`curl -s -X POST https://coord.taifoon.dev/v1/x402/class/risk.address -H 'Content-Type: application/json' -H "X-API-Key: $TAIFOON_KEY" -d '{"input":{"address":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","chainId":8453}}'`.
+
 **The sample list:** three public addresses on Base, one per branch: a wallet with no code that has never sent a transaction
 (medium: held), USDC's token contract (low, but code at the address: held) and Taifoon's vault, a wallet that has sent transactions
 (low: ready to pay).
@@ -165,7 +228,7 @@ holds every row when it is above `max_usdc_per_check`; each check's receipt says
 **Category:** AI · Engineering
 **Nodes:** Manual Trigger, Set, Taifoon ×3 (Agreement → List Agreements, Agreement → Accept Agreement, Inference → Chat), Code ×2, If
 **File:** `ours/16-chat-on-one-key.json`
-**Needs the community node** `n8n-nodes-taifoon` 2.0.1 (self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`):
+**Needs the community node** `n8n-nodes-taifoon` 2.1.0 (self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`):
 https://www.npmjs.com/package/n8n-nodes-taifoon
 
 **For:** n8n builders whose workflow needs a short AI answer (a draft, a classification, a step of reasoning) without an OpenAI
@@ -183,7 +246,45 @@ credential with it, select it on the three Taifoon nodes, edit **Input** and run
 **What you get back:** the answer, the model, its token usage, `charged_usdc` and the sale. A refusal comes back in one shape:
 `{ ok: false, error: { code, status, type, sdk, retry, message, next } }`.
 
-**Tested:** n8n 2.45.5 with `n8n-nodes-taifoon` 2.0.1 on 2026-11-05, against production: 85 tokens, charged 0.000004 USDC.
+**Test it:** run with the sample question: **Answer** shows the text and `charged_usdc`. Without n8n:
+`curl -s https://coord.taifoon.dev/v1/chat/completions -H 'Content-Type: application/json' -H "X-API-Key: $TAIFOON_KEY" -d '{"messages":[{"role":"user","content":"What is 17 times 24?"}],"max_tokens":64}'`.
+
+**Tested:** n8n 2.45.5 with `n8n-nodes-taifoon` 2.1.0 on 2026-11-15, against production: 85 tokens, charged 0.000004 USDC.
+
+---
+
+## 26 · AI Agent on Taifoon: chat model and agent search on one key, paid per token
+
+**Category:** AI · AI Agents
+**Nodes:** Chat Trigger, AI Agent, OpenAI Chat Model, HTTP Request Tool, Code ×3, Manual Trigger, Set, HTTP Request ×2, If
+**File:** `ours/26-ai-agent-on-taifoon.json`
+**Built-in nodes only**: no community node needed. Taifoon's node for n8n is `n8n-nodes-taifoon` (https://www.npmjs.com/package/n8n-nodes-taifoon);
+this template does not need it.
+
+**For:** n8n builders who run an AI Agent and want its chat model and its tools paid from one key, per token, without an OpenAI
+account or a card on file. **Why:** n8n's own OpenAI Chat Model points at Taifoon's OpenAI-compatible door, so the agent runs on
+open-weight models resold at the provider's price + 20 %; a built-in HTTP tool finds checked agents to hire; one key pays every
+answer, and when its balance is spent the chat says how to top it up.
+
+```
+Chat → AI Agent (Taifoon chat model · Find a Taifoon agent) → answer | top-up step
+Accept the terms once → Terms input → Agreements → Terms → [Accept document] → Terms state
+```
+
+**Set up (3 minutes):** get a key (`POST https://coord.taifoon.dev/v1/register`). Add an **OpenAI** credential with the key as API
+Key and `https://coord.taifoon.dev/v1` as Base URL, and a **Header Auth** credential (`X-API-Key`, the same key). Read TSUL-1.1
+and TAT, set `accept_terms` to true and run **Accept the terms once**. Open the chat and ask. Any model of
+`GET https://coord.taifoon.dev/v1/models` works; the template starts on `llama-3.3-70b-instruct`. Adding your own OpenAI Chat Model
+node? Turn **Use Responses API** off: Taifoon serves Chat Completions.
+
+**What you get back:** the agent's answer in the chat; every answer is one metered line on the key (`GET /v1/access/usage`, per
+channel). When the key needs the terms or a top-up, the chat names the step (https://www.taifoon.io/pricing).
+
+**Test it:** run **Accept the terms once**, then open the chat and ask "What is 17 times 24?": the agent answers 408. Ask "find me
+an agent that returns a sha256 digest": its tool names a checked agent with its price.
+
+**Tested:** n8n 2.45.5 on 2026-11-11, against production: the agent answered "17 multiplied by 24 is 408" and, through one call of
+its tool, named a checked sha256 digest agent with its price and the call that buys it.
 
 ---
 
@@ -199,7 +300,9 @@ credential with it, select it on the three Taifoon nodes, edit **Input** and run
 
 Taifoon hires the best-ranked agent behind its wall and checks the answer by code before the key is charged. When no answer
 passes, the key is refunded. The delivery is graded afterwards. The answer comes back with its sale (id, price, the template's
-channel), `charged_usdc`, the meter line and the loop vault.
+channel) and `charged_usdc`.
+
+**Test it:** run either one with its sample input: **Answer** shows the answer, its checks and what it cost.
 
 ---
 
@@ -220,6 +323,17 @@ NEAR AI Cloud's admin shape and shareable with any cloud that has one.
 and puts it behind `TAIFOON_API_KEY`. Nothing in the workflows carries a key value. The guide:
 https://www.taifoon.io/docs/guides/inference-cloud
 
+**Test it:** run 20 as it ships (public reads only): **What NEAR gets** shows the provider entry and the priced batch. Run 21 with
+a Taifoon Relayer API credential: **Settlement line** shows the tokens, the cost and the evidence. Without n8n:
+
+```
+curl -s https://coord.taifoon.dev/v1/models
+curl -s https://coord.taifoon.dev/v1/chat/completions -H 'Content-Type: application/json' -H "X-API-Key: $TAIFOON_KEY" \
+  -d '{"messages":[{"role":"user","content":"Say hi"}],"max_tokens":16}'
+```
+
+**Limits:** the cloud's own admin calls ship switched off. A free key answers about 10 chats a UTC day from one calling address.
+
 ---
 
 ## 23 · Work on the NEAR AI Agent Market, answering each brief through Taifoon
@@ -238,7 +352,8 @@ the escrow to the agent's marketplace account, or asks for changes.
 
 **Set up:** two Header Auth credentials: `Authorization: Bearer tfr_…` (your Taifoon key, on the chat node) and
 `Authorization: Bearer aat_…` (the agent's NEAR Agent Market token, on the two market nodes). The register node is disabled: it
-creates the marketplace account and accepts its terms, so the agent's owner runs it once. Then activate the workflow.
+creates the marketplace account and accepts its terms, so the agent's owner runs it once. **Submit the deliverable** ships
+switched off too: enable it once the agent is registered, then activate the workflow.
 
 **What you get back:** per brief the answer and the market's reply to the submission. A free key answers about 10 briefs a UTC day
 from one calling address; past that, a key with a balance pays per answer.
@@ -259,6 +374,17 @@ register). **Every hour** reads the offers addressed to you (`taifoon_sell` inbo
 **Set up:** one Header Auth credential on the MCP Client nodes (name `X-API-Key`, value your Taifoon key); set `CARD_URL` and
 `PAYOUT_ADDRESS` in **Seller** and `ADDRESS` in both Code nodes; enable the three listing nodes and run **List once**.
 
-**What you get back:** the listing id and its state, the probe's verdict, and every offer with what your workflow answered. Your
-share is paid by Taifoon on Base USDC to your payout address; nothing in this workflow signs or moves money.
+**What you get back:** the listing id and its state, the probe's verdict, and every offer with what your workflow answered. You
+are paid your price in USDC on Base under the seller terms ([`POLICY.md`](../POLICY.md#selling-a-workflow-through-taifoon));
+nothing in this workflow signs or moves money.
+
+**Test it:** activate the workflow and call the two webhooks:
+
+```
+curl -s <n8n>/webhook/tfn-mcp-word-count-card
+curl -s -X POST <n8n>/webhook/tfn-mcp-word-count -H 'Content-Type: application/json' \
+  -d '{"task":"Count the words in: \"one two three four\"","nonce":"n1"}'
+```
+
+**Limits:** the three listing nodes ship switched off until your card is filled in.
 

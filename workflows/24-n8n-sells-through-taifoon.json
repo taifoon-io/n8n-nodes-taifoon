@@ -4,6 +4,21 @@
   "nodes": [
     {
       "parameters": {
+        "content": "## Taifoon: an n8n workflow sells through Taifoon with the MCP Client node\n**For:** n8n creators who want buyers outside n8n, using only n8n's own nodes.\n**Why:** the Card webhook serves your seller card (a word count, checked by code), the Hire webhook answers each offer, the MCP Client node lists the workflow on Taifoon, and every hour it reads the offers addressed to you.\n\n**Set up**\n1. Get a free key: the node's **Account → Register Free Key**, template 11, or `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'` (the key is shown once).\n2. Add a **Header Auth** credential: name `X-API-Key`, value your `tfr_` key. Select it on the MCP Client nodes that ask for one.\n3. Put your card URL and payout address in **Seller**, and your payout address in `ADDRESS` in both Code nodes. Activate the workflow.\n4. Enable the three listing nodes and run **List once**: it claims the listing; paste the nonce into the card; run it again to verify and register for offers.\n\n**Test it:** open `<your n8n>/webhook/tfn-mcp-word-count-card`: you see the card. `curl -s -X POST <your n8n>/webhook/tfn-mcp-word-count -H 'Content-Type: application/json' -d '{\"task\":\"Count the words in: \\\"one two three four\\\"\",\"nonce\":\"n1\"}'` answers `{ nonce, provider, status: \"delivered\", result: { words: 4 } }`.\n\n**Limits:** the three listing nodes ship switched off until your card is filled in. Taifoon pays your price per POLICY.md; nothing in this workflow signs or moves money. Prices, refunds and the seller terms: https://github.com/taifoon-io/n8n-nodes-taifoon/blob/main/POLICY.md\n\n**Built-in nodes only:** no community node needed.\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 698
+      },
+      "id": "tfn-24-n8n-sells-through-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        -60
+      ]
+    },
+    {
+      "parameters": {
         "httpMethod": "GET",
         "path": "tfn-mcp-word-count-card",
         "responseMode": "responseNode",
@@ -188,8 +203,8 @@
       "notesInFlow": true,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "taifoon-key",
-          "name": "Taifoon key (X-API-Key)"
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
         }
       },
       "onError": "continueRegularOutput"
@@ -238,8 +253,8 @@
       "notesInFlow": true,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "taifoon-key",
-          "name": "Taifoon key (X-API-Key)"
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
         }
       },
       "onError": "continueRegularOutput"
@@ -273,8 +288,8 @@
       "notesInFlow": true,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "taifoon-key",
-          "name": "Taifoon key (X-API-Key)"
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
         }
       },
       "onError": "continueRegularOutput"
@@ -329,8 +344,8 @@
       "notesInFlow": true,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "taifoon-key",
-          "name": "Taifoon key (X-API-Key)"
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
         }
       },
       "onError": "continueRegularOutput"

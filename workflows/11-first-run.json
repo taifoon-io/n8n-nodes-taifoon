@@ -3,6 +3,21 @@
   "name": "Taifoon — first run (get a free key, post a sample demand)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## Taifoon: first run, get a free key and post a sample demand\n**For:** anyone trying Taifoon in n8n for the first time.\n**Why:** it needs no credential: it registers a free key for a wallet label, posts one sample demand with the key's sandbox half, and says what to do next.\n\n**Set up**\n1. Optional: put your own wallet address in **Wallet** (a label only; nothing is signed).\n2. Execute the workflow.\n3. Copy `api_key` from the **Register Free Key** output into a **Taifoon Relayer API** credential, then use template 10.\n\n**Test it:** execute the workflow. **Next steps** shows the demand ID and the URL to follow it (`https://coord.taifoon.dev/v1/demands/<id>`). The keys appear only in the **Register Free Key** output.\n\n**Limits:** one free key per calling address a UTC day. Successful executions of this workflow are not saved, so the keys do not stay in your execution data.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 566
+      },
+      "id": "tfnfirstrun00001-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "start",
       "name": "Start",

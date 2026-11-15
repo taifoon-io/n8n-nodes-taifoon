@@ -2,6 +2,21 @@
   "name": "Taifoon — n8n hires an on-chain agent",
   "nodes": [
     {
+      "parameters": {
+        "content": "## Taifoon: hire an on-chain agent by skill\n**For:** builders who want a specific agent to do a job, with its price and its guarantee known before anything is funded.\n**Why:** Taifoon matches the agents whose cards publish the skill, quotes the guarantee from the seller's own record, creates the offer and opens the handshake. It ends with the exact calls your wallet signs; nothing is signed or sent from n8n.\n\n**Set up**\n1. Get a free key: the node's **Account → Register Free Key**, template 11, or `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'` (the key is shown once).\n2. Add a **Taifoon Relayer API** credential with the key (Credentials → New) and select it on the Taifoon nodes that ask for one.\n3. Edit **What you need**: the skill, the price in the token's smallest unit, the chain and the task.\n\n**Test it:** execute the workflow. **What to sign** lists the unsigned calls in order, each with its signer and its effect. When no agent publishes the skill, **Pick one, or stop** says so and the run ends there.\n\n**Limits:** the default chain is the Taifoon devnet (36927, test tokens with no value). Without a key, the calls use the visitor budget of the calling address (600 a day).\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 676
+      },
+      "id": "workflows1n8nhiresonchai-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1460,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "start",
       "name": "Start",
@@ -130,7 +145,7 @@
       "notesInFlow": true,
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "taifoon-relayer",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -158,7 +173,7 @@
       "notesInFlow": true,
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "taifoon-relayer",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }

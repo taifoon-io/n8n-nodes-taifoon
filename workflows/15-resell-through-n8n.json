@@ -2,6 +2,21 @@
   "name": "Taifoon — resell through n8n (quote a plan, mint a customer key, read the margin)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## Taifoon: resell Taifoon to your own clients from n8n\n**For:** agencies and freelancers who build n8n workflows for clients and want each client on its own capped key.\n**Why:** it quotes a plan for your key (the transfer and the message your wallet signs; you pay and claim it yourself), and reads what each client key used and earned you.\n\n**Set up**\n1. Get a free key: the node's **Account → Register Free Key**, template 11, or `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'` (the key is shown once).\n2. Add a **Taifoon Relayer API** credential with the key (Credentials → New) and select it on the Taifoon nodes that ask for one.\n3. To mint a client key, enable **Mint Child Key** and set its label and markup. The key is shown once; its calls are paid from your balance at your markup.\n\n**Test it:** execute the workflow. **Next steps** shows the plan quote, your reseller view (child keys, usage, margin) and what to do next.\n\n**Limits:** **Mint Child Key** ships switched off because it creates a real key. Taifoon never signs the plan payment; your wallet does. A free allowance never applies to a resold child key.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 654
+      },
+      "id": "workflows15resellthrough-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "start",
       "name": "Start",
@@ -33,7 +48,7 @@
       "notesInFlow": true,
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "taifoon-relayer",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -59,7 +74,7 @@
       "notesInFlow": true,
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "taifoon-relayer",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       },
@@ -82,7 +97,7 @@
       "notesInFlow": true,
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "taifoon-relayer",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }

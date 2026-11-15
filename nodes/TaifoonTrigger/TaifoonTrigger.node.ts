@@ -59,7 +59,7 @@ export class TaifoonTrigger implements INodeType {
 				type: 'string',
 				default: '',
 				required: true,
-				placeholder: '0x…',
+				placeholder: 'e.g. 0x…',
 				description: 'A full 20-byte address. A shortened one is refused by the API.',
 				displayOptions: { hide: { watch: ['all'] } },
 			},
@@ -103,7 +103,9 @@ export class TaifoonTrigger implements INodeType {
 		if (watch !== 'all') {
 			const address = (this.getNodeParameter('address') as string).trim();
 			if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
-				throw new NodeOperationError(this.getNode(), 'Address must be a full 20-byte address (0x followed by 40 hex characters)');
+				throw new NodeOperationError(this.getNode(), 'Address must be a full 20-byte address (0x followed by 40 hex characters)', {
+					description: 'Paste the whole address (0x and 40 hex characters, not a shortened 0x12…ab form), or set Watch to All Jobs.',
+				});
 			}
 			qs[watch] = address;
 		}
@@ -122,7 +124,9 @@ export class TaifoonTrigger implements INodeType {
 			})) as { ok?: boolean; jobs?: Job[]; cursor?: string; more?: boolean };
 
 			if (!res || res.ok !== true || !Array.isArray(res.jobs)) {
-				throw new NodeOperationError(this.getNode(), 'The Taifoon API returned an unexpected response for /v1/jobs');
+				throw new NodeOperationError(this.getNode(), 'The Taifoon API returned an unexpected response for /v1/jobs', {
+					description: 'The trigger polls again on its next interval. If this repeats, check https://coord.taifoon.dev/v1/jobs?limit=1 in a browser and report it at https://github.com/taifoon-io/n8n-nodes-taifoon/issues.',
+				});
 			}
 			collected.push(...res.jobs);
 			if (res.cursor) cursor = String(res.cursor);

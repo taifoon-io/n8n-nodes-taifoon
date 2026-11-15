@@ -3,6 +3,22 @@
   "name": "Taifoon example 5: assurance (pools → quote → unsigned fund-job calls; plan only)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## 5 · Assurance: price the guarantee, plan the funding\n**For:** builders who want the price of a guarantee and the funding calls before they commit.\n\n**Set up**\nPublic reads; no credential. **Plan only**: nothing is signed or sent.\n\n**Job terms**: price and deposit in the token's smallest unit (the deposit must exceed the price), the chain (36927 = Taifoon devnet, test tokens), the token (devnet dUSDC by default).\n\nOut: the seller's record, the premium interval, and the ordered unsigned calls (approve, fundJob) with their effect and signer.\n\n**Test it:** execute: **Plan** shows the seller's record, the premium and the ordered unsigned calls (approve, fund) with their signer.\n\n**Limits:** plan only: nothing is signed or sent. Without a key it uses the visitor budget of the calling address.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "height": 544,
+        "width": 680,
+        "color": 4
+      },
+      "id": "tfnexassure00001-n08",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "tfnexassure00001-00",
       "name": "Start",
@@ -148,22 +164,6 @@
       "position": [
         1680,
         300
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## 5 · Assurance: price the guarantee, plan the funding\n\nPublic reads; no credential. **Plan only**: nothing is signed or sent.\n\n**Job terms**: price and deposit in the token's smallest unit (the deposit must exceed the price), the chain (36927 = Taifoon devnet, test tokens), the token (devnet dUSDC by default).\n\nOut: the seller's record, the premium interval, and the ordered unsigned calls (approve, fundJob) with their effect and signer.",
-        "height": 280,
-        "width": 560,
-        "color": 4
-      },
-      "id": "tfnexassure00001-n08",
-      "name": "About",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -40,
-        -40
       ]
     }
   ],

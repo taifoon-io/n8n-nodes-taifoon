@@ -3,6 +3,21 @@
   "name": "Taifoon — buy through Taifoon (one click: a need in words, matched, graded, settled on chain)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## Taifoon: buy work from AI agents in one click\n**For:** builders who want a step done by an agent without choosing who does it.\n**Why:** say what you need in words. Taifoon maps it to a class of work with fixed rules, picks a seller by its record, hires it, checks the answer by code and settles the job. The workflow waits for the end, reads the job (who did the work, who was paid) and asks the chain to confirm the settlement.\n\n**Set up**\n1. Get a free key: the node's **Account → Register Free Key**, template 11, or `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'` (the key is shown once).\n2. Add a **Taifoon Relayer API** credential with the key (Credentials → New) and select it on the Taifoon nodes that ask for one. Select it on **Post demand** and **Get demand**.\n3. Edit **Need**, e.g. `the sha256 digest of the text \"hello from n8n\"`.\n\n**Test it:** execute the workflow. Within a few minutes **Receipt** shows the demand ID, the seller, each check by name, the settlement transaction with its link, and the attestation (`REAL` when the chain confirms it). The same demand without n8n: `curl -s -X POST https://coord.taifoon.dev/v1/demands -H 'Content-Type: application/json' -H \"X-API-Key: $TAIFOON_KEY\" -d '{\"need\":\"the sha256 digest of the text \\\"hello\\\"\"}'`.\n\n**Limits:** it polls up to 30 times, 20 s apart (10 minutes). Settlement runs on the Taifoon devnet (36927, test tokens). A need no seller can do ends `unmatched`, and the receipt reads UNVERIFIED.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 720
+      },
+      "id": "tfnbuythrough001-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "start",
       "name": "Start",
@@ -66,7 +81,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "taifoon-relayer",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       },
@@ -105,7 +120,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "taifoon-relayer",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       },

@@ -49,8 +49,12 @@ for (const f of NEW) {
 		assert.deepStrictEqual(wf.settings.executionOrder, 'v1');
 		const names = new Set(wf.nodes.map((n) => n.name));
 		assert.strictEqual(names.size, wf.nodes.length, 'node names are unique');
+		// the overview note (n8n's template rules: one overview sticky note, the setup, a test, the limits, the version tested)
+		const start = wf.nodes.find((n) => n.name === 'Start here' && n.type === 'n8n-nodes-base.stickyNote');
+		for (const k of ['**For:**', '**Why:**', '**Set up**', '**Test it:**', '**Limits:**', '**Tested:** n8n ']) assert.ok(start?.parameters.content.includes(k), `the Start here note says ${k}`);
 		for (const n of wf.nodes) {
 			assert.ok(n.id && n.type && n.typeVersion && Array.isArray(n.position), `${n.name} is a full node`);
+			if (n.type === 'n8n-nodes-base.stickyNote') continue; // a note is documentation, not a step
 			assert.ok(typeof n.notes === 'string' && n.notes.includes(' · ') && n.notesInFlow === true, `${n.name} carries a note`);
 			assert.ok(wf.meta.taifoon.steps[n.name], `${n.name} is described in meta.taifoon.steps`);
 			assert.ok(!n.type.startsWith('CUSTOM.'), 'shipped templates use the package type, not the instance alias');
@@ -260,7 +264,7 @@ test('24-n8n-sells-through-taifoon.json: the MCP Client nodes call the coord MCP
 	assert.strictEqual(wf.active, false);
 	assert.deepStrictEqual(wf.settings.executionOrder, 'v1');
 	assert.ok(!/tfr_[A-Za-z0-9_-]{8,}|sk-[A-Za-z0-9]{20,}/.test(JSON.stringify(wf)), 'no key in the template');
-	for (const n of wf.nodes) {
+	for (const n of wf.nodes.filter((x) => x.type !== 'n8n-nodes-base.stickyNote')) {
 		assert.ok(typeof n.notes === 'string' && n.notes.includes(' · ') && n.notesInFlow === true, `${n.name} carries a note`);
 		assert.ok(wf.meta.taifoon.steps[n.name], `${n.name} is described in meta.taifoon.steps`);
 	}
@@ -299,4 +303,41 @@ test('24: the sell order is the one coord names (surfaces n8n.mcp-seller), when 
 	const wf = W('24-n8n-sells-through-taifoon.json');
 	for (const c of wf.meta.taifoon.mcp.order) assert.ok(named.includes(c), `${c} is a step coord names`);
 	assert.strictEqual(s.node.split(' ')[0], '@n8n/n8n-nodes-langchain.mcpClient');
+});
+
+// ── privacy of every shipped workflow (n8n's template rules): no credential id, no instance id, no pinned data, no tunnel or
+// personal address, an overview note; a credential reference keeps its type and a descriptive name, so n8n asks for your own ──
+const { readdirSync, statSync } = require('node:fs');
+function shippedWorkflows() {
+	const root = join(__dirname, '..'), out = [];
+	const walk = (rel) => {
+		for (const f of readdirSync(join(root, rel))) {
+			const r = `${rel}/${f}`;
+			if (['workflows/ours/pending', 'workflows/ours/coord-lang', 'workflows/ours/samples'].includes(r)) continue;
+			if (statSync(join(root, r)).isDirectory()) { walk(r); continue; }
+			if (!f.endsWith('.json')) continue;
+			let w; try { w = JSON.parse(readFileSync(join(root, r), 'utf8')); } catch { continue; }
+			if (w && Array.isArray(w.nodes) && w.connections) out.push([r, w]);
+		}
+	};
+	walk('workflows'); walk('examples');
+	return out;
+}
+test('every shipped workflow: an overview note, no credential id, no instance id, no pinned data, no tunnel or personal address', () => {
+	const all = shippedWorkflows();
+	assert.ok(all.length >= 30, `${all.length} workflows`);
+	for (const [f, w] of all) {
+		const notes = w.nodes.filter((n) => n.type === 'n8n-nodes-base.stickyNote');
+		const sub = w.nodes.some((n) => /executeWorkflowTrigger$/.test(n.type));
+		assert.ok(notes.length >= 1, `${f}: a sticky note`);
+		if (!sub) assert.ok(notes.some((n) => /\*\*Tested:\*\* n8n \d/.test(n.parameters.content)), `${f}: its overview note names the n8n version tested`);
+		for (const n of w.nodes) for (const [t, ref] of Object.entries(n.credentials ?? {})) {
+			assert.equal(ref.id, '', `${f} · ${n.name}: no credential id (n8n asks for the user's own on import)`);
+			assert.ok(typeof ref.name === 'string' && ref.name.length > 0, `${f} · ${n.name}: ${t} keeps a descriptive name`);
+		}
+		assert.equal(w.meta?.instanceId, undefined, `${f}: no instance id`);
+		assert.ok(!w.pinData || Object.keys(w.pinData).length === 0, `${f}: no pinned data`);
+		const s = JSON.stringify(w);
+		assert.doesNotMatch(s, /trycloudflare\.com|ngrok|loca\.lt|@(gmail|proton|protonmail|outlook|yahoo)\./i, `${f}: no tunnel URL or personal email`);
+	}
 });

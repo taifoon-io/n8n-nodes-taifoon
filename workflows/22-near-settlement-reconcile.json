@@ -4,6 +4,21 @@
   "nodes": [
     {
       "parameters": {
+        "content": "## Taifoon as a provider of an inference cloud: the daily reconcile\n**For:** the finance side of an inference cloud integration, once a day.\n**Why:** it reads Taifoon's public record of sales (each sale and whether its parts sum) and the key's standing, and writes the day's digest to compare with the cloud's own revenue report.\n\n**Set up**\n1. Get a free key: the node's **Account → Register Free Key**, template 11, or `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'` (the key is shown once).\n2. Add a **Header Auth** credential: name `X-API-Key`, value your `tfr_` key. Select it on the HTTP nodes that ask for one. Select it on **Key standing**.\n3. The cloud's admin may enable **GET /v1/admin/platform/model-revenue** with the cloud's own credential to add its side.\n4. Activate the workflow: it runs every day.\n\n**Test it:** execute the workflow by hand. **Digest** shows the day's sales, whether they sum, and the key's balance and standing.\n\n**Limits:** the cloud's revenue node ships switched off: it is the cloud's own admin call.\n\n**Built-in nodes only:** no community node needed.\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 566
+      },
+      "id": "near-settlement-reconcil-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
+      "parameters": {
         "rule": {
           "interval": [
             {
@@ -59,8 +74,8 @@
       "notesInFlow": true,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "taifoon-key",
-          "name": "Taifoon key (X-API-Key)"
+          "id": "",
+          "name": "Taifoon key (Header Auth: X-API-Key)"
         }
       }
     },
@@ -106,8 +121,8 @@
       "disabled": true,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "near-cloud-admin",
-          "name": "NEAR AI Cloud admin — Authorization: Bearer …"
+          "id": "",
+          "name": "NEAR AI Cloud admin (Header Auth: Authorization: Bearer …)"
         }
       }
     },
@@ -180,7 +195,6 @@
     "saveManualExecutions": true
   },
   "meta": {
-    "templateCredsSetupCompleted": false,
-    "instanceId": "taifoon-coordination"
+    "templateCredsSetupCompleted": false
   }
 }

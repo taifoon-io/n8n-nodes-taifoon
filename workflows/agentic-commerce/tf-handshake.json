@@ -254,9 +254,9 @@
         0
       ],
       "parameters": {
-        "content": "## tf.handshake\nCalled by the main flow before any paid step. Reads the key's standing (`GET /v1/access/key`), the documents it still lacks for the product (`GET /v1/access/agreements`), accepts them only when the caller consented (`accept_terms: true`, a click-through acceptance recorded under the key's ref), and asks for a top-up quote. Every answer is read into one error contract (coord `gate-errors.cue`).",
+        "content": "## tf.handshake\nCalled by the main flow before any paid step. Reads the key's standing (`GET /v1/access/key`), the documents it still lacks for the product (`GET /v1/access/agreements`), accepts them only when the caller consented (`accept_terms: true`, a click-through acceptance recorded under the key's ref), and asks for a top-up quote. Every answer is read into one error contract (coord `gate-errors.cue`). Part of **taifoon-agentic-commerce**: import it with the main flow and publish it; the main flow's **Start here** note has the setup, the test and the limits.",
         "width": 460,
-        "height": 260
+        "height": 340
       }
     }
   ],

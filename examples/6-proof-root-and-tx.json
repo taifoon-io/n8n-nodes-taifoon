@@ -3,6 +3,22 @@
   "name": "Taifoon example 6: proof (latest root → transaction proof → output)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## 6 · Proof: is this transaction inside the root?\n**For:** anyone who needs to show that a transaction happened on a chain.\n\n**Set up**\nPublic reads; no credential.\n\nPut a chain and a full 66-character transaction hash in **Transaction** and execute. While the producer is still building that block's proof the answer is `pending_proof` with the receipt read from chain; the workflow asks again up to 3 times, 10 s apart.\n\nOut: the root, `is_finalized`, and the list of exactly what was checked.\n\n**Test it:** execute: **Output** shows the root, `is_finalized` and exactly what was checked. Without n8n: `curl -s https://coord.taifoon.dev/v1/root/latest`.\n\n**Limits:** a block still being proven answers `pending_proof`; the workflow asks again up to 3 times, 10 s apart.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "height": 544,
+        "width": 680,
+        "color": 4
+      },
+      "id": "tfnexproof000001-n07",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "tfnexproof000001-00",
       "name": "Start",
@@ -118,22 +134,6 @@
       "position": [
         1440,
         300
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## 6 · Proof: is this transaction inside the root?\n\nPublic reads; no credential.\n\nPut a chain and a full 66-character transaction hash in **Transaction** and execute. While the producer is still building that block's proof the answer is `pending_proof` with the receipt read from chain; the workflow asks again up to 3 times, 10 s apart.\n\nOut: the root, `is_finalized`, and the list of exactly what was checked.",
-        "height": 260,
-        "width": 560,
-        "color": 4
-      },
-      "id": "tfnexproof000001-n07",
-      "name": "About",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -40,
-        -40
       ]
     }
   ],

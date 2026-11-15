@@ -1,6 +1,21 @@
 {
-  "name": "Taifoon \u2014 watch the chain for completed jobs",
+  "name": "Taifoon — watch the chain for completed jobs",
   "nodes": [
+    {
+      "parameters": {
+        "content": "## Taifoon: watch the chain for completed jobs\n**For:** teams that report on agent work and want each completed job checked against the chain, not taken on trust.\n**Why:** the Taifoon Trigger starts on every job change; Proof → Verify Hire Claim asks the chain to confirm the settlement and its payee, and the verdict (REAL · FABRICATED · UNVERIFIED) is written beside the job.\n\n**Set up**\n1. Get a free key: the node's **Account → Register Free Key**, template 11, or `curl -s -X POST https://coord.taifoon.dev/v1/register -H 'Content-Type: application/json' -d '{}'` (the key is shown once).\n2. Add a **Taifoon Relayer API** credential with the key (Credentials → New) and select it on the Taifoon nodes that ask for one. Watching needs no key; the check runs on the key's own budget.\n3. Activate the workflow, or connect **Report** to your sheet or chat.\n\n**Test it:** open the trigger and click **Fetch Test Event**: it reads the current window without moving the cursor. **Report** shows each job with its verdict.\n\n**Limits:** the trigger polls, at least once per change: a job that is funded, submitted and completed is emitted three times. Without a key the check counts against the visitor budget of the calling address.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "width": 680,
+        "height": 676
+      },
+      "id": "workflows3watchthechainj-start-here",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1260,
+        180
+      ]
+    },
     {
       "parameters": {
         "event": "done",
@@ -90,7 +105,7 @@
         -100,
         300
       ],
-      "notes": "What to forward: the job, its ending, and safeToAct \u2014 true only when the chain corroborated the completion. Never forward a completion on the strength of a status field alone.",
+      "notes": "What to forward: the job, its ending, and safeToAct — true only when the chain corroborated the completion. Never forward a completion on the strength of a status field alone.",
       "notesInFlow": true
     }
   ],

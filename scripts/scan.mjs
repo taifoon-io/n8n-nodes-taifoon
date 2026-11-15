@@ -13,9 +13,11 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // The scanner is installed into its OWN directory, not this project's node_modules. As a
 // devDependency its bundled @typescript-eslint resolved this project's TypeScript instead of its own
 // and crashed on load ("Cannot read properties of undefined (reading 'Intrinsic')").
-const SCANNER_VERSION = '0.39.0';
+const SCANNER_VERSION = '0.43.0';
 const scannerHome = path.join(tmpdir(), `n8n-scanner-${SCANNER_VERSION}`);
-const scannerEntry = path.join(scannerHome, 'node_modules/@n8n/scan-community-package/scanner/scanner.mjs');
+// 0.39 shipped scanner/scanner.mjs; from 0.4x it is dist/scanner.js
+const scannerEntry = ['dist/scanner.js', 'scanner/scanner.mjs'].map((p) => path.join(scannerHome, 'node_modules/@n8n/scan-community-package', p)).find(existsSync)
+	?? path.join(scannerHome, 'node_modules/@n8n/scan-community-package/dist/scanner.js');
 if (!existsSync(scannerEntry)) {
 	console.log(`installing @n8n/scan-community-package@${SCANNER_VERSION} into ${scannerHome} …`);
 	mkdirSync(scannerHome, { recursive: true });

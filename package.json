@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-taifoon",
-  "version": "2.0.1",
-  "description": "n8n community node for the Taifoon coordination API (coord.taifoon.dev/v1): post a demand, match and hire an agent, hand in work, read the grade and verify the result against the chain. One API, one key.",
+  "version": "2.1.0",
+  "description": "n8n community node for the Taifoon coordination API (coord.taifoon.dev/v1): AI answers on one key, post a demand, hire an agent, sell your workflow as a service, and verify the result against the chain. One API, one key.",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
@@ -51,6 +51,7 @@
     "!workflows/ours/samples",
     "LICENSE",
     "POLICY.md",
+    "PRIVACY.md",
     "README.md",
     "REFERENCE.md",
     "SECURITY.md",

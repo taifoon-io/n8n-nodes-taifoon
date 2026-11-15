@@ -3,6 +3,22 @@
   "name": "Taifoon example 1b: check my tenant (with the saved key)",
   "nodes": [
     {
+      "parameters": {
+        "content": "## 1b · Check my tenant\n**For:** anyone who saved a key and wants to see its tenant.\n\n**Set up**\nAttach your **Taifoon Relayer API** credential (no key yet: run **1a**) to **Get My Tenant** and execute.\n\nOut: tenant id, how it came (`via`), its keys (prefixes only) and the next step the layer suggests.\n\n**Test it:** execute: **Summary** shows the tenant ID, how it came, the key prefixes and the next step.\n\n**Limits:** needs the credential; without it the call answers 401 with how to get a key.\n\n**Needs the community node** `n8n-nodes-taifoon` (tested with 2.1.0): self-hosted n8n → Settings → Community nodes → Install → `n8n-nodes-taifoon`. https://www.npmjs.com/package/n8n-nodes-taifoon\n**Tested:** n8n 2.45.5 with n8n-nodes-taifoon 2.1.0, 2026-11-15: imported from this file into a fresh n8n and run against coord.taifoon.dev.",
+        "height": 478,
+        "width": 680,
+        "color": 4
+      },
+      "id": "tfnexmytenant001-n03",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
       "parameters": {},
       "id": "tfnexmytenant001-00",
       "name": "Start",
@@ -28,7 +44,7 @@
       ],
       "credentials": {
         "taifoonRelayerApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "id": "",
           "name": "Taifoon Relayer API"
         }
       }
@@ -44,22 +60,6 @@
       "position": [
         480,
         300
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## 1b · Check my tenant\n\nAttach your **Taifoon Relayer API** credential (no key yet: run **1a**) to **Get My Tenant** and execute.\n\nOut: tenant id, how it came (`via`), its keys (prefixes only) and the next step the layer suggests.",
-        "height": 240,
-        "width": 460,
-        "color": 4
-      },
-      "id": "tfnexmytenant001-n03",
-      "name": "About",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -40,
-        -40
       ]
     }
   ],

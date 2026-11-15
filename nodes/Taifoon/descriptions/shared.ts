@@ -29,7 +29,7 @@ export const address = (
 	type: 'string',
 	default: '',
 	required,
-	placeholder: '0x…',
+	placeholder: 'e.g. 0x…',
 	description: `${description} Must be a full 20-byte address; a shortened one is refused`,
 	displayOptions: show(resource, operation),
 });

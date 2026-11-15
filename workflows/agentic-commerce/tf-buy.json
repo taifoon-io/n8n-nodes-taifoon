@@ -317,9 +317,9 @@
         0
       ],
       "parameters": {
-        "content": "## tf.buy\nA need in words (`POST /v1/demands`): the layer matches a seller, hires it, grades the delivery by code, settles it, and this flow polls the demand, reads the job (who did the work, who was paid) and asks the chain for its verdict (`POST /v1/attest/hire`: REAL · FABRICATED · UNVERIFIED). The buyer pays only for work that passed.",
+        "content": "## tf.buy\nA need in words (`POST /v1/demands`): the layer matches a seller, hires it, grades the delivery by code, settles it, and this flow polls the demand, reads the job (who did the work, who was paid) and asks the chain for its verdict (`POST /v1/attest/hire`: REAL · FABRICATED · UNVERIFIED). The buyer pays only for work that passed. Part of **taifoon-agentic-commerce**: import it with the main flow and publish it; the main flow's **Start here** note has the setup, the test and the limits.",
         "width": 460,
-        "height": 260
+        "height": 340
       }
     }
   ],

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.1.0 (2026-11-15)
+
+Files and policies for n8n's verification and template rules. No operation, field value or request changed; saved workflows keep working.
+
+- **Privacy** (`PRIVACY.md`, new, in the npm package and the public repository): what the node sends and to whom (one host, the
+  fields you set, four headers), what stays in your n8n, what Taifoon keeps (a key's hash only; for AI answers the sale record, not
+  the prompt or the completion), and what is public by design.
+- **Seller terms** (`POLICY.md`, new section *Selling a workflow through Taifoon*): what can be sold from n8n, your price and the
+  buyer's (you are paid your own price; the buyer pays it plus Taifoon's fee, at least 20 % of it), when and how you are paid
+  (USDC on Base, to a confirmed payout address), devnet jobs, pausing and delisting, what stays yours. The pricing line now says
+  the fee is at least 20 % and that the exact price is stated before you pay. The terms behind the policy are named in one place.
+- **Credentials:** the credential's documentation link is now the README's *Credentials* section, which says where the key comes
+  from, how to test it (in n8n and with curl), which operations need it, what the Channel ID is, and what happens without a key.
+  The credential's descriptions name the current operations (Job Review → Submit Review); the Channel ID placeholder starts with "e.g.".
+- **UX:** every value placeholder starts with "e.g." (the generated descriptions too); the Trigger's and the pager's errors say how
+  to fix them.
+- **Templates:** every workflow and example opens with a **Start here** note (for whom, why, setup steps, a test, the limits, the
+  n8n and node versions tested). The exported JSON carries no credential IDs (each reference keeps its type and a descriptive
+  name, so n8n asks for your own credential), no instance ID and no pinned data; a test checks every shipped workflow for this.
+  Template 23's **Submit the deliverable** ships switched off, like its register node: both act on the market. `TEMPLATES.md` gives
+  each template a test (what to run, what you see, curl lines) and its limits.
+- The package description no longer mentions grading (removed in 2.0.0); the stale "+49 bps" price text is gone from the docs.
+
 ## 2.0.1 (2026-11-05)
 
 - The last names of the grading model are out of the node and its templates: the Helpdesk "Jev" grader option, the Give Feedback and Grade Case descriptions, the template notes. No request changes except that Grade Case no longer offers that grader.

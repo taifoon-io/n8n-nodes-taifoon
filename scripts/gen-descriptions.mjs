@@ -35,7 +35,8 @@ function param(resource, ops, p) {
 	const dflt = p.default ?? (p.type === 'number' ? 0 : p.type === 'boolean' ? false : '');
 	lines.push(`\t\tdefault: ${lit(dflt)},`);
 	if (p.required) lines.push(`\t\trequired: true,`);
-	if (p.placeholder) lines.push(`\t\tplaceholder: ${q(p.placeholder)},`);
+	// n8n's UX rule: a value placeholder starts with "e.g."
+	if (p.placeholder) lines.push(`\t\tplaceholder: ${q(/^e\.g\. /.test(p.placeholder) ? p.placeholder : `e.g. ${p.placeholder}`)},`);
 	// an option's name: its words title-cased (n8n's linter), a token with a digit or a dot kept as written (TSUL-1.1, 1d); sorted by name
 	if (p.type === 'options') lines.push(`\t\toptions: [${p.options.map((o) => ({ n: optName(o), o })).sort((a, b) => a.n.localeCompare(b.n)).map(({ n, o }) => `{ name: ${q(n)}, value: ${q(o)} }`).join(', ')}],`);
 	if (p.type === 'number' && /limit/i.test(p.name)) lines.push(`\t\ttypeOptions: { minValue: 1 },`);
