@@ -375,7 +375,7 @@ export const accountOperations: INodeProperties[] = [
 		default: '',
 		required: true,
 		placeholder: 'e.g. my-workflows',
-		description: 'Your channel id: lower-case letters, digits, dots, colons and dashes. First come: one key holds it.',
+		description: 'Your channel ID: lower-case letters, digits, dots, colons and dashes. First come: one key holds it.',
 		displayOptions: show('account', ['registerAuthorChannel']),
 		routing: { send: { type: 'body', property: 'channel' } },
 	},
