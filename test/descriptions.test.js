@@ -11,6 +11,9 @@ const prop = (name) => d.properties.find((p) => p.name === name);
 const flat = (props) => props.flatMap((p) => (p.type === 'collection' ? p.options.map((o) => ({ ...o, displayOptions: p.displayOptions, in: p.name })) : [p]));
 const field = (name) => flat(d.properties).find((p) => p.name === name);
 const route = (resource, op) => ops(resource).find((o) => o.value === op).routing.request;
+// coord-lang/ (coord gen row n8n-resale-node) stays in the private source; the public mirror ships without it
+const RESALE = require('node:path').join(__dirname, '..', 'coord-lang', 'n8n-resale.json');
+const { existsSync } = require('node:fs');
 
 test('Settlement is a resource, its three operations hit /v1/settle and nothing else', () => {
 	assert.ok(prop('resource').options.some((o) => o.value === 'settlement'));
@@ -357,7 +360,9 @@ test('Market is a resource generated from coord, between Job Review and Proof, i
 	assert.ok(names.includes('market'));
 	assert.deepStrictEqual(ops('market').map((o) => o.value), ['compareVenues', 'getFeeScheme', 'getPrices', 'quoteFee']);
 	assert.strictEqual(d.properties.find((p) => p.name === 'operation' && p.displayOptions.show.resource[0] === 'market').default, 'getPrices');
-	const resale = require('../coord-lang/n8n-resale.json');
+	// the route check reads coord-lang/, which the public mirror does not ship (test/generated.test.js skips the same way)
+	if (!existsSync(RESALE)) return;
+	const resale = require(RESALE);
 	for (const o of resale.node_ops.filter((x) => x.resource === 'market')) {
 		assert.ok(!o.hand, `${o.operation} is generated, not hand-typed`);
 		assert.deepStrictEqual(route('market', o.operation), { method: o.method, url: o.url });
@@ -419,9 +424,9 @@ test('Seller Listing → Get Venues and Set Venue address the ls_ listing; Set V
 	assert.match(ops('sellerListing').find((o) => o.value === 'setVenue').description, /Nothing is listed, signed or paid here/);
 });
 
-test('2.2.0 hand-typed operations are held to their coord gate routes (gen-descriptions --check)', async () => {
+test('2.2.0 hand-typed operations are held to their coord gate routes (gen-descriptions --check)', { skip: !existsSync(RESALE) && 'no coord-lang/ here' }, async () => {
 	const { handDrift } = await import('../scripts/gen-descriptions.mjs');
-	const resale = require('../coord-lang/n8n-resale.json');
+	const resale = require(RESALE);
 	const rows = resale.node_ops.filter((o) => ['account.getUsage', 'agent.getRegistered', 'sellerListing.getVenues', 'sellerListing.setVenue'].includes(`${o.resource}.${o.operation}`));
 	assert.strictEqual(rows.length, 4);
 	assert.ok(rows.every((o) => o.hand));
