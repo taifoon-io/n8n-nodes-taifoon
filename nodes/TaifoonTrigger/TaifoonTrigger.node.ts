@@ -7,7 +7,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-import { initialCursor, takeFresh, type Job, type PollState } from './cursor';
+import { initialCursor, takeFresh, takeFreshOffers, type Job, type Offer, type OfferState, type PollState } from './cursor';
 
 const BASE = 'https://coord.taifoon.dev/v1';
 const MAX_PAGES = 10;
@@ -20,32 +20,54 @@ export class TaifoonTrigger implements INodeType {
 		group: ['trigger'],
 		version: 1,
 		subtitle: '={{$parameter["event"]}}',
-		description: 'Starts a workflow when an on-chain agent job changes — funded, submitted, completed, expired, rejected',
+		description: 'Starts a workflow when an on-chain agent job changes — funded, submitted, completed, expired, rejected — or when Taifoon sends your seller address an offer',
 		defaults: { name: 'Taifoon Trigger' },
 		polling: true,
 		inputs: [],
 		outputs: [NodeConnectionTypes.Main],
+		credentials: [
+			{
+				// optional: with a key the polls run on the key's own budget instead of the visitor budget of the n8n host's address
+				// (600 keyless calls a day), so a trigger that polls every minute keeps answering
+				name: 'taifoonRelayerApi',
+				required: false,
+			},
+		],
 		properties: [
 			{
 				displayName: 'Event',
 				name: 'event',
 				type: 'options',
 				default: 'any',
-				description: 'A job ends in exactly one of four ways. "Opened or Progressed" is a job still in flight.',
+				description:
+					'A job ends in exactly one of four ways. "Opened or Progressed" is a job still in flight. "Offer to My Seller Address" is an offer Taifoon or a buyer sent the address on your card (a handshake), once per offer and state.',
 				options: [
 					{ name: 'Any Change', value: 'any' },
 					{ name: 'Cheat Finding', value: 'cheat' },
 					{ name: 'Completed', value: 'done' },
 					{ name: 'Expired', value: 'expired' },
+					{ name: 'Offer to My Seller Address', value: 'offer' },
 					{ name: 'Opened or Progressed', value: 'open' },
 					{ name: 'Rejected', value: 'rejected' },
 				],
+			},
+			{
+				displayName: 'Seller Address',
+				name: 'address',
+				type: 'string',
+				default: '',
+				required: true,
+				placeholder: 'e.g. 0x…',
+				description:
+					'Your payTo address, the one on your card: the offers addressed to it (GET /v1/handshake?provider=). Each carries what your webhook answered; your answer is that reply. A full 20-byte address.',
+				displayOptions: { show: { event: ['offer'] } },
 			},
 			{
 				displayName: 'Watch',
 				name: 'watch',
 				type: 'options',
 				default: 'all',
+				displayOptions: { hide: { event: ['offer'] } },
 				options: [
 					{ name: 'All Jobs', value: 'all' },
 					{ name: 'Jobs an Address Is Buying', value: 'buyer' },
@@ -61,7 +83,7 @@ export class TaifoonTrigger implements INodeType {
 				required: true,
 				placeholder: 'e.g. 0x…',
 				description: 'A full 20-byte address. A shortened one is refused by the API.',
-				displayOptions: { hide: { watch: ['all'] } },
+				displayOptions: { hide: { watch: ['all'], event: ['offer'] } },
 			},
 			{
 				displayName: 'Options',
@@ -83,6 +105,7 @@ export class TaifoonTrigger implements INodeType {
 						name: 'chain',
 						type: 'number',
 						default: 8453,
+						description: 'The chain of the jobs (not used for offers)',
 					},
 				],
 			},
@@ -96,6 +119,31 @@ export class TaifoonTrigger implements INodeType {
 		const manual = this.getMode() === 'manual';
 		const state = this.getWorkflowStaticData('node') as PollState;
 		const now = Date.now();
+		// the credential, when one is attached, carries X-API-Key and the channel on every poll
+		const keyed = Boolean(this.getNode().credentials?.taifoonRelayerApi);
+		const get = async (url: string, qs: IDataObject) =>
+			keyed
+				? this.helpers.httpRequestWithAuthentication.call(this, 'taifoonRelayerApi', { method: 'GET', url, qs, json: true })
+				: this.helpers.httpRequest({ method: 'GET', url, qs, json: true });
+
+		if (event === 'offer') {
+			const address = (this.getNodeParameter('address') as string).trim();
+			if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+				throw new NodeOperationError(this.getNode(), 'Seller Address must be a full 20-byte address (0x followed by 40 hex characters)', {
+					description: 'Paste the payTo address your card names (0x and 40 hex characters), not a shortened 0x12…ab form.',
+				});
+			}
+			const res = (await get(`${BASE}/handshake`, { provider: address, limit: 200 })) as { ok?: boolean; handshakes?: Offer[] };
+			if (!res || res.ok !== true || !Array.isArray(res.handshakes)) {
+				throw new NodeOperationError(this.getNode(), 'The Taifoon API returned an unexpected response for /v1/handshake', {
+					description: 'The trigger polls again on its next interval. If this repeats, check https://coord.taifoon.dev/v1/handshake?provider=<your address>&limit=1 in a browser.',
+				});
+			}
+			// manual: the newest five as they stand, nothing consumed
+			if (manual) return res.handshakes.length ? [this.helpers.returnJsonArray(res.handshakes.slice(0, 5) as IDataObject[])] : null;
+			const fresh = takeFreshOffers(state as OfferState, res.handshakes, now, options.backfill === true);
+			return fresh.length ? [this.helpers.returnJsonArray(fresh as IDataObject[])] : null;
+		}
 
 		const qs: IDataObject = { limit: 50 };
 		if (event !== 'any') qs.status = event;
@@ -116,12 +164,7 @@ export class TaifoonTrigger implements INodeType {
 		const collected: Job[] = [];
 
 		for (let page = 0; page < MAX_PAGES; page++) {
-			const res = (await this.helpers.httpRequest({
-				method: 'GET',
-				url: `${BASE}/jobs`,
-				qs: { ...qs, since: cursor },
-				json: true,
-			})) as { ok?: boolean; jobs?: Job[]; cursor?: string; more?: boolean };
+			const res = (await get(`${BASE}/jobs`, { ...qs, since: cursor })) as { ok?: boolean; jobs?: Job[]; cursor?: string; more?: boolean };
 
 			if (!res || res.ok !== true || !Array.isArray(res.jobs)) {
 				throw new NodeOperationError(this.getNode(), 'The Taifoon API returned an unexpected response for /v1/jobs', {

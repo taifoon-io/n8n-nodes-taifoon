@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-taifoon",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "n8n community node for the Taifoon coordination API (coord.taifoon.dev/v1): AI answers on one key, post a demand, hire an agent, sell your workflow as a service, and verify the result against the chain. One API, one key.",
   "keywords": [
     "n8n-community-node-package",

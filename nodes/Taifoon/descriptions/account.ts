@@ -81,12 +81,28 @@ export const accountOperations: INodeProperties[] = [
 				routing: { request: { method: 'GET', url: '/access/reseller' } },
 			},
 			{
+				name: 'Get Usage',
+				value: 'getUsage',
+				action: 'Get what your key used',
+				description:
+					'What your key used over a window, per product family: calls, GRID and USDC metered, errors and refused calls, by day, per key, and per project, agent or workflow the keys are bound to; what you earned into your vault (needs the credential)',
+				routing: { request: { method: 'GET', url: '/access/usage' } },
+			},
+			{
 				name: 'Mint Child Key',
 				value: 'mintChildKey',
 				action: 'Mint a child key',
 				description:
 					'Mint a customer of yours: a child tenant with its own live and sandbox keys, shown ONCE (needs the credential). The child is debited at the wholesale price from your balance and owes you list + markup (ledger rows only). 10 a day.',
 				routing: { request: { method: 'POST', url: '/tenant/keys' } },
+			},
+			{
+				name: 'Register Author Channel',
+				value: 'registerAuthorChannel',
+				action: 'Register an author channel',
+				description:
+					'Name the channel your workflows sell under and the address your author share is paid to (needs the credential). Then pass the channel to Register Seller: every sale of that workflow pays you your share on top of the price your workflow asks.',
+				routing: { request: { method: 'POST', url: '/channels' } },
 			},
 			{
 				name: 'Register Free Key',
@@ -333,6 +349,56 @@ export const accountOperations: INodeProperties[] = [
 		routing: { send: { type: 'body', property: 'kind' } },
 	},
 	{
+		displayName: 'Additional Fields',
+		name: 'sellerOptions',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: show('account', ['registerSeller']),
+		options: [
+			{
+				displayName: 'Author Channel',
+				name: 'sellerChannel',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. my-workflows',
+				description: 'The channel you registered with Register Author Channel (same credential). Each sale of this workflow pays your author share to that channel.',
+				routing: { send: { type: 'body', property: 'channel', value: '={{ $value || undefined }}' } },
+			},
+		],
+	},
+	// ── register an author channel (POST /v1/channels): the channel id and the address its share is paid to ──
+	{
+		displayName: 'Channel',
+		name: 'authorChannel',
+		type: 'string',
+		default: '',
+		required: true,
+		placeholder: 'e.g. my-workflows',
+		description: 'Your channel id: lower-case letters, digits, dots, colons and dashes. First come: one key holds it.',
+		displayOptions: show('account', ['registerAuthorChannel']),
+		routing: { send: { type: 'body', property: 'channel' } },
+	},
+	{
+		displayName: 'Additional Fields',
+		name: 'authorChannelOptions',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: show('account', ['registerAuthorChannel']),
+		options: [
+			{
+				displayName: 'Pay To',
+				name: 'authorPayTo',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. 0x…',
+				description: 'The address your share is paid to, in USDC on Base. Leave it out to keep the one registered before.',
+				routing: { send: { type: 'body', property: 'pay_to', value: '={{ $value || undefined }}' } },
+			},
+		],
+	},
+	{
 		displayName: 'Listing ID',
 		name: 'sellerListingId',
 		type: 'string',
@@ -341,5 +407,29 @@ export const accountOperations: INodeProperties[] = [
 		placeholder: 'e.g. ls_…',
 		description: 'The listing ID Register Seller returned',
 		displayOptions: show('account', ['verifySeller']),
+	},
+	{
+		displayName: 'Filters',
+		name: 'usageFilters',
+		type: 'collection',
+		placeholder: 'Add Filter',
+		default: {},
+		displayOptions: show('account', ['getUsage']),
+		options: [
+			{
+				displayName: 'Window',
+				name: 'usageWindow',
+				type: 'options',
+				default: '30d',
+				description: 'The period the usage is counted over',
+				options: [
+					{ name: '1d', value: '1d' },
+					{ name: '30d', value: '30d' },
+					{ name: '7d', value: '7d' },
+					{ name: 'Month', value: 'month' },
+				],
+				routing: { send: { type: 'query', property: 'window' } },
+			},
+		],
 	},
 ];

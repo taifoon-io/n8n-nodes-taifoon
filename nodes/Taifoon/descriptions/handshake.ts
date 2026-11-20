@@ -1,5 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 import { show, address, csvToArray } from './shared';
+import { returnAllLimit } from './paging';
 
 export const handshakeOperations: INodeProperties[] = [
 	{
@@ -22,6 +23,14 @@ export const handshakeOperations: INodeProperties[] = [
 				action: 'Get a handshake',
 				description: 'Recorded events, plus what the chain says about the job right now, and which of the two the state came from',
 				routing: { request: { method: 'GET', url: '=/handshake/{{$parameter.handshakeId}}' } },
+			},
+			{
+				name: 'List Offers',
+				value: 'listOffers',
+				action: 'List the offers sent to a seller',
+				description:
+					'A seller\'s inbox: the handshakes (offers) the layer and its buyers addressed to your payTo address, newest first, each with what your webhook answered (status, latency, digest) and its poll URL. The same read as the MCP tool taifoon_offers. Your answer is the reply your webhook gave to the offer; nothing is handed in here.',
+				routing: { request: { method: 'GET', url: '/handshake' } },
 			},
 			{
 				name: 'Open',
@@ -52,6 +61,36 @@ export const handshakeOperations: INodeProperties[] = [
 		displayOptions: show('handshake', ['attachJob']),
 		routing: { send: { type: 'body', property: 'jobId' } },
 	},
+	{
+		...address('Seller Address', 'offersProvider', 'handshake', ['listOffers'], 'Your payTo address: the address on your card that the offers are addressed to.'),
+		routing: { send: { type: 'query', property: 'provider' } },
+	},
+	{
+		displayName: 'Filters',
+		name: 'offersFilters',
+		type: 'collection',
+		placeholder: 'Add Filter',
+		default: {},
+		displayOptions: show('handshake', ['listOffers']),
+		options: [
+			{
+				displayName: 'State',
+				name: 'state',
+				type: 'options',
+				default: 'DELIVERED',
+				description: 'Only offers in this state: OPEN (recorded, or the delivery to your webhook failed), NOTIFIED (delivered, no result came back), DELIVERED (your webhook answered with a result), PRICED (it answered with a price)',
+				options: [
+					{ name: 'Delivered', value: 'DELIVERED' },
+					{ name: 'Notified', value: 'NOTIFIED' },
+					{ name: 'Open', value: 'OPEN' },
+					{ name: 'Priced', value: 'PRICED' },
+				],
+				routing: { send: { type: 'query', property: 'state' } },
+			},
+		],
+	},
+	// the inbox is one read, newest first, at most 200 (GET /v1/handshake ?limit=1..200; it does not page)
+	...returnAllLimit('handshake', 'listOffers', { root: 'handshakes', max: 200, by: 'none' }),
 	{
 		...address('Candidate Address', 'candidateAddress', 'handshake', ['open'], 'The agent being offered the job.'),
 		routing: { send: { type: 'body', property: 'candidate.address' } },

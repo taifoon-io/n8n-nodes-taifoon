@@ -109,18 +109,30 @@ const onOp = (resource, op) =>
 
 test('X-Taifoon-Client rides on every request and names the package version', () => {
 	assert.strictEqual(d.requestDefaults.headers['X-Taifoon-Client'], `n8n-nodes-taifoon/${pkg.version}`);
-	assert.strictEqual(pkg.version, '2.1.1');
+	assert.strictEqual(pkg.version, '2.2.0');
 	assert.strictEqual(d.requestDefaults.baseURL, 'https://coord.taifoon.dev/v1');
 });
 
-test('Account → Register Seller posts /listings/claim with { card_url, kind: "n8n" } and nothing else', () => {
+test('Account → Register Seller posts /listings/claim with { card_url, kind: "n8n" } and, optionally, the author channel', () => {
 	assert.deepStrictEqual(route('account', 'registerSeller'), { method: 'POST', url: '/listings/claim' });
-	const sent = Object.fromEntries(onOp('account', 'registerSeller').map((p) => [p.routing.send.property, p]));
+	const props = onOp('account', 'registerSeller');
+	// _N8N_AUTHOR_MAINNET_v1_: one optional field (Additional Fields), the author channel, sent only when set
+	const extra = props.filter((p) => p.in === 'sellerOptions');
+	assert.deepStrictEqual(extra.map((o) => [o.name, o.routing.send.property, o.routing.send.value]), [['sellerChannel', 'channel', '={{ $value || undefined }}']]);
+	const sent = Object.fromEntries(props.filter((p) => !p.in).map((p) => [p.routing.send.property, p]));
 	assert.deepStrictEqual(Object.keys(sent).sort(), ['card_url', 'kind']);
 	assert.strictEqual(sent.card_url.name, 'cardUrl');
 	assert.strictEqual(sent.card_url.required, true);
 	assert.strictEqual(sent.kind.type, 'hidden', 'kind is fixed, not a choice');
 	assert.strictEqual(sent.kind.default, 'n8n');
+});
+
+test('Account → Register Author Channel posts /channels with { channel, pay_to? } and nothing else', () => {
+	assert.deepStrictEqual(route('account', 'registerAuthorChannel'), { method: 'POST', url: '/channels' });
+	const sent = Object.fromEntries(onOp('account', 'registerAuthorChannel').map((p) => [p.routing.send.property, p]));
+	assert.deepStrictEqual(Object.keys(sent).sort(), ['channel', 'pay_to']);
+	assert.strictEqual(sent.channel.required, true); assert.strictEqual(sent.pay_to.in, 'authorChannelOptions', 'pay_to is an additional field');
+	assert.strictEqual(sent.pay_to.routing.send.value, '={{ $value || undefined }}', 'an empty pay_to keeps the one registered');
 });
 
 test('Account → Verify Seller posts /listings/{id}/verify with no body', () => {
@@ -277,4 +289,141 @@ test('no operation or field calls a grading model, takes its key, or depends on 
 	for (const name of ['composeMode', 'composeAnsweredBy', 'recordReply', 'items', 'question', 'state', 'reviewJev', 'key']) assert.ok(!flat(d.properties).some((p) => p.name === name && ['judge', 'commerce'].includes(p.displayOptions?.show?.resource?.[0])), `${name} is gone`);
 	assert.doesNotMatch(JSON.stringify(d), /typesafe|\bjev\b/i);
 	assert.strictEqual(d.credentials[0].displayOptions, undefined, 'the relayer key (X-API-Key) rides on every resource');
+});
+
+// ── the seller path of "List my workflow on Taifoon": the inbox, the agent listing and the payee ──
+test('Handshake → List Offers reads the seller\'s inbox: GET /v1/handshake?provider=, the state only when set, Return All reads 200', async () => {
+	const a = '0x' + 'ab'.repeat(20);
+	const r = await buildRequest('handshake', 'listOffers', { offersProvider: a });
+	assert.deepStrictEqual([r.method, r.url, r.qs, r.body], ['GET', '/handshake', { provider: a, limit: 50 }, undefined]);
+	assert.deepStrictEqual((await buildRequest('handshake', 'listOffers', { offersProvider: a, offersFilters: { state: 'DELIVERED' }, limit: 5 })).qs, { provider: a, limit: 5, state: 'DELIVERED' });
+	const all = await buildRequest('handshake', 'listOffers', { offersProvider: a, returnAll: true });
+	assert.deepStrictEqual([all.qs, all.paginate], [{ provider: a }, true]);
+	assert.match(ops('handshake').find((o) => o.value === 'listOffers').description, /taifoon_offers/);
+});
+
+test('Seller Listing → Create posts /v1/agent-listings: identity, a self-hosted door and the pricing, nothing else', async () => {
+	const p = { listingName: 'Word counter', listingHandle: 'word-counter', listingCategory: 'data', listingTagline: 'Counts words', listingWebhookUrl: 'https://n8n.example.com/webhook/wc', listingClasses: 'chat.word_count, mcp.digest', listingPrice: ' 0.05 ', listingPayout: '0x' + 'ab'.repeat(20) };
+	const r = await buildRequest('sellerListing', 'create', p);
+	assert.deepStrictEqual([r.method, r.url], ['POST', '/agent-listings']);
+	assert.deepStrictEqual(r.body, { identity: { name: 'Word counter', handle: 'word-counter', category: 'data', tagline: 'Counts words' }, hosting: { door: { endpoint: 'https://n8n.example.com/webhook/wc', kind: 'n8n' }, mode: 'self_hosted' }, pricing: { classes: ['chat.word_count', 'mcp.digest'], seller_price_usd: '0.05', payout: '0x' + 'ab'.repeat(20) } });
+	const more = await buildRequest('sellerListing', 'create', { ...p, listingDoorKind: 'mcp', listingOptions: { description: 'longer', slaSeconds: 600 } });
+	assert.deepStrictEqual([more.body.hosting.door.kind, more.body.identity.description, more.body.pricing.sla_seconds], ['mcp', 'longer', 600]);
+	assert.strictEqual((await buildRequest('sellerListing', 'create', { ...p, listingOptions: { description: '' } })).body.identity.description, undefined, 'an empty description is not sent');
+	assert.match(ops('sellerListing').find((o) => o.value === 'create').description, /shows an agent token and a signing secret ONCE/);
+});
+
+test('Seller Listing → Get, Publish and Get Payee Registration address the listing by its ID; the payTo basis sends basis=payto, the owner basis agent_id', async () => {
+	const id = { agentListingId: 'al_0123456789abcdef' };
+	assert.deepStrictEqual((({ method, url, body }) => [method, url, body])(await buildRequest('sellerListing', 'get', id)), ['GET', '/agent-listings/al_0123456789abcdef', undefined]);
+	assert.deepStrictEqual((({ method, url, body }) => [method, url, body])(await buildRequest('sellerListing', 'publish', id)), ['POST', '/agent-listings/al_0123456789abcdef/publish', undefined]);
+	const payto = await buildRequest('sellerListing', 'payeeToSign', id);
+	assert.deepStrictEqual([payto.method, payto.url, payto.qs], ['GET', '/agent-listings/al_0123456789abcdef/payee', { basis: 'payto' }], 'the payTo is the default signer');
+	assert.deepStrictEqual((await buildRequest('sellerListing', 'payeeToSign', { ...id, payeeBasis: 'agent_owner', payeeAgentId: '1234' })).qs, { agent_id: '1234' });
+});
+
+test('Seller Listing → Register Payee posts the registration with the wallet\'s signature as sig, and takes the whole answer pasted', async () => {
+	const reg = { agent_id: '0', basis: 'payto', payee: '0x' + 'ab'.repeat(20), nonce: '3', valid_until: '1795000000' };
+	const sig = '0x' + '1c'.repeat(65);
+	const r = await buildRequest('sellerListing', 'registerPayee', { agentListingId: 'al_0123456789abcdef', payeeRegistration: JSON.stringify(reg), payeeSignature: sig });
+	assert.deepStrictEqual([r.method, r.url, r.body], ['POST', '/agent-listings/al_0123456789abcdef/payee', { registration: { ...reg, sig } }]);
+	const whole = await buildRequest('sellerListing', 'registerPayee', { agentListingId: 'al_0123456789abcdef', payeeRegistration: { ok: true, registration: reg, typed_data: {}, digest: '0x' }, payeeSignature: sig });
+	assert.deepStrictEqual(whole.body, { registration: { ...reg, sig } });
+});
+
+test('Seller Listing signs nothing: no field takes a private key or a mnemonic, and every payee text says your own wallet signs', () => {
+	const fields = flat(d.properties).filter((p) => p.displayOptions?.show?.resource?.includes('sellerListing'));
+	assert.deepStrictEqual(fields.filter((p) => /private|mnemonic|secret|seed/i.test(`${p.name} ${p.displayName}`)).map((p) => p.name), []);
+	for (const v of ['payeeToSign', 'registerPayee']) assert.match(ops('sellerListing').find((o) => o.value === v).description, /your (own )?wallet/i);
+	assert.match(ops('sellerListing').find((o) => o.value === 'payeeToSign').description, /Nothing is signed, sent or spent here/);
+});
+
+test('Taifoon Trigger: the offer event watches one seller address, hides Watch, and takes the credential (optional)', () => {
+	const { TaifoonTrigger } = require('../dist/nodes/TaifoonTrigger/TaifoonTrigger.node.js');
+	const t = new TaifoonTrigger().description;
+	assert.deepStrictEqual(t.credentials, [{ name: 'taifoonRelayerApi', required: false }]);
+	assert.ok(t.properties.find((p) => p.name === 'event').options.some((o) => o.value === 'offer'));
+	const addresses = t.properties.filter((p) => p.name === 'address');
+	assert.deepStrictEqual(addresses.map((p) => p.displayOptions), [{ show: { event: ['offer'] } }, { hide: { watch: ['all'], event: ['offer'] } }]);
+	assert.deepStrictEqual(t.properties.find((p) => p.name === 'watch').displayOptions, { hide: { event: ['offer'] } });
+	assert.ok(addresses.every((p) => p.required));
+});
+
+// ── 2.2.0: routes coord already served that the node had no operation for (_N8N_MARKET_OPS_v1_) ──
+const req3 = (r) => [r.method, r.url, r.qs, r.body];
+
+test('Market is a resource generated from coord, between Job Review and Proof, its four reads public', () => {
+	const names = prop('resource').options.map((o) => o.value);
+	assert.ok(names.includes('market'));
+	assert.deepStrictEqual(ops('market').map((o) => o.value), ['compareVenues', 'getFeeScheme', 'getPrices', 'quoteFee']);
+	assert.strictEqual(d.properties.find((p) => p.name === 'operation' && p.displayOptions.show.resource[0] === 'market').default, 'getPrices');
+	const resale = require('../coord-lang/n8n-resale.json');
+	for (const o of resale.node_ops.filter((x) => x.resource === 'market')) {
+		assert.ok(!o.hand, `${o.operation} is generated, not hand-typed`);
+		assert.deepStrictEqual(route('market', o.operation), { method: o.method, url: o.url });
+	}
+});
+
+test('Market → Get Prices sends class and venue only when set (no window: the route reads a fixed one)', async () => {
+	assert.deepStrictEqual(req3(await buildRequest('market', 'getPrices', {})), ['GET', '/prices', {}, undefined]);
+	const r = await buildRequest('market', 'getPrices', { marketGetPricesFilters: { pricesClass: 'inference.chat', pricesVenue: 'x402-base' } });
+	assert.deepStrictEqual(r.qs, { class: 'inference.chat', venue: 'x402-base' });
+	assert.deepStrictEqual((await buildRequest('market', 'getPrices', { marketGetPricesFilters: { pricesClass: '' } })).qs, {}, 'an empty class is not sent');
+	assert.ok(!flat(d.properties).some((p) => p.displayOptions?.show?.resource?.[0] === 'market' && p.routing?.send?.property === 'window'));
+});
+
+test('Market → Compare Venues requires the class; Get Fee Scheme takes nothing', async () => {
+	assert.strictEqual(prop('compareClass').required, true);
+	assert.deepStrictEqual(req3(await buildRequest('market', 'compareVenues', { compareClass: 'inference.chat' })), ['GET', '/venues/compare', { class: 'inference.chat' }, undefined]);
+	assert.deepStrictEqual(req3(await buildRequest('market', 'getFeeScheme', {})), ['GET', '/fees/scheme', {}, undefined]);
+});
+
+test('Market → Quote Job Fee sends the price, and the chain and profile only when set', async () => {
+	assert.strictEqual(prop('quotePrice').required, true);
+	assert.deepStrictEqual(req3(await buildRequest('market', 'quoteFee', { quotePrice: '1.5' })), ['GET', '/fees/quote', { price: '1.5' }, undefined]);
+	const r = await buildRequest('market', 'quoteFee', { quotePrice: '2', marketQuoteFeeFilters: { quoteChainId: 8453, quoteProfile: 'direct' } });
+	assert.deepStrictEqual(r.qs, { price: '2', chain: 8453, profile: 'direct' });
+	assert.deepStrictEqual((await buildRequest('market', 'quoteFee', { quotePrice: '2', marketQuoteFeeFilters: { quoteChainId: 0 } })).qs, { price: '2' }, 'chain 0 is the route default, not sent');
+	assert.deepStrictEqual(field('quoteProfile').options.map((o) => o.value).sort(), ['direct', 'relayed', 'stand-in']);
+});
+
+test('Account → Get Usage reads GET /v1/access/usage with the window as a filter', async () => {
+	assert.deepStrictEqual(route('account', 'getUsage'), { method: 'GET', url: '/access/usage' });
+	assert.deepStrictEqual(req3(await buildRequest('account', 'getUsage', {})), ['GET', '/access/usage', {}, undefined]);
+	assert.deepStrictEqual((await buildRequest('account', 'getUsage', { usageFilters: { usageWindow: '7d' } })).qs, { window: '7d' });
+	assert.deepStrictEqual(field('usageWindow').options.map((o) => o.value).sort(), ['1d', '30d', '7d', 'month']);
+	assert.match(ops('account').find((o) => o.value === 'getUsage').description, /needs the credential/);
+});
+
+test('Agent → Get Registered sends chain, venue, class and words as filters, each only when set', async () => {
+	assert.deepStrictEqual(req3(await buildRequest('agent', 'getRegistered', {})), ['GET', '/agents/registered', {}, undefined]);
+	const r = await buildRequest('agent', 'getRegistered', { registeredFilters: { chain: ' 8453,base ', venue: 'mcp', class: 'inference.chat', q: 'translate' } });
+	assert.deepStrictEqual(r.qs, { chain: '8453,base', venue: 'mcp', class: 'inference.chat', q: 'translate' });
+	assert.deepStrictEqual((await buildRequest('agent', 'getRegistered', { registeredFilters: { chain: '', q: '' } })).qs, {});
+	const fields = d.properties.find((p) => p.name === 'registeredFilters');
+	assert.deepStrictEqual(fields.options.map((o) => o.displayName), [...fields.options.map((o) => o.displayName)].sort((a, b) => a.localeCompare(b)), 'filters stay alphabetical');
+	for (const o of fields.options) assert.strictEqual(o.type, 'string', `${o.name} is free text: no chain, venue or class list is typed into the node`);
+});
+
+test('Seller Listing → Get Venues and Set Venue address the ls_ listing; Set Venue sends the venue and only the fields set', async () => {
+	const id = { venueListingId: 'ls_0123456789abcdef' };
+	assert.deepStrictEqual(req3(await buildRequest('sellerListing', 'getVenues', id)), ['GET', '/listings/ls_0123456789abcdef/venues', {}, undefined]);
+	assert.deepStrictEqual(req3(await buildRequest('sellerListing', 'setVenue', { ...id, venueId: 'x402-base' })), ['POST', '/listings/ls_0123456789abcdef/venues', {}, { venue: 'x402-base' }]);
+	const all = await buildRequest('sellerListing', 'setVenue', { ...id, venueId: 'x402-base', venueOptions: { on: false, priceUsdc: ' 0.07 ', title: 'T', description: 'D', category: 'data', dryRun: true } });
+	assert.deepStrictEqual(all.body, { venue: 'x402-base', on: false, price_usdc: '0.07', title: 'T', description: 'D', category: 'data', dry_run: true });
+	assert.deepStrictEqual((await buildRequest('sellerListing', 'setVenue', { ...id, venueId: 'x402-base', venueOptions: { priceUsdc: 'one' } })).body, { venue: 'x402-base', price_usdc: null }, '"one" goes back to the one price');
+	assert.deepStrictEqual((await buildRequest('sellerListing', 'setVenue', { ...id, venueId: 'x402-base', venueOptions: { priceUsdc: '', title: '' } })).body, { venue: 'x402-base' }, 'empty fields are not sent');
+	assert.deepStrictEqual(prop('venueListingId').displayOptions.show.operation, ['getVenues', 'setVenue']);
+	assert.strictEqual(prop('agentListingId').displayOptions.show.operation.includes('getVenues'), false, 'the venues take the ls_ listing, not the al_ agent listing');
+	for (const v of ['getVenues', 'setVenue']) assert.match(ops('sellerListing').find((o) => o.value === v).description, /needs the key that holds the listing/);
+	assert.match(ops('sellerListing').find((o) => o.value === 'setVenue').description, /Nothing is listed, signed or paid here/);
+});
+
+test('2.2.0 hand-typed operations are held to their coord gate routes (gen-descriptions --check)', async () => {
+	const { handDrift } = await import('../scripts/gen-descriptions.mjs');
+	const resale = require('../coord-lang/n8n-resale.json');
+	const rows = resale.node_ops.filter((o) => ['account.getUsage', 'agent.getRegistered', 'sellerListing.getVenues', 'sellerListing.setVenue'].includes(`${o.resource}.${o.operation}`));
+	assert.strictEqual(rows.length, 4);
+	assert.ok(rows.every((o) => o.hand));
+	assert.deepStrictEqual(handDrift(resale), []);
 });

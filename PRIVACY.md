@@ -12,7 +12,7 @@ and requests: info@taifoon.io. Requests are answered within 30 days.
   nothing else from your workflow, and it collects no usage data in the background.
 - **Four headers.** `X-API-Key` (your key, only when a Taifoon Relayer API credential is selected), `X-Taifoon-Channel`
   (the credential's Channel ID, or `n8n` when it is empty), `X-Taifoon-Client` (the package name and version, for example
-  `n8n-nodes-taifoon/2.1.1`), and the usual `Accept` / `Content-Type`.
+  `n8n-nodes-taifoon/2.2.0`), and the usual `Accept` / `Content-Type`.
 - **The Taifoon Trigger** polls `GET /v1/jobs` with the filters you set (event, address, chain). Its cursor and the jobs it
   has already emitted are kept in the workflow's static data in your own n8n, not on Taifoon's side.
 

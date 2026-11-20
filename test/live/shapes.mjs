@@ -33,6 +33,10 @@ const NULL_AS = {
 	inherited_from: 'object',
 	// agents/cards on the harvester path: the crawl's window and registry
 	window_blocks: 'integer', registry: 'string',
+	// POST attest/hire: the fabricated-claim strike, null on any verdict that is not FABRICATED (the attest-hire route)
+	strike: 'object',
+	// GET fees/quote: why the line does not serve the quote, null where it does (the devnet line, a live chain)
+	why: 'string',
 };
 // Operations that answer in more than one form, whose sample may show only one: their declared shape is the union, required
 // only what every form carries. GET proof/tx answers the proof, or the pending answer while the producer builds it.
@@ -44,6 +48,9 @@ const MULTI_FORM = {
 	// no row for the job (an assurance-hook job on a chain it does not index, an unknown id): the trail and det still answer
 	'GET judge/trace/:chain/:jobId': { status: [200], props: { chain: 'integer', contract: 'string', det: 'object', devnet_feedback: 'object?', events: 'array', explorer_contract: 'string', get_key: 'object', how: 'string', jev: 'object', job: 'object?', job_id: 'string', ok: 'boolean', read_at: 'string', registry_stamps: 'object', seller_record: 'object?', window: 'object' }, required: ['chain', 'contract', 'det', 'events', 'explorer_contract', 'how', 'jev', 'job_id', 'ok', 'read_at', 'registry_stamps', 'window'] },
 	'GET proof/tx/:chain/:tx': { status: [200], props: { batch_id: 'integer?', proof: 'object?', blob: 'object', block_hash: 'string', block_number: 'integer', chain_id: 'integer', checks: 'object', finality_block: 'integer?', finalized_block_hash: 'string?', is_finalized: 'boolean', last_anchor: 'object?', ok: 'boolean', pending_proof: 'boolean', proof_state: 'string', retry: 'string', retry_after_seconds: 'integer', source: 'string', super_root_hash: 'string?', tx: 'string', verifiable_block: 'integer?' }, required: ['block_hash', 'block_number', 'chain_id', 'checks', 'is_finalized', 'ok', 'source', 'tx'] },
+	// GET fees/quote (_N8N_MARKET_OPS_v1_ market.quoteFee) answers the gas-priced quote on a live chain and a short one on the devnet (no gas,
+	// no calibration, the floor's fee): the union of both, required only what both carry; why is null where the line serves the quote
+	'GET fees/quote': { status: [200], props: { bps: 'integer', by_bps: 'string', calibration: 'object', cap: 'string', chainId: 'integer', decimals: 'integer', drift: 'array', fee: 'string', floor: 'string', floored: 'boolean', gas: 'object', get_key: 'object', line: 'object', margin: 'string', min_price: 'string', ok: 'boolean', price: 'string', profile: 'string', rule: 'string', schema: 'string', served: 'boolean', sources: 'object', ttl_s: 'integer', valid_until: 'integer', why: 'string?' }, required: ['chainId', 'decimals', 'fee', 'line', 'ok', 'price', 'profile', 'rule', 'schema', 'served'] },
 };
 const typeOf = (v) => (v === null ? 'null' : Array.isArray(v) ? 'array' : Number.isInteger(v) ? 'integer' : typeof v);
 const ids = await sampleIds();

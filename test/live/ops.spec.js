@@ -81,6 +81,8 @@ const SPEC = {
 	},
 	'account.keyStanding': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 4000 },
 	'account.resellerView': { mode: 'read', key: true, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 4000, gap: 'the probe tenant is a reseller by default; a child key would answer 403' },
+	// 2.2.0: what the key used, per family and per bound project / agent / workflow (_N8N_MARKET_OPS_v1_)
+	'account.getUsage': { mode: 'read', key: true, params: () => ({ usageFilters: { usageWindow: '1d' } }), ok: { status: 200, fields: ['window', 'families', 'total'] }, refusals: [NO_KEY, BAD_KEY], budgetMs: 8000 },
 	'account.mintChildKey': {
 		mode: 'refusal-only', key: true, params: () => ({ childOptions: { childLabel: TEST_TAG }, childMarkupBps: '{ "*": 1000 }' }),
 		ok: { status: 201, fields: ['child', 'keys', 'shown_once'] },
@@ -109,6 +111,15 @@ const SPEC = {
 		gap: 'a claim writes a listing row (20 a day per key or, keyless, per address); no recorded success body exists, so only the refusals are called',
 		budgetMs: 6000,
 	},
+	// _N8N_AUTHOR_MAINNET_v1_: a channel is first come and held by one key: only the refusals are called (a success writes a row)
+	'account.registerAuthorChannel': {
+		mode: 'refusal-only', key: true, params: () => ({ authorChannel: 'n8n' }),
+		ok: { status: 201, fields: ['channel'] },
+		refusals: [{ why: 'no credential: a channel is registered to a key', noKey: true, params: { authorChannel: 'x-live-check' }, status: [400, 401] }, BAD_KEY,
+			{ why: 'a reserved channel (the layer’s own n8n door)', params: { authorChannel: 'n8n' }, status: [400] }, { why: 'not a channel id', params: { authorChannel: 'Not A Channel' }, status: [400] }],
+		gap: 'a registration writes a channel row held by the key for good; only the refusals are called',
+		budgetMs: 6000,
+	},
 	'account.verifySeller': {
 		mode: 'refusal-only', key: true, params: () => ({ sellerListingId: 'ls_0000000000000000' }),
 		ok: { status: 200, fields: ['listing'] },
@@ -117,11 +128,68 @@ const SPEC = {
 		budgetMs: 8000,
 	},
 
+	// ── Seller Listing: the agent-listing door (_AGENT_LISTING_v1_) and its payee (_PAYEE_DOOR_v1_). Every op is the creating key's:
+	// the probe key holds no listing, so each is called only where the layer refuses before it reads or writes a row ──
+	'sellerListing.create': {
+		mode: 'refusal-only', key: true,
+		params: () => ({ listingName: TEST_TAG, listingHandle: TEST_TAG, listingCategory: 'data', listingTagline: TEST_TAG, listingWebhookUrl: 'https://n8n.taifoon.dev/webhook/tfn-word-count', listingClasses: 'chat.word_count', listingPrice: '0.05', listingPayout: ADDR }),
+		ok: { status: 201, fields: ['listing', 'token', 'signing_secret'] },
+		refusals: [NO_KEY, BAD_KEY, { why: 'a category no class of it has (the definition is refused before a row is written)', params: { listingName: TEST_TAG, listingHandle: TEST_TAG, listingCategory: 'no-such-category', listingTagline: TEST_TAG, listingWebhookUrl: 'https://n8n.taifoon.dev/webhook/tfn-word-count', listingClasses: 'chat.word_count', listingPrice: '0.05', listingPayout: ADDR }, status: [422] }],
+		gap: 'a create writes a permanent handle (20 a day per key) and claims its card; only the refusals before a write are called',
+		budgetMs: 8000,
+	},
+	'sellerListing.get': {
+		mode: 'refusal-only', key: true, params: () => ({ agentListingId: 'al_0000000000000000' }),
+		ok: { status: 200, fields: ['listing'] },
+		refusals: [{ why: 'an unknown listing', params: { agentListingId: 'al_0000000000000000' }, status: [404] }, { why: 'not a listing ID', params: { agentListingId: 'ls_0000000000000000' }, status: [400, 404] }],
+		gap: 'the creator reads its own listing; the probe key created none',
+		budgetMs: 6000,
+	},
+	'sellerListing.publish': {
+		mode: 'refusal-only', key: true, params: () => ({ agentListingId: 'al_0000000000000000' }),
+		ok: { status: 200, fields: ['listing', 'probe'] },
+		refusals: [NO_KEY, { why: 'an unknown listing', params: { agentListingId: 'al_0000000000000000' }, status: [404] }],
+		gap: 'publishing probes the seller and lists it; only the refusals are called',
+		budgetMs: 8000,
+	},
+	'sellerListing.payeeToSign': {
+		mode: 'refusal-only', key: true, params: () => ({ agentListingId: 'al_0000000000000000', payeeBasis: 'payto' }),
+		ok: { status: 200, fields: ['registration', 'typed_data', 'digest', 'who_signs'] },
+		refusals: [NO_KEY, { why: 'an unknown listing', params: { agentListingId: 'al_0000000000000000', payeeBasis: 'payto' }, status: [404] }],
+		gap: 'the typed data is the creating key\'s listing\'s; the probe key created none',
+		budgetMs: 6000,
+	},
+	'sellerListing.registerPayee': {
+		mode: 'refusal-only', key: true, params: () => ({ agentListingId: 'al_0000000000000000', payeeRegistration: '{"agent_id":"0","basis":"payto","payee":"' + ADDR + '","nonce":"1","valid_until":"1"}', payeeSignature: '0x' + '00'.repeat(65) }),
+		ok: { status: 200, fields: ['payee', 'listing'] },
+		refusals: [NO_KEY, { why: 'an unknown listing', params: { agentListingId: 'al_0000000000000000', payeeRegistration: '{}', payeeSignature: '0x' }, status: [404] }],
+		gap: 'a registration is signed by the seller\'s own wallet and stored for the payout; only the refusals are called',
+		budgetMs: 6000,
+	},
+	// 2.2.0: a listing's venues (_VENUE_SETTINGS_v1_): the holder's key only; the probe key holds no listing
+	'sellerListing.getVenues': {
+		mode: 'refusal-only', key: true, params: () => ({ venueListingId: 'ls_0000000000000000' }),
+		ok: { status: 200, fields: ['listing_id', 'venues'], lists: ['venues'] },
+		refusals: [NO_KEY, BAD_KEY, { why: 'not a listing ID', params: { venueListingId: 'al_0000000000000000' }, status: [400] }, { why: 'an unknown listing', params: { venueListingId: 'ls_0000000000000000' }, status: [403, 404] }],
+		gap: 'the venues are the holding key\'s listing\'s; the probe key holds none',
+		budgetMs: 6000,
+	},
+	'sellerListing.setVenue': {
+		mode: 'refusal-only', key: true, params: () => ({ venueListingId: 'ls_0000000000000000', venueId: 'x402-base', venueOptions: { dryRun: true } }),
+		ok: { status: 200, fields: ['venue', 'changed', 'refused', 'settings'] },
+		refusals: [BAD_KEY, { why: 'not a listing ID', params: { venueListingId: 'al_0000000000000000', venueId: 'x402-base', venueOptions: { dryRun: true } }, status: [400] }, { why: 'an unknown listing (dry run)', params: { venueListingId: 'ls_0000000000000000', venueId: 'x402-base', venueOptions: { dryRun: true } }, status: [403, 404] }],
+		gap: 'a set changes the holding key\'s listing; the probe key holds none, so only the refusals are called (dry run on)',
+		budgetMs: 6000,
+	},
+
 	// ── Agent ──
 	'agent.getCards': { mode: 'read', key: false, params: () => ({ limit: 5 }), ok: { status: 200, fields: ['cards', 'skills_seen'], lists: ['cards'], nonEmpty: ['cards'] }, refusals: [{ why: 'a negative limit', params: { limit: -1 }, status: [400] }], budgetMs: 6000 },
 	'agent.getMarket': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
 	'agent.getProviders': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
-	'agent.getRegistered': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
+	'agent.getRegistered': {
+		mode: 'read', key: false, params: () => ({ registeredFilters: { chain: '8453', q: 'agent' } }), ok: { status: 200, fields: ['total', 'filters', 'agents'], lists: ['agents'] }, refusals: [], budgetMs: 6000,
+		extra: [{ why: 'the filters are read (echoed as sent)', check: (j) => (j?.filters?.chain === '8453' && j?.filters?.q === 'agent' ? [] : [`filters ${JSON.stringify(j?.filters)}`]) }],
+	},
 	'agent.getReputation': { mode: 'read', key: false, params: () => ({ address: ADDR }), ok: { status: 200, fields: [] }, refusals: [{ why: 'a shortened address', params: { address: '0x3574…4f5b' }, status: [400] }], budgetMs: 8000 },
 	'agent.getWireReady': { mode: 'read', key: false, params: () => ({ wireChain: 8453, wireLimit: 5 }), ok: { status: 200, fields: [] }, refusals: [], budgetMs: 6000 },
 	'agent.match': { mode: 'read', key: false, params: () => ({ required_skills: 'summarization' }), ok: { status: 200, fields: [] }, refusals: [{ why: 'no skills', params: { required_skills: '' }, status: [400] }], budgetMs: 10000 },
@@ -191,6 +259,13 @@ const SPEC = {
 	// ── Handshake ──
 	'handshake.attachJob': { operatorKey: true, mode: 'refusal-only', key: true, params: () => ({ handshakeId: 'hs_000000000000000000000000', jobId: '1' }), ok: { status: 200, fields: [] }, refusals: [NO_KEY, { why: 'unknown handshake', params: { handshakeId: 'hs_000000000000000000000000', jobId: '1' }, status: [404] }], gap: 'attaching advances a real handshake; only the refusals are called', budgetMs: 8000 },
 	'handshake.get': { mode: 'read', key: false, params: (ids) => ({ handshakeId: ids.handshake }), ok: { status: 200, fields: [] }, refusals: [{ why: 'unknown id', params: { handshakeId: 'hs_000000000000000000000000' }, status: [404] }], budgetMs: 8000 },
+	// the seller's inbox (GET /v1/handshake?provider=, the MCP tool taifoon_offers): a public read, newest first
+	'handshake.listOffers': {
+		mode: 'read', key: false, params: () => ({ offersProvider: ADDR, limit: 5 }),
+		ok: { status: 200, fields: ['handshakes', 'count'], lists: ['handshakes'] },
+		refusals: [{ why: 'a shortened address', params: { offersProvider: '0x3574…4f5b' }, status: [400, 422] }],
+		budgetMs: 10000,
+	},
 	'handshake.open': {
 		mode: 'refusal-only', key: true, params: () => ({ candidateAddress: ADDR, candidateKind: 'onchain', task: TEST_TAG }),
 		ok: { status: 201, fields: [] },
@@ -263,6 +338,11 @@ const SPEC = {
 	'proof.attestHire': { mode: 'read', key: false, params: (ids) => ({ claim: { txHash: ids.baseTx ?? SAMPLE_TX, chainId: 8453 } }), ok: { status: 200, fields: [] }, refusals: [{ why: 'no claim', params: { claim: {} }, status: [400] }], budgetMs: 20000 },
 
 	// ── Settlement ──
+	// ── Market (2.2.0, _N8N_MARKET_OPS_v1_): public reads ──
+	'market.getPrices': { mode: 'read', key: false, params: () => ({ marketGetPricesFilters: { pricesClass: 'inference.chat' } }), ok: { status: 200, fields: ['window_days', 'scheme', 'rows'], lists: ['rows'] }, refusals: [], budgetMs: 8000 },
+	'market.compareVenues': { mode: 'read', key: false, params: () => ({ compareClass: 'inference.chat' }), ok: { status: 200, fields: ['class', 'rows'], lists: ['rows'] }, refusals: [{ why: 'no class', params: { compareClass: '' }, status: [400] }], budgetMs: 8000 },
+	'market.getFeeScheme': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['formula', 'our_fee', 'venue_fee'] }, refusals: [], budgetMs: 6000 },
+	'market.quoteFee': { mode: 'read', key: false, params: () => ({ quotePrice: '1' }), ok: { status: 200, fields: ['served', 'by_bps', 'gas'] }, refusals: [{ why: 'no price', params: { quotePrice: '' }, status: [400] }], budgetMs: 10000 },
 	'settlement.get': { mode: 'read', key: false, params: (ids) => ({ settlementId: ids.settlement }), ok: { status: 200, fields: [] }, refusals: [{ why: 'unknown id', params: { settlementId: ZERO32 }, status: [404] }], budgetMs: 8000 },
 	'settlement.getAll': { mode: 'read', key: false, params: () => ({}), ok: { status: 200, fields: ['settlements'], lists: ['settlements'] }, refusals: [], budgetMs: 8000 },
 	'settlement.settle': {

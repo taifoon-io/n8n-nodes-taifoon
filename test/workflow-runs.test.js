@@ -43,3 +43,21 @@ test('the README table is what the record says', async () => {
   const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
   assert.equal(readmeWith(readme, tableOf(record)), readme, 'node scripts/workflow-runs.mjs');
 });
+
+// _N8N_SELLER_CANARY_v1_: the seller path run on our own n8n host (claim → verify from n8n.taifoon.dev), recorded beside the
+// file runs: each names an operation the node still ships, every path passed, every listing it checked ended listed
+test('the seller canaries on our own n8n host name shipped operations, passed, and cost nothing', async () => {
+  const { operations } = require('./live/node-request');
+  const shippedOps = operations().map((o) => `${o.resource}.${o.operation}`);
+  const c = record.canaries;
+  assert.ok(c && /_N8N_SELLER_CANARY_v1_/.test(c.rule));
+  const runs = Object.entries(c).filter(([k]) => k !== 'rule');
+  assert.deepEqual(runs.map(([k]) => k).sort(), ['n8n.taifoon.dev/tfnsellerclaim01', 'n8n.taifoon.dev/tfnsellerverif01']);
+  for (const [k, e] of runs) {
+    assert.equal(e.host, k.split('/')[0]);
+    assert.ok(shippedOps.includes(e.op), `${k}: ${e.op} is shipped`);
+    assert.equal(e.cost_usd, 0);
+    assert.ok(e.paths.length && e.paths.every((p) => p.verdict === 'PASS' && p.checks.every((x) => x.ok)), `${k}: every path passed`);
+    assert.ok(e.answers.every((a) => a.ok && a.listing.state === 'listed' && a.listing.whose === 'ours'), `${k}: every listing is listed, ours`);
+  }
+});

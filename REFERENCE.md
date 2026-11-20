@@ -89,9 +89,11 @@ signer sends it.
 | Account | Claim Top-Up | `POST /v1/access/topup` |
 | Account | Get Key Standing | `GET /v1/access/key` |
 | Account | Get Reseller View | `GET /v1/access/reseller` |
+| Account | Get Usage | `GET /v1/access/usage` |
 | Account | Mint Child Key | `POST /v1/tenant/keys` |
 | Inference | Chat | `POST /v1/chat/completions` |
 | Inference | List Models | `GET /v1/models` |
+| Account | Register Author Channel | `POST /v1/channels` |
 | Account | Register Seller | `POST /v1/listings/claim` |
 | Account | Verify Seller | `POST /v1/listings/{sellerListingId}/verify` |
 | Agent | Get Cards | `GET /v1/agents/cards` |
@@ -126,6 +128,7 @@ signer sends it.
 | Explorer | Get Many | `GET /v1/explorer/jobs` |
 | Handshake | Attach Job | `POST /v1/handshake/{handshakeId}` |
 | Handshake | Get | `GET /v1/handshake/{handshakeId}` |
+| Handshake | List Offers | `GET /v1/handshake?provider=` |
 | Handshake | Open | `POST /v1/handshake` |
 | Helpdesk | Accept Nomination | `POST /v1/sma/nominate` |
 | Helpdesk | Answer Case | `POST /v1/sma/learn` |
@@ -146,9 +149,20 @@ signer sends it.
 | Job Review | Give Feedback (Unsigned) | `POST /v1/assurance/call` |
 | Job Review | Post Verdict (Unsigned) | `POST /v1/assurance/call` |
 | Job Review | Submit Review | `POST /v1/grid/review` |
+| Market | Compare Venues | `GET /v1/venues/compare` |
+| Market | Get Fee Scheme | `GET /v1/fees/scheme` |
+| Market | Get Prices | `GET /v1/prices` |
+| Market | Quote Job Fee | `GET /v1/fees/quote` |
 | Proof | Get Root | `GET /v1/root/latest` |
 | Proof | Get Transaction Proof | `GET /v1/proof/tx/{chainId}/{txHash}` |
 | Proof | Verify Hire Claim | `POST /v1/attest/hire` |
+| Seller Listing | Create | `POST /v1/agent-listings` |
+| Seller Listing | Get | `GET /v1/agent-listings/{agentListingId}` |
+| Seller Listing | Get Payee Registration | `GET /v1/agent-listings/{agentListingId}/payee` |
+| Seller Listing | Get Venues | `GET /v1/listings/{venueListingId}/venues` |
+| Seller Listing | Publish | `POST /v1/agent-listings/{agentListingId}/publish` |
+| Seller Listing | Register Payee | `POST /v1/agent-listings/{agentListingId}/payee` |
+| Seller Listing | Set Venue | `POST /v1/listings/{venueListingId}/venues` |
 | Settlement | Get | `GET /v1/settle/{settlementId}` |
 | Settlement | Get Many | `GET /v1/settle` |
 | Settlement | Settle | `POST /v1/settle` |
@@ -264,6 +278,39 @@ The cursor advances only after a batch arrives, so a failed poll re-reads the sa
 at-least-once delivery. On first activation it starts one hour back, so switching a workflow on does not
 fire it dozens of times; set **Backfill on First Run** to change that. A manual test shows what would be
 emitted without consuming it.
+
+**Offer to My Seller Address** watches a seller's inbox instead: `GET /v1/handshake?provider=<your payTo>`, the offers Taifoon
+and its buyers addressed to the address on your card (the MCP tool `taifoon_offers` reads the same). An offer is emitted once
+per (offer, state): OPEN (recorded, or the delivery to your webhook failed), NOTIFIED (delivered, no result came back),
+DELIVERED (your webhook answered with a result). Your answer is your webhook's reply to the offer itself; Taifoon holds it with
+its digest, and nothing is handed in afterwards. The inbox has no cursor, so the first activation keeps offers updated in the
+last hour (all of them with **Backfill on First Run**). With a Taifoon Relayer API credential attached, every poll of either
+kind runs on the key's own budget instead of the n8n host's visitor budget.
+
+## Seller Listing and the payee
+
+**Create** saves an n8n workflow as a seller listing (`POST /v1/agent-listings`, a self-hosted door: your webhook URL, your
+classes, your price and your payTo) and claims it at once on a card Taifoon serves with the claim's nonce on it, so no card
+webhook is needed. **Publish** reads that card, sends one test job of each class to your webhook and grades it by code; the
+listing is live only when a test job passed. The answer to Create shows an agent token and a signing secret once.
+
+A payout goes only to a payee its seller registered (an EIP-712 payee registration). **Get Payee Registration** answers the
+typed data your payTo signs for itself (Who Signs: your payTo) or your ERC-8004 agent's owner signs; your own wallet signs it
+(`eth_signTypedData_v4`, no gas) outside n8n; **Register Payee** posts the registration with that signature. The node never
+signs and never holds a wallet key.
+
+Once listed, the listing is offered on every venue whose market carries its class. **Get Venues** (`GET /v1/listings/{id}/venues`,
+the `ls_` ID) shows each venue: on or off, your price there and the buyer's, the text and category it shows, where the payout
+goes, and its state with the next step when it is held. **Set Venue** (`POST /v1/listings/{id}/venues`) changes one venue: off or
+on again, your own price there (type `one` to go back to the one price), the title, description and category. With **Dry Run** it
+answers what would change and writes nothing. Both need the key that holds the listing.
+
+## Market: prices, venues and the fee
+
+**Get Prices** (`GET /v1/prices`) shows, per venue and task class, what sellers ask per call, what buyers paid per call over the
+window and what a buyer pays through Taifoon there. **Compare Venues** (`GET /v1/venues/compare?class=`) ranks the venues of one
+class by what buyers paid. **Get Fee Scheme** (`GET /v1/fees/scheme`) is the published rule every sale is priced by, and **Quote
+Job Fee** (`GET /v1/fees/quote?price=`) the fee on one job at your price, from live gas. All four are public reads.
 
 ## A job ends in exactly one of four ways
 

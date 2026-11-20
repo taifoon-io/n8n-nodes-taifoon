@@ -6,7 +6,7 @@
   <a href="https://www.npmjs.com/package/n8n-nodes-taifoon"><img src="https://img.shields.io/npm/v/n8n-nodes-taifoon?style=flat-square&labelColor=000000&color=3DA5FF&label=npm" alt="npm"></a>
   <img src="https://img.shields.io/badge/provenance-signed-00B5B8?style=flat-square&labelColor=000000" alt="provenance">
   <img src="https://img.shields.io/badge/dependencies-0-E6F0F7?style=flat-square&labelColor=000000" alt="no dependencies">
-  <img src="https://img.shields.io/badge/operations-85-3DA5FF?style=flat-square&labelColor=000000" alt="85 operations">
+  <img src="https://img.shields.io/badge/operations-99-3DA5FF?style=flat-square&labelColor=000000" alt="99 operations">
 </p>
 
 Hire AI agents and call paid APIs from an n8n workflow. Every paid call states its price before it runs, the answer is
@@ -16,8 +16,8 @@ wallet to sign. The node holds no key that can move money.
 ## Install
 
 Self-hosted n8n → **Settings → Community Nodes → Install** → `n8n-nodes-taifoon`. Two nodes come with it:
-**Taifoon** (85 operations, 19 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
-[`/v1/openapi.json`](https://coord.taifoon.dev/v1/openapi.json)) and **Taifoon Trigger** (a job changed). Tested on n8n
+**Taifoon** (99 operations, 21 resources, all on `https://coord.taifoon.dev/v1`, OpenAPI at
+[`/v1/openapi.json`](https://coord.taifoon.dev/v1/openapi.json)) and **Taifoon Trigger** (a job changed, or an offer reached your seller address). Tested on n8n
 2.45.5; Node.js 20.15 or later.
 
 ## Credentials
@@ -45,9 +45,9 @@ The node uses one credential, **Taifoon Relayer API**, which holds one Taifoon k
 | | |
 |---|---|
 | Sent as | `X-API-Key: tfr_…`, over HTTPS to `coord.taifoon.dev` only |
-| Needed by | Inference → Chat; Completion; Account → Get My Tenant, Register Seller, Verify Seller; Handshake → Attach Job; Job → Create Offer with a handshake ID; Job Review → Submit Review; Helpdesk → Ask and its writes; Reseller Key; Template → Get Demand |
-| Used when present | Demand and Handshake → Open run on the key's own budget; without a key they use the visitor budget of the calling address |
-| Not needed | public reads: Proof, Explorer, Catalog, Discovery, Agent reads, Assurance quotes, Inference → List Models, Template → List |
+| Needed by | Inference → Chat; Completion; Account → Get My Tenant, Get Usage, Register Seller, Verify Seller; Seller Listing; Handshake → Attach Job; Job → Create Offer with a handshake ID; Job Review → Submit Review; Helpdesk → Ask and its writes; Reseller Key; Template → Get Demand |
+| Used when present | Demand, Handshake → Open and the Taifoon Trigger run on the key's own budget; without a key they use the visitor budget of the calling address |
+| Not needed | public reads: Proof, Explorer, Catalog, Discovery, Agent reads, Assurance quotes, Market, Inference → List Models, Template → List |
 | Channel ID (optional) | a public label sent as `X-Taifoon-Channel` (empty: `n8n`). It is for integrators with a registered channel and pays them a share of Taifoon's fee, never more for the buyer ([`POLICY.md`](POLICY.md#partner-attribution)) |
 | Without a key | a keyed operation answers `401` with `next_step`: how to get a free key in one call |
 
@@ -120,7 +120,7 @@ Sign them with the wallet you already use. The node never sends a transaction.
 
 | Resource | Operations |
 |---|---|
-| Account | Register Free Key, Get Key Standing, Get My Tenant, Subscribe, Register Seller, Verify Seller, Get Access Quote, Claim Plan, Claim Top-Up, Mint Child Key, Get Reseller View |
+| Account | Register Free Key, Get Key Standing, Get My Tenant, Subscribe, Register Author Channel, Register Seller, Verify Seller, Get Access Quote, Claim Plan, Claim Top-Up, Mint Child Key, Get Reseller View, Get Usage |
 | Agent | Match, Get Cards, Get Market, Get Providers, Get Registered, Get Reputation, Get Wire-Ready, Register, Plan Enrollment, Publish As Seller |
 | Agreement | List Agreements, Accept Agreement |
 | Assurance | Get Pools, Get Quote, Build Call, Stamp Grade, Get Deployment |
@@ -130,13 +130,15 @@ Sign them with the wallet you already use. The node never sends a transaction.
 | Demand | Post, Get, Get Many |
 | Discovery | Get Capabilities, Search Capabilities, Get Capability Skills, Get Standards |
 | Explorer | Get Many, Get |
-| Handshake | Open, Get, Attach Job |
+| Handshake | Open, Get, Attach Job, List Offers |
 | Helpdesk | Ask, Get Graph, Get Weakest, Answer Case, Grade Case, Tune Loop, Nominate Expert, Accept Nomination, Revoke Nomination |
 | Inference | Chat, List Models |
 | Job | Create Offer, Get Changed, Get Ledger |
+| Market | Get Prices, Compare Venues, Get Fee Scheme, Quote Job Fee |
 | Job Review | Get Ready Jobs, Get Reviewable Jobs, Get Stages, Get Trace, Submit Review, Post Verdict (Unsigned), Give Feedback (Unsigned) |
 | Proof | Get Root, Get Transaction Proof, Verify Hire Claim |
 | Reseller Key | Mint Child Key, List Child Keys, Revoke Child Key, Mint Promo, List Promos, Redeem Promo, Enrol Client Vault, List Client Vaults |
+| Seller Listing | Create, Publish, Get, Get Payee Registration, Register Payee, Get Venues, Set Venue |
 | Settlement | Settle, Get, Get Many |
 | Template | List, Get Demand |
 
@@ -172,7 +174,7 @@ it: [taifoon.io/docs/n8n](https://www.taifoon.io/docs/n8n#workflows); the listin
 [`workflows/TEMPLATES.md`](workflows/TEMPLATES.md).
 
 <!-- workflow-runs -->
-Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@2.1.0, n8n-nodes-taifoon@2.1.1, n8n-nodes-taifoon@2.0.1 against `coord.taifoon.dev` (2026-11-05, 2026-11-11, 2026-11-15): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
+Every workflow and example here, run in n8n 2.45.5 with n8n-nodes-taifoon@2.1.0, n8n-nodes-taifoon@2.2.0, n8n-nodes-taifoon@2.0.1 against `coord.taifoon.dev` (2026-11-05, 2026-11-11, 2026-11-15, 2026-11-19): each trigger on its own, a webhook fed a sample request and its answer checked. *Ran up to a need* means the run stopped on something only you bring: your own key, the partner's key, or the free answers of the calling address (they renew at 00:00 UTC). The record, node by node: [`workflows/runs.json`](workflows/runs.json).
 
 | Workflow | Trigger → result |
 |---|---|

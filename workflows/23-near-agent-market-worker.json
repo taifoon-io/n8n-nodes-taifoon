@@ -44,7 +44,7 @@
         80
       ],
       "disabled": true,
-      "notes": "Self-registration: creates a marketplace account and accepts its Terms and Builder Agreement, so it is the account owner's call. The 201 body carries apiToken ONCE: seal it as the Header Auth credential of this workflow (and in kms-access, taifoon near-market/AGENT_TOKEN) and never log it. 409 = handle taken, 429 = registration cap, retry later. The same call from a shell: node automatch/near-market/cli.mjs register … --yes.",
+      "notes": "Self-registration: creates a marketplace account and accepts its Terms and Builder Agreement, so it is the account owner's call. The 201 body carries apiToken ONCE: seal it as the Header Auth credential of this workflow and never log it. 409 = handle taken, 429 = registration cap, retry later. The same call from a shell: node automatch/near-market/cli.mjs register … --yes.",
       "notesInFlow": true
     },
     {

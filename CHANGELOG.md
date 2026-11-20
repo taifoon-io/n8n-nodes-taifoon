@@ -1,5 +1,45 @@
 # Changelog
 
+## 2.2.0 (2026-11-19)
+
+Fourteen operations, one resource and one trigger event are added; nothing existing changed its request, so saved workflows keep
+working. The routes behind them were already live on `coord.taifoon.dev`; the node had no operation for them.
+
+**The market: prices, venues and the fee**
+
+- **Market** (new resource, generated from coord like Reseller Key and Template): **Get Prices** (`GET /v1/prices`: per venue and
+  task class, what sellers ask per call, what buyers paid per call over the window the answer names, and what a buyer pays through Taifoon there;
+  filter by class or venue), **Compare Venues** (`GET /v1/venues/compare?class=`: which venue pays most for one class),
+  **Get Fee Scheme** (`GET /v1/fees/scheme`: the one published rule every sale is priced by) and **Quote Job Fee**
+  (`GET /v1/fees/quote?price=`: the fee on one job at your price, from live gas). Public reads, no key needed.
+- **Account → Get Usage** (`GET /v1/access/usage`): what your key used over a day, a week, 30 days or the month, per product
+  family, per day, per key and per project, agent or workflow; needs the credential.
+- **Agent → Get Registered** now takes filters: chain, venue, class and words (the route already read them).
+- **Seller Listing → Get Venues** and **Set Venue** (`GET` / `POST /v1/listings/{id}/venues`): every venue your listing is offered
+  on, and one venue changed after the fact: off or on again, your own price there, the title, description and category it shows.
+  Dry Run answers what would change. Nothing is listed, signed or paid by the call; needs the key that holds the listing.
+- Class, venue and chain fields are free text the route checks, so a new venue or class works without a new node release.
+- The client header reads `n8n-nodes-taifoon/2.2.0`.
+
+**Sell your workflow as its author**
+
+- **Account → Register Author Channel** (`POST /v1/channels`, needs the credential): the channel your workflows sell under and the
+  address your author share is paid to, in USDC on Base. First come: one key holds a channel.
+- **Account → Register Seller** takes an optional **Author Channel**: each sale of the listed workflow then pays your author share
+  on top of the price your workflow asks. Without it, the claim sends what it sent before.
+
+**The seller path of *List my workflow on Taifoon***
+
+- **Seller Listing** (new resource, the agent-listing door): **Create** (`POST /v1/agent-listings`: a self-hosted n8n door, the
+  classes, the price and the payTo; claimed at once on a card Taifoon serves, its nonce already on it), **Publish**
+  (`POST /v1/agent-listings/{id}/publish`: one test job per class, graded by code, nothing paid), **Get**
+  (`GET /v1/agent-listings/{id}`), **Get Payee Registration** (`GET /v1/agent-listings/{id}/payee`: the EIP-712 typed data the
+  payTo, or the ERC-8004 agent's owner, signs) and **Register Payee** (`POST /v1/agent-listings/{id}/payee`: the registration and
+  the wallet's signature). The node builds and posts; it never signs and holds no wallet key.
+- **Handshake → List Offers** (`GET /v1/handshake?provider=`): a seller's inbox, the read the MCP tool `taifoon_offers` makes.
+- **Taifoon Trigger → Offer to My Seller Address**: polls that inbox and emits each offer once per state (OPEN, NOTIFIED,
+  DELIVERED). The trigger takes the Taifoon Relayer API credential (optional): with it every poll runs on the key's budget.
+
 ## 2.1.1 (2026-11-15)
 
 Contact fix only. No operation, field value or request changed; saved workflows keep working.

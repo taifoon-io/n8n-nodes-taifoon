@@ -5,23 +5,23 @@
   "templates": {
     "chat-on-one-key": {
       "verified": true,
-      "at": "2026-11-15T02:10:06Z",
+      "at": "2026-11-19T15:02:32Z",
       "n8n": "2.45.5 (docker n8nio/n8n:2.45.5; CLI: import:workflow + execute, the Taifoon Relayer API key an env expression)",
-      "node_package": "n8n-nodes-taifoon@2.1.1",
+      "node_package": "n8n-nodes-taifoon@2.2.0",
       "against": "https://coord.taifoon.dev",
       "key": "the sandbox key (keychain taifoon-n8n-reseller-sandbox)",
       "status": 200,
       "ok": true,
       "sale": {
-        "id": "gpu_mwh76yod_a8f2257f0e",
+        "id": "gpu_mwnoipw1_f1e781e7ec",
         "channel": "n8n",
         "paid_by": "key_balance",
-        "micro": "4",
-        "usdc": "0.000004",
+        "micro": "19",
+        "usdc": "0.000019",
         "price_rule": "OWN_INFERENCE_PRICE_v1",
         "vault": "vault:taifoon:loop"
       },
-      "answer": "17 × 24 = 408. (nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16, 32 tokens in, 53 out), charged 0.000004 USDC",
+      "answer": "17 × 24 = 408. (nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16, 32 tokens in, 53 out), charged 0.000019 USDC",
       "notes": [
         "the chat is the Taifoon node's Inference → Chat (POST /v1/chat/completions) on the Taifoon Relayer API credential; the agreements are Agreement → List / Accept",
         "the debit is 0.000011 USDC under OWN_INFERENCE_PRICE_v1 (our own card's per-token price), so the template says \"up to 0.001 USDC per answer\", never a fixed price",
@@ -32,7 +32,8 @@
         "re-run 2026-11-05T16:06:00Z with n8n-nodes-taifoon@2.0.0 (npm pack of the 2.0.0 source, before the npm publish): sale gpu_mw3qn673_2a3ef8bf52, reserved 11 micro, settled to usage at 4; before: gpu_mw11nstn_1aee979e8a on 1.3.0",
         "re-run 2026-11-05T16:37:00Z with n8n-nodes-taifoon@2.0.1 (npm pack of the 2.0.1 source, before the npm publish): sale gpu_mw3rrban_db9d605fe9, reserved 11 micro, settled to usage at 4",
         "re-run 2026-11-15T00:00:22Z with n8n-nodes-taifoon@2.1.0 (npm pack of the 2.1.0 source, before the npm publish): sale gpu_mwh2k0q7_d53c1ddeea, reserved 11 micro, settled to usage at 4; before: gpu_mw3rrban_db9d605fe9 on 2.0.1",
-        "re-run 2026-11-15T02:10:06Z with n8n-nodes-taifoon@2.1.1 (npm pack of the 2.1.1 source, before the npm publish): sale gpu_mwh76yod_a8f2257f0e, reserved 11 micro, settled to usage at 4; before: gpu_mwh2k0q7_d53c1ddeea on 2.1.0"
+        "re-run 2026-11-15T02:10:06Z with n8n-nodes-taifoon@2.1.1 (npm pack of the 2.1.1 source, before the npm publish): sale gpu_mwh76yod_a8f2257f0e, reserved 11 micro, settled to usage at 4; before: gpu_mwh2k0q7_d53c1ddeea on 2.1.0",
+        "re-run 2026-11-19T15:02:32Z with n8n-nodes-taifoon@2.2.0 (the packed 2.2.0 source, before it is on the registry): sale gpu_mwnoipw1_f1e781e7ec, reserved 89 micro, settled to usage at 19 (SETTLE_ACTUAL_v1); before: gpu_mwh76yod_a8f2257f0e at 4 with 2.1.1"
       ]
     },
     "text-digest": {

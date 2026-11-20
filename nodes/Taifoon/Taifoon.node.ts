@@ -16,8 +16,10 @@ import { helpdeskOperations } from './descriptions/helpdesk';
 import { inferenceOperations } from './descriptions/inference';
 import { jobOperations } from './descriptions/job';
 import { judgeOperations } from './descriptions/judge';
+import { marketOperations } from './descriptions/market.generated';
 import { proofOperations } from './descriptions/proof';
 import { resellerKeyOperations } from './descriptions/reseller.generated';
+import { sellerListingOperations } from './descriptions/sellerListing';
 import { settlementOperations } from './descriptions/settlement';
 import { templateOperations } from './descriptions/template.generated';
 
@@ -62,12 +64,14 @@ export class Taifoon implements INodeType {
 				// need it. Shown on every resource (1.1.0): the credential's Channel ID goes on every call as X-Taifoon-Channel, so a
 				// sale a workflow makes pays the integrator's channel its share; the reads accept a key too.
 				// Helpdesk: Ask, the Learn and Nominate writes need the tenant's key (Graph widens with it).
+				// Seller Listing: every operation needs the key that created the listing (403 not_creator otherwise); Get Venues and
+				// Set Venue the key that holds it (403 not_holder). Account → Get Usage reads the key's own meter. Market is public.
 			},
 		],
 		requestDefaults: {
 			baseURL: 'https://coord.taifoon.dev/v1',
 			// X-Taifoon-Client lets the layer attribute node traffic; kept equal to package.json's version (a test checks it)
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/2.1.1' },
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Taifoon-Client': 'n8n-nodes-taifoon/2.2.0' },
 		},
 		properties: [
 			{
@@ -91,8 +95,10 @@ export class Taifoon implements INodeType {
 					{ name: 'Inference', value: 'inference', description: 'List the models and run one OpenAI-compatible chat completion, metered on your key' },
 					{ name: 'Job', value: 'job', description: 'Poll jobs, read the ledger, create an offer' },
 					{ name: 'Job Review', value: 'judge', description: 'Read the jobs ready for review, review deliveries, and leave a verdict on chain (unsigned calls)' },
+					{ name: 'Market', value: 'market', description: 'Prices per task class, which venue pays most for a class, and Taifoon\'s published fee' },
 					{ name: 'Proof', value: 'proof', description: 'Prove a transaction, or check a claim against the chain' },
 					{ name: 'Reseller Key', value: 'resellerKey', description: 'A key with its own spending cap for each client you build workflows for' },
+					{ name: 'Seller Listing', value: 'sellerListing', description: 'List your workflow on a card Taifoon serves, publish it, and register your payee (typed data your own wallet signs)' },
 					{ name: 'Settlement', value: 'settlement', description: 'Settle one paid call on the assurance hook (unsigned calls, in order)' },
 					{ name: 'Template', value: 'template', description: 'Taifoon\'s own n8n templates with class and live price, and the n8n demand verdicts' },
 				],
@@ -112,8 +118,10 @@ export class Taifoon implements INodeType {
 			...inferenceOperations,
 			...jobOperations,
 			...judgeOperations,
+			...marketOperations,
 			...proofOperations,
 			...resellerKeyOperations,
+			...sellerListingOperations,
 			...settlementOperations,
 			// 1.1.0, last so the fields Commerce re-binds are found under their own operations first
 			...commerceOperations,
